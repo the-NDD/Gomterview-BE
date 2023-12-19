@@ -18,7 +18,6 @@ jobs:
 
       - name: Build and push Docker image
         run: |
-          cd BE
           touch ./.env
           echo "${{ secrets.BE_ENV }}" > ./.env
           cd src/config
@@ -41,4 +40,4 @@ jobs:
       - name: Delete Old docker container
         run: sudo docker rm -f server || true
       - name: Run Docker Container
-        run: sudo docker run --oom-kill-disable --restart on-failure -d -p 80:8080 --name server --network ndd-network ${{secrets.BE_DOCKER_USERNAME}}/${{secrets.BE_DOCKER_REPO}}:${{secrets.DOCKER_DEV_TAG}}
+        run: docker run —memory=1g —memory-swap=2g —restart=unless-stopped -d -p 80:8080 --name server --network ndd-network ${{secrets.BE_DOCKER_USERNAME}}/${{secrets.BE_DOCKER_REPO}}:${{secrets.DOCKER_DEV_TAG}}
