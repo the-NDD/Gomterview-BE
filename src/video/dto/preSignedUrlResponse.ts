@@ -1,5 +1,6 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { createPropertyOption } from 'src/util/swagger.util';
+import { PreSignedInfo } from '../interface/video.interface';
 
 export class PreSignedUrlResponse {
   @ApiProperty(
@@ -9,13 +10,13 @@ export class PreSignedUrlResponse {
       String,
     ),
   )
-  readonly preSignedUrl: string;
+  readonly video: PreSignedInfo;
 
   @ApiProperty(createPropertyOption('example.webm', '저장할 파일 이름', String))
-  readonly key: string;
+  readonly thumbnail: PreSignedInfo;
 
-  constructor(preSignedUrl: string, key: string) {
-    this.preSignedUrl = preSignedUrl;
-    this.key = key;
+  constructor(video: PreSignedInfo, thumbnail: PreSignedInfo) {
+    this.video = video;
+    this.thumbnail = thumbnail;
   }
 }
