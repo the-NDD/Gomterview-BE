@@ -17,7 +17,7 @@ const getPutCommandObject = (key: string, isVideo: boolean): PutObjectCommand =>
 export async function getSignedUrlWithKey(key: string, isVideo: boolean) {
   const s3 = getIdriveS3Client();
   const command = getPutCommandObject(key, isVideo);
-  const expiresIn = 100;
+  const expiresIn = 10;
 
   return await getSignedUrl(s3, command, { expiresIn });
 }
