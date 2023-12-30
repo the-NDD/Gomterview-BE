@@ -741,7 +741,6 @@ describe('VideoService 통합 테스트', () => {
 
       //when
       const result = await videoService.getPreSignedUrl(member);
-      console.log(result.thumbnail.preSignedUrl);
 
       //then
       expect(result).toBeInstanceOf(PreSignedUrlResponse);
