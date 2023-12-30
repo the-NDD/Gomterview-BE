@@ -1,18 +1,28 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { createPropertyOption } from 'src/util/swagger.util';
 import { PreSignedInfo } from '../interface/video.interface';
+import {
+  thumbnailPreSignedInfo,
+  videoPreSignedInfo,
+} from '../fixture/video.fixture';
 
 export class PreSignedUrlResponse {
   @ApiProperty(
     createPropertyOption(
-      'https://example.com',
-      '비디오 업로드를 위한 Pre-Signed URL',
-      String,
+      videoPreSignedInfo,
+      '비디오 업로드를 위한 Pre-Signed URL과 파일명',
+      Object,
     ),
   )
   readonly video: PreSignedInfo;
 
-  @ApiProperty(createPropertyOption('example.webm', '저장할 파일 이름', String))
+  @ApiProperty(
+    createPropertyOption(
+      thumbnailPreSignedInfo,
+      '썸네일 업로드를 위한 Pre-Signed URL과 파일명',
+      Object,
+    ),
+  )
   readonly thumbnail: PreSignedInfo;
 
   constructor(video: PreSignedInfo, thumbnail: PreSignedInfo) {
