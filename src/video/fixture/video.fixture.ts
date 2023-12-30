@@ -1,5 +1,6 @@
 import { CreateVideoRequest } from '../dto/createVideoRequest';
 import { Video } from '../entity/video';
+import { PreSignedInfo } from '../interface/video.interface';
 
 export const videoListExample = [
   {
@@ -96,3 +97,13 @@ export const createVideoRequestFixture = new CreateVideoRequest(
   'https://bar.com',
   '03:29',
 );
+
+export const videoPreSignedInfoFixture = {
+  preSignedUrl: 'https://video-example.com',
+  key: 'video-example.mp4',
+} as PreSignedInfo;
+
+export const thumbnailPreSignedInfoFixture = {
+  preSignedUrl: 'https://thumbnail-example.com',
+  key: 'thumbnail-example.png',
+} as PreSignedInfo;

@@ -11,12 +11,12 @@ const getIdriveS3Client = (): S3Client => {
   return s3Client;
 };
 
-const getPutCommandObject = (key: string): PutObjectCommand =>
-  new PutObjectCommand({ Bucket: 'videos', Key: key });
+const getPutCommandObject = (key: string, isVideo: boolean): PutObjectCommand =>
+  new PutObjectCommand({ Bucket: isVideo ? 'videos' : 'thumbnail', Key: key });
 
-export async function getSignedUrlWithKey(key: string) {
+export async function getSignedUrlWithKey(key: string, isVideo: boolean) {
   const s3 = getIdriveS3Client();
-  const command = getPutCommandObject(key);
+  const command = getPutCommandObject(key, isVideo);
   const expiresIn = 10;
 
   return await getSignedUrl(s3, command, { expiresIn });

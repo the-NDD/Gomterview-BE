@@ -137,14 +137,18 @@ describe('VideoService 단위 테스트', () => {
         idriveUtil,
         'getSignedUrlWithKey',
       );
-      getSignedUrlWithKeySpy.mockResolvedValueOnce(url);
+      getSignedUrlWithKeySpy.mockResolvedValue(url);
 
       const response = await videoService.getPreSignedUrl(member);
 
       // then
       expect(response).toBeInstanceOf(PreSignedUrlResponse);
-      expect(response.key.endsWith('.mp4')).toBeTruthy(); // 파일 확장자는 반드시 mp4이어야 함
-      expect(response.preSignedUrl).toBe(url);
+      expect(response.video.key.endsWith('.mp4')).toBeTruthy(); // 비디오 파일 확장자는 반드시 mp4이어야 함
+      expect(response.video.preSignedUrl).toBe(url);
+      expect(response.thumbnail.key.endsWith('.png')).toBeTruthy(); // 썸네일 파일 확장자는 반드시 png이어야 함
+      expect(response.thumbnail.preSignedUrl).toBe(url);
+
+      getSignedUrlWithKeySpy.mockRestore();
     });
 
     it('prSigned URL 얻기 성공 시 member가 없으면 ManipulatedTokenNotFiltered을 반환한다.', () => {
@@ -740,8 +744,14 @@ describe('VideoService 통합 테스트', () => {
 
       //then
       expect(result).toBeInstanceOf(PreSignedUrlResponse);
-      expect(result.preSignedUrl.startsWith('https://video')).toBeTruthy();
-      expect(result.key.endsWith('.mp4')).toBeTruthy();
+      expect(
+        result.video.preSignedUrl.startsWith('https://video'),
+      ).toBeTruthy();
+      expect(result.video.key.endsWith('.mp4')).toBeTruthy();
+      expect(
+        result.thumbnail.preSignedUrl.startsWith('https://thumbnail'),
+      ).toBeTruthy();
+      expect(result.thumbnail.key.endsWith('.png')).toBeTruthy();
     });
 
     it('preSigned URL 얻기 시 member가 없으면 ManipulatedTokenNotFiltered를 반환한다.', async () => {

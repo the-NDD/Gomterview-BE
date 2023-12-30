@@ -4,7 +4,6 @@ import { Video } from '../entity/video';
 import { VideoRepository } from '../repository/video.repository';
 import { v4 as uuidv4 } from 'uuid';
 import { PreSignedUrlResponse } from '../dto/preSignedUrlResponse';
-import { QuestionRepository } from 'src/question/repository/question.repository';
 import {
   IDriveException,
   InvalidHashException,
@@ -30,12 +29,12 @@ import {
 import { SingleVideoResponse } from '../dto/singleVideoResponse';
 import { MemberNotFoundException } from 'src/member/exception/member.exception';
 import { getSignedUrlWithKey } from 'src/util/idrive.util';
+import { PreSignedInfo } from '../interface/video.interface';
 
 @Injectable()
 export class VideoService {
   constructor(
     private videoRepository: VideoRepository,
-    private questionRepository: QuestionRepository,
     private memberRepository: MemberRepository,
   ) {}
 
@@ -103,11 +102,13 @@ export class VideoService {
 
   async getPreSignedUrl(member: Member) {
     validateManipulatedToken(member);
-    const key = `${uuidv4()}.mp4`;
-
+    const videoKey = `${uuidv4()}.mp4`;
+    const thumbnailKey = `${uuidv4()}.png`;
     try {
-      const preSignedUrl = await getSignedUrlWithKey(key);
-      return new PreSignedUrlResponse(preSignedUrl, key);
+      return new PreSignedUrlResponse(
+        await this.getPreSignedUrlResponse(videoKey, true),
+        await this.getPreSignedUrlResponse(thumbnailKey, false),
+      );
     } catch (error) {
       throw new IDriveException();
     }
@@ -175,6 +176,16 @@ export class VideoService {
   //     question ? question.content : '삭제된 질문입니다'
   //   }_${uuidv4().split('-').pop()}`;
   // }
+
+  private async getPreSignedUrlResponse(
+    key: string,
+    isVideo: boolean,
+  ): Promise<PreSignedInfo> {
+    return {
+      preSignedUrl: await getSignedUrlWithKey(key, isVideo),
+      key,
+    } as PreSignedInfo;
+  }
 
   private validateVideoOwnership(video: Video, memberId: number) {
     if (isEmpty(video)) throw new VideoNotFoundException();
