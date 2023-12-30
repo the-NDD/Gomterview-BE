@@ -4,7 +4,6 @@ import { Video } from '../entity/video';
 import { VideoRepository } from '../repository/video.repository';
 import { v4 as uuidv4 } from 'uuid';
 import { PreSignedUrlResponse } from '../dto/preSignedUrlResponse';
-import { QuestionRepository } from 'src/question/repository/question.repository';
 import {
   IDriveException,
   InvalidHashException,
@@ -36,7 +35,6 @@ import { PreSignedInfo } from '../interface/video.interface';
 export class VideoService {
   constructor(
     private videoRepository: VideoRepository,
-    private questionRepository: QuestionRepository,
     private memberRepository: MemberRepository,
   ) {}
 
