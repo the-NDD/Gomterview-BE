@@ -98,12 +98,12 @@ export const createVideoRequestFixture = new CreateVideoRequest(
   '03:29',
 );
 
-export const videoPreSignedInfo = {
+export const videoPreSignedInfoFixture = {
   preSignedUrl: 'https://video-example.com',
   key: 'video-example.mp4',
 } as PreSignedInfo;
 
-export const thumbnailPreSignedInfo = {
+export const thumbnailPreSignedInfoFixture = {
   preSignedUrl: 'https://thumbnail-example.com',
   key: 'thumbnail-example.png',
 } as PreSignedInfo;

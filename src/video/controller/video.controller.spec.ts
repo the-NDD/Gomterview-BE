@@ -25,10 +25,12 @@ import {
 import {
   createVideoRequestFixture,
   privateVideoFixture,
+  thumbnailPreSignedInfoFixture,
   videoFixture,
   videoListFixture,
   videoOfOtherFixture,
   videoOfWithdrawnMemberFixture,
+  videoPreSignedInfoFixture,
 } from '../fixture/video.fixture';
 import { VideoDetailResponse } from '../dto/videoDetailResponse';
 import { VideoHashResponse } from '../dto/videoHashResponse';
@@ -119,15 +121,18 @@ describe('VideoController 단위 테스트', () => {
 
       //when
       mockVideoService.getPreSignedUrl.mockResolvedValue(
-        new PreSignedUrlResponse('fakePreSignedUrl', 'fakeKey'),
+        new PreSignedUrlResponse(
+          videoPreSignedInfoFixture,
+          thumbnailPreSignedInfoFixture,
+        ),
       );
 
       //then
       const result = await controller.getPreSignedUrl(mockReqWithMemberFixture);
 
       expect(result).toBeInstanceOf(PreSignedUrlResponse);
-      expect(result.preSignedUrl).toBe('fakePreSignedUrl');
-      expect(result.key).toBe('fakeKey');
+      expect(result.video).toBe(videoPreSignedInfoFixture);
+      expect(result.thumbnail).toBe(thumbnailPreSignedInfoFixture);
     });
 
     it('Pre-Signed URL 생성 도중 에러가 발생하면 IDriveException을 반환해야한다.', async () => {

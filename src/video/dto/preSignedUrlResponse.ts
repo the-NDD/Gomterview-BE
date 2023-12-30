@@ -2,14 +2,14 @@ import { ApiProperty } from '@nestjs/swagger';
 import { createPropertyOption } from 'src/util/swagger.util';
 import { PreSignedInfo } from '../interface/video.interface';
 import {
-  thumbnailPreSignedInfo,
-  videoPreSignedInfo,
+  thumbnailPreSignedInfoFixture,
+  videoPreSignedInfoFixture,
 } from '../fixture/video.fixture';
 
 export class PreSignedUrlResponse {
   @ApiProperty(
     createPropertyOption(
-      videoPreSignedInfo,
+      videoPreSignedInfoFixture,
       '비디오 업로드를 위한 Pre-Signed URL과 파일명',
       Object,
     ),
@@ -18,7 +18,7 @@ export class PreSignedUrlResponse {
 
   @ApiProperty(
     createPropertyOption(
-      thumbnailPreSignedInfo,
+      thumbnailPreSignedInfoFixture,
       '썸네일 업로드를 위한 Pre-Signed URL과 파일명',
       Object,
     ),

@@ -106,8 +106,8 @@ export class VideoService {
     const thumbnailKey = `${uuidv4()}.png`;
     try {
       return new PreSignedUrlResponse(
-        await this.getPreSignedUrlResponse(videoKey),
-        await this.getPreSignedUrlResponse(thumbnailKey),
+        await this.getPreSignedUrlResponse(videoKey, true),
+        await this.getPreSignedUrlResponse(thumbnailKey, false),
       );
     } catch (error) {
       throw new IDriveException();
@@ -177,9 +177,12 @@ export class VideoService {
   //   }_${uuidv4().split('-').pop()}`;
   // }
 
-  private async getPreSignedUrlResponse(key: string): Promise<PreSignedInfo> {
+  private async getPreSignedUrlResponse(
+    key: string,
+    isVideo: boolean,
+  ): Promise<PreSignedInfo> {
     return {
-      preSignedUrl: await getSignedUrlWithKey(key),
+      preSignedUrl: await getSignedUrlWithKey(key, isVideo),
       key,
     } as PreSignedInfo;
   }
