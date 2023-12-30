@@ -30,6 +30,7 @@ import {
 import { SingleVideoResponse } from '../dto/singleVideoResponse';
 import { MemberNotFoundException } from 'src/member/exception/member.exception';
 import { getSignedUrlWithKey } from 'src/util/idrive.util';
+import { PreSignedInfo } from '../interface/video.interface';
 
 @Injectable()
 export class VideoService {
@@ -103,11 +104,13 @@ export class VideoService {
 
   async getPreSignedUrl(member: Member) {
     validateManipulatedToken(member);
-    const key = `${uuidv4()}.mp4`;
-
+    const videoKey = `${uuidv4()}.mp4`;
+    const thumbnailKey = `${uuidv4()}.png`;
     try {
-      const preSignedUrl = await getSignedUrlWithKey(key);
-      return new PreSignedUrlResponse(preSignedUrl, key);
+      return new PreSignedUrlResponse(
+        await this.getPreSignedUrlResponse(videoKey),
+        await this.getPreSignedUrlResponse(thumbnailKey),
+      );
     } catch (error) {
       throw new IDriveException();
     }
@@ -175,6 +178,13 @@ export class VideoService {
   //     question ? question.content : '삭제된 질문입니다'
   //   }_${uuidv4().split('-').pop()}`;
   // }
+
+  private async getPreSignedUrlResponse(key: string): Promise<PreSignedInfo> {
+    return {
+      preSignedUrl: await getSignedUrlWithKey(key),
+      key,
+    } as PreSignedInfo;
+  }
 
   private validateVideoOwnership(video: Video, memberId: number) {
     if (isEmpty(video)) throw new VideoNotFoundException();
