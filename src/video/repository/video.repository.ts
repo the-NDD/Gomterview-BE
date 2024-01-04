@@ -39,6 +39,15 @@ export class VideoRepository {
       .execute();
   }
 
+  async updateVideoName(videoId: number, name: string) {
+    return await this.videoRepository
+      .createQueryBuilder()
+      .update(Video)
+      .set({ name })
+      .where('id = :id', { id: Number(videoId) })
+      .execute();
+  }
+
   async remove(video: Video) {
     await this.videoRepository.remove(video);
   }
