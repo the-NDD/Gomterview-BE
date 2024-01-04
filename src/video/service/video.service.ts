@@ -160,6 +160,10 @@ export class VideoService {
     return this.updateVideoHashInRedis(video);
   }
 
+  async updateVideoName(videoId: number, member: Member, name: string) {
+    throw new Error('Method not implemented.');
+  }
+
   async deleteVideo(videoId: number, member: Member) {
     validateManipulatedToken(member);
     const memberId = member.id;
