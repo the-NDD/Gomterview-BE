@@ -172,6 +172,19 @@ export class VideoController {
     );
   }
 
+  @Patch('/name/:videoId')
+  @UseGuards(TokenHardGuard)
+  async updateVideoName(
+    @Param('videoId') videoId: number,
+    @Req() req: Request,
+  ) {
+    return await this.videoService.updateVideoName(
+      videoId,
+      req.user as Member,
+      req.body.name,
+    );
+  }
+
   @Delete(':videoId')
   @UseGuards(TokenHardGuard)
   @ApiCookieAuth()
