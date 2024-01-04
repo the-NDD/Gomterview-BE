@@ -161,7 +161,11 @@ export class VideoService {
   }
 
   async updateVideoName(videoId: number, member: Member, name: string) {
-    throw new Error('Method not implemented.');
+    validateManipulatedToken(member);
+    const video = await this.videoRepository.findById(videoId);
+    this.validateVideoOwnership(video, member.id);
+
+    await this.videoRepository.updateVideoName(videoId, name);
   }
 
   async deleteVideo(videoId: number, member: Member) {
