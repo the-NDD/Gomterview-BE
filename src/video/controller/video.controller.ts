@@ -174,11 +174,19 @@ export class VideoController {
 
   @Patch('/name/:videoId')
   @UseGuards(TokenHardGuard)
+  @ApiCookieAuth()
+  @ApiOperation({
+    summary: '비디오 이름 변경',
+  })
+  @ApiResponse(createApiResponseOption(200, '비디오 이름 변경 완료', null))
+  @ApiResponse(createApiResponseOption(403, 'V02', null))
+  @ApiResponse(createApiResponseOption(404, 'V03', null))
+  @ApiResponse(createApiResponseOption(500, 'SERVER', null))
   async updateVideoName(
     @Param('videoId') videoId: number,
     @Req() req: Request,
   ) {
-    return await this.videoService.updateVideoName(
+    await this.videoService.updateVideoName(
       videoId,
       req.user as Member,
       req.body.name,
