@@ -5,6 +5,7 @@ import {
   copyQuestionRequestFixture,
   createQuestionRequestFixture,
   questionFixture,
+  updateIndexInWorkbookRequestFixture,
 } from '../fixture/question.fixture';
 import { QuestionResponse } from '../dto/questionResponse';
 import {
@@ -53,6 +54,7 @@ describe('QuestionService', () => {
     findById: jest.fn(),
     remove: jest.fn(),
     findAllByIds: jest.fn(),
+    updateIndex: jest.fn(),
   };
 
   const mockWorkbookRepository = {
@@ -269,6 +271,81 @@ describe('QuestionService', () => {
       await expect(
         service.copyQuestions(copyQuestionRequestFixture, otherMemberFixture),
       ).rejects.toThrow(new WorkbookForbiddenException());
+    });
+  });
+
+  describe('질문 인덱스 변경', () => {
+    it('질문의 인덱스를 성공적으로 변경시킨다', async () => {
+      //given
+      mockQuestionRepository.findAllByIds.mockResolvedValue([
+        questionFixture,
+        questionFixture,
+        questionFixture,
+      ]);
+      mockQuestionRepository.updateIndex.mockResolvedValue(undefined);
+      mockWorkbookRepository.findById.mockResolvedValue(workbookFixtureWithId);
+      //when
+
+      //then
+      await expect(
+        service.updateIndex(updateIndexInWorkbookRequestFixture, memberFixture),
+      ).resolves.toBeUndefined();
+    });
+
+    it('문제집을 확인할 수 없으면 WorkbookNotFoundException을 반환한다', async () => {
+      //given
+      mockQuestionRepository.findAllByIds.mockResolvedValue([
+        questionFixture,
+        questionFixture,
+        questionFixture,
+      ]);
+      mockQuestionRepository.updateIndex.mockResolvedValue(undefined);
+      mockWorkbookRepository.findById.mockResolvedValue(undefined);
+      //when
+
+      //then
+      await expect(
+        service.updateIndex(updateIndexInWorkbookRequestFixture, memberFixture),
+      ).rejects.toThrow(new WorkbookNotFoundException());
+    });
+
+    it('문제집과 요청 회원이 다른 사람이면 WorkbookForbiddenException을 반환한다', async () => {
+      //given
+      mockQuestionRepository.findAllByIds.mockResolvedValue([
+        questionFixture,
+        questionFixture,
+        questionFixture,
+      ]);
+      mockQuestionRepository.updateIndex.mockResolvedValue(undefined);
+      mockWorkbookRepository.findById.mockResolvedValue(workbookFixtureWithId);
+      //when
+
+      //then
+      await expect(
+        service.updateIndex(
+          updateIndexInWorkbookRequestFixture,
+          otherMemberFixture,
+        ),
+      ).rejects.toThrow(new WorkbookForbiddenException());
+    });
+
+    it('질문이 존재하지 않는경우(입력받은 id배열의 길이와 DB에서 id로 조회한 결과가 다른 경우) QuestionNotFoundException을 반환한다', async () => {
+      //given
+      mockQuestionRepository.findAllByIds.mockResolvedValue([
+        questionFixture,
+        questionFixture,
+      ]);
+      mockQuestionRepository.updateIndex.mockResolvedValue(undefined);
+      mockWorkbookRepository.findById.mockResolvedValue(workbookFixtureWithId);
+      //when
+
+      //then
+      await expect(
+        service.updateIndex(
+          updateIndexInWorkbookRequestFixture,
+          otherMemberFixture,
+        ),
+      ).rejects.toThrow(new QuestionNotFoundException());
     });
   });
 });
