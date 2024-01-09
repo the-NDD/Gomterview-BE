@@ -103,6 +103,9 @@ export class QuestionService {
       updateIndexRequest.workbookId,
       member,
     );
+    (
+      await this.questionRepository.findAllByIds(updateIndexRequest.ids)
+    ).forEach(validateQuestion);
 
     this.questionRepository.updateIndex(updateIndexRequest.ids);
   }
