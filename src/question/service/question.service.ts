@@ -17,6 +17,7 @@ import { Workbook } from '../../workbook/entity/workbook';
 import { WorkbookIdResponse } from '../../workbook/dto/workbookIdResponse';
 import { NeedToFindByWorkbookIdException } from '../../workbook/exception/workbook.exception';
 import { Transactional } from 'typeorm-transactional';
+import { UpdateIndexInWorkbookRequest } from '../dto/updateIndexInWorkbookRequest';
 
 @Injectable()
 export class QuestionService {
@@ -90,6 +91,20 @@ export class QuestionService {
     validateQuestion(question);
     await this.validateMembersWorkbookById(question.workbook.id, member);
     await this.questionRepository.remove(question);
+  }
+
+  @Transactional()
+  async updateIndex(
+    updateIndexRequest: UpdateIndexInWorkbookRequest,
+    member: Member,
+  ) {
+    validateManipulatedToken(member);
+    await this.validateMembersWorkbookById(
+      updateIndexRequest.workbookId,
+      member,
+    );
+
+    this.questionRepository.updateIndex(updateIndexRequest.ids);
   }
 
   private async validateMembersWorkbookById(
