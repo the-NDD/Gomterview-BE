@@ -42,6 +42,7 @@ import { categoryFixtureWithId } from '../../category/fixture/category.fixture';
 import { CategoryModule } from '../../category/category.module';
 import { WorkbookIdResponse } from '../../workbook/dto/workbookIdResponse';
 import { CopyQuestionRequest } from '../dto/copyQuestionRequest';
+import { UpdateIndexInWorkbookRequest } from '../dto/updateIndexInWorkbookRequest';
 
 describe('QuestionService', () => {
   let service: QuestionService;
@@ -493,5 +494,33 @@ describe('QuestionService 통합 테스트', () => {
     const result = await questionService.copyQuestions(copyRequest, other);
     expect(result).toBeInstanceOf(WorkbookIdResponse);
     expect(result.workbookId).toBe(othersWorkbook.id);
+  });
+
+  it('질문을 수정할 때 정상적으로 데이터를 넣고, 인덱스를 수정요청하면, 조회시에 다른 인덱스로 반환된다.', async () => {
+    //given
+    await memberRepository.save(memberFixture);
+    await categoryRepository.save(categoryFixtureWithId);
+    const workbook = await workbookRepository.save(workbookFixture);
+
+    const questionIds = [];
+
+    for (let index = 0; index < 3; index++) {
+      const question = await questionRepository.save(
+        Question.of(workbook, null, 'tester'),
+      );
+      questionIds.push(question.id); // 1, 2, 3
+    }
+
+    questionIds.push(questionIds.shift()); // 2, 3, 1
+
+    //when
+    await questionService.updateIndex(
+      new UpdateIndexInWorkbookRequest(workbook.id, questionIds),
+      memberFixture,
+    );
+
+    //then
+    const result = await questionRepository.findByWorkbookId(workbook.id);
+    expect(result.map((each) => each.indexInWorkbook)).toEqual([2, 3, 1]);
   });
 });
