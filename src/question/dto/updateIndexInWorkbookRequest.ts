@@ -13,4 +13,9 @@ export class UpdateIndexInWorkbookRequest {
   @ArrayMinSize(1) // 최소 1개의 원소를 가져야 합니다.
   @IsNumber({}, { each: true })
   ids: number[];
+
+  constructor(workbookId: number, ids: number[]) {
+    this.workbookId = workbookId;
+    this.ids = ids;
+  }
 }
