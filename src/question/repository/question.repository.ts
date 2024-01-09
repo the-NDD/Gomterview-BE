@@ -72,6 +72,15 @@ export class QuestionRepository {
     await this.repository.remove(question);
   }
 
+  async updateIndex(ids: number[]) {
+    await this.repository
+      .createQueryBuilder()
+      .update(Question)
+      .set({ indexInWorkbook: () => 'FIND_IN_SET(id, :ids)' })
+      .where('id IN (:...ids)', { ids })
+      .execute();
+  }
+
   private fetchOrigin(question: Question) {
     if (!question) {
       return null;
