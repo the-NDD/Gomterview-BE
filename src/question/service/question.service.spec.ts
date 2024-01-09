@@ -341,10 +341,7 @@ describe('QuestionService', () => {
 
       //then
       await expect(
-        service.updateIndex(
-          updateIndexInWorkbookRequestFixture,
-          otherMemberFixture,
-        ),
+        service.updateIndex(updateIndexInWorkbookRequestFixture, memberFixture),
       ).rejects.toThrow(new QuestionNotFoundException());
     });
   });
