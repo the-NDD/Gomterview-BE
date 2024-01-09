@@ -24,6 +24,9 @@ export class Question extends DefaultEntity {
   @JoinColumn({ name: 'defaultAnswer' })
   defaultAnswer: Answer;
 
+  @Column({ default: 0 })
+  indexInWorkbook: number;
+
   constructor(
     id: number,
     content: string,
@@ -37,6 +40,7 @@ export class Question extends DefaultEntity {
     this.workbook = workbook;
     this.origin = origin;
     this.defaultAnswer = defaultAnswer;
+    this.indexInWorkbook = 0;
   }
 
   static of(workbook: Workbook, origin: Question, content: string) {

@@ -17,6 +17,8 @@ import { Workbook } from '../../workbook/entity/workbook';
 import { WorkbookIdResponse } from '../../workbook/dto/workbookIdResponse';
 import { NeedToFindByWorkbookIdException } from '../../workbook/exception/workbook.exception';
 import { Transactional } from 'typeorm-transactional';
+import { UpdateIndexInWorkbookRequest } from '../dto/updateIndexInWorkbookRequest';
+import { QuestionNotFoundException } from '../exception/question.exception';
 
 @Injectable()
 export class QuestionService {
@@ -92,6 +94,21 @@ export class QuestionService {
     await this.questionRepository.remove(question);
   }
 
+  @Transactional()
+  async updateIndex(
+    updateIndexRequest: UpdateIndexInWorkbookRequest,
+    member: Member,
+  ) {
+    validateManipulatedToken(member);
+    await this.validateMembersWorkbookById(
+      updateIndexRequest.workbookId,
+      member,
+    );
+    await this.validateQuestionsByIds(updateIndexRequest.ids);
+
+    this.questionRepository.updateIndex(updateIndexRequest.ids);
+  }
+
   private async validateMembersWorkbookById(
     workbookId: number,
     member: Member,
@@ -99,6 +116,11 @@ export class QuestionService {
     const workbook = await this.workbookRepository.findById(workbookId);
     validateWorkbook(workbook);
     validateWorkbookOwner(workbook, member);
+  }
+
+  private async validateQuestionsByIds(ids: number[]) {
+    const questions = await this.questionRepository.findAllByIds(ids);
+    if (questions.length != ids.length) throw new QuestionNotFoundException();
   }
 
   private createCopy(question: Question, workbook: Workbook) {
