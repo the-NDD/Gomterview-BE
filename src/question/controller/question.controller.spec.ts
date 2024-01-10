@@ -407,6 +407,63 @@ describe('QuestionController 통합테스트', () => {
         .expect(200)
         .then(() => {});
     });
+
+    it('로그인을 하지 않으면 401에러를 반환한다.', async () => {
+      //given
+      await memberRepository.save(memberFixture);
+      await categoryRepository.save(categoryFixtureWithId);
+      const workbook = await workbookRepository.save(workbookFixture);
+      const ids = [];
+      for (let index = 1; index <= 5; index++) {
+        ids.push(
+          (
+            await questionRepository.save(
+              Question.of(workbook, null, `tester${index}`),
+            )
+          ).id,
+        );
+      }
+
+      ids.push(ids.shift());
+      ids.push(ids.shift());
+      //when&then
+      const agent = request.agent(app.getHttpServer());
+      await agent
+        .patch('/api/question/index')
+        .send(new UpdateIndexInWorkbookRequest(workbook.id, ids))
+        .expect(401)
+        .then(() => {});
+    });
+
+    it('나의 문제집에 질문 순서를 바꾸면 성공적으로 인덱스를 수정한다.', async () => {
+      //given
+      await memberRepository.save(memberFixture);
+      await categoryRepository.save(categoryFixtureWithId);
+      const workbook = await workbookRepository.save(workbookFixture);
+      const ids = [];
+      for (let index = 1; index <= 5; index++) {
+        ids.push(
+          (
+            await questionRepository.save(
+              Question.of(workbook, null, `tester${index}`),
+            )
+          ).id,
+        );
+      }
+
+      ids.push(ids.shift());
+      ids.push(ids.shift());
+      //when&then
+      const agent = request.agent(app.getHttpServer());
+      await agent
+        .patch('/api/question/index')
+        .set('Cookie', [
+          `accessToken=${await authService.login(memberFixturesOAuthRequest)}`,
+        ])
+        .send(new UpdateIndexInWorkbookRequest(workbook.id, ids))
+        .expect(200)
+        .then(() => {});
+    });
   });
 
   afterEach(async () => {
