@@ -104,9 +104,9 @@ export class QuestionService {
       updateIndexRequest.workbookId,
       member,
     );
-    const questions = await this.questionRepository.findAllByIds(
-      updateIndexRequest.ids,
-    );
+    const questions = (
+      await this.questionRepository.findAllByIds(updateIndexRequest.ids)
+    ).filter((each) => each.workbook.id === updateIndexRequest.workbookId);
     this.validateQuestionsByIds(questions, updateIndexRequest.ids);
     await this.questionRepository.updateIndex(updateIndexRequest.ids);
   }
