@@ -1,9 +1,10 @@
 import { DefaultEntity } from '../../app.entity';
-import { Column, Entity, JoinColumn, ManyToOne } from 'typeorm';
+import { Column, Entity, Index, JoinColumn, ManyToOne } from 'typeorm';
 import { Answer } from '../../answer/entity/answer';
 import { Workbook } from '../../workbook/entity/workbook';
 
 @Entity({ name: 'Question' })
+@Index('idx_indexInWorkbook', ['indexInWorkbook'])
 export class Question extends DefaultEntity {
   @Column({ type: 'text' })
   readonly content: string;
