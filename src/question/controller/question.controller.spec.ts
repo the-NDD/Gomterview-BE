@@ -438,9 +438,12 @@ describe('QuestionController 통합테스트', () => {
 
     it('다른 사람의 인덱스를 수정하려하면 403에러를 반환한다.', async () => {
       //given
-      await memberRepository.save(memberFixture);
-      await categoryRepository.save(categoryFixtureWithId);
-      const workbook = await workbookRepository.save(workbookFixture);
+      const token = await authService.login(memberFixturesOAuthRequest);
+      await memberRepository.save(otherMemberFixture);
+      const workbook = await workbookRepository.save(otherWorkbookFixture);
+      const question = await questionRepository.save(
+        Question.of(workbook, null, 'tester'),
+      );
       const ids = [];
       for (let index = 1; index <= 5; index++) {
         ids.push(
@@ -458,9 +461,7 @@ describe('QuestionController 통합테스트', () => {
       const agent = request.agent(app.getHttpServer());
       await agent
         .patch('/api/question/index')
-        .set('Cookie', [
-          `accessToken=${await authService.login(oauthRequestFixture)}`,
-        ])
+        .set('Cookie', [`accessToken=${token}`])
         .send(new UpdateIndexInWorkbookRequest(workbook.id, ids))
         .expect(FORBIDDEN)
         .then(() => {});
