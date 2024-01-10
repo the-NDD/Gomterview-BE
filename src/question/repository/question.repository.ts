@@ -2,6 +2,7 @@ import { Repository } from 'typeorm';
 import { Question } from '../entity/question';
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
+import { QueryDeepPartialEntity } from 'typeorm/query-builder/QueryPartialEntity';
 
 @Injectable()
 export class QuestionRepository {
@@ -73,12 +74,17 @@ export class QuestionRepository {
   }
 
   async updateIndex(ids: number[]) {
-    await this.repository
-      .createQueryBuilder()
-      .update(Question)
-      .set({ indexInWorkbook: () => 'FIND_IN_SET(id, :ids)' })
-      .where('id IN (:...ids)', { ids })
-      .execute();
+    const caseStatements = ids.map(
+      (id) => `WHEN id = ${id} THEN ${ids.indexOf(id)}`,
+    );
+
+    const updateQuery = `
+      UPDATE Question
+      SET indexInWorkbook = CASE ${caseStatements.join(' ')} END
+      WHERE id IN (${ids.join(', ')})
+    `;
+
+    await this.repository.query(updateQuery);
   }
 
   private fetchOrigin(question: Question) {
