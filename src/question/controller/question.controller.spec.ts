@@ -384,6 +384,44 @@ describe('QuestionController 통합테스트', () => {
       await memberRepository.save(memberFixture);
       await categoryRepository.save(categoryFixtureWithId);
       const workbook = await workbookRepository.save(workbookFixture);
+      const ids = []; //tester1, 2, 3, 4, 5
+      for (let index = 1; index <= 5; index++) {
+        ids.push(
+          (
+            await questionRepository.save(
+              Question.of(workbook, null, `tester${index}`),
+            )
+          ).id,
+        );
+      }
+
+      ids.push(ids.shift()); // 2, 3, 4, 5, 1
+      ids.push(ids.shift()); // 3, 4, 5, 1, 2
+      //when&then
+      const agent = request.agent(app.getHttpServer());
+      await agent
+        .patch('/api/question/index')
+        .set('Cookie', [
+          `accessToken=${await authService.login(memberFixturesOAuthRequest)}`,
+        ])
+        .send(new UpdateIndexInWorkbookRequest(workbook.id, ids))
+        .expect(OK)
+        .then(() => {});
+      const result = await questionRepository.findByWorkbookId(workbook.id);
+      expect(result.map((each) => each.content)).toEqual([
+        'tester3',
+        'tester4',
+        'tester5',
+        'tester1',
+        'tester2',
+      ]);
+    });
+
+    it('존재하지 않는 문제집은 404에러를 반환한다.', async () => {
+      //given
+      await memberRepository.save(memberFixture);
+      await categoryRepository.save(categoryFixtureWithId);
+      const workbook = await workbookRepository.save(workbookFixture);
       const ids = [];
       for (let index = 1; index <= 5; index++) {
         ids.push(
@@ -404,8 +442,8 @@ describe('QuestionController 통합테스트', () => {
         .set('Cookie', [
           `accessToken=${await authService.login(memberFixturesOAuthRequest)}`,
         ])
-        .send(new UpdateIndexInWorkbookRequest(workbook.id, ids))
-        .expect(OK)
+        .send(new UpdateIndexInWorkbookRequest(10000, ids))
+        .expect(NOT_FOUND)
         .then(() => {});
     });
 
