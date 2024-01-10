@@ -39,6 +39,7 @@ import { CategoryModule } from '../../category/category.module';
 import { categoryFixtureWithId } from '../../category/fixture/category.fixture';
 import { CopyQuestionRequest } from '../dto/copyQuestionRequest';
 import { UpdateIndexInWorkbookRequest } from '../dto/updateIndexInWorkbookRequest';
+import { FORBIDDEN, OK, UNAUTHORIZED } from 'src/constant/constant';
 
 describe('QuestionController', () => {
   let controller: QuestionController;
@@ -404,7 +405,7 @@ describe('QuestionController 통합테스트', () => {
           `accessToken=${await authService.login(memberFixturesOAuthRequest)}`,
         ])
         .send(new UpdateIndexInWorkbookRequest(workbook.id, ids))
-        .expect(200)
+        .expect(OK)
         .then(() => {});
     });
 
@@ -431,11 +432,11 @@ describe('QuestionController 통합테스트', () => {
       await agent
         .patch('/api/question/index')
         .send(new UpdateIndexInWorkbookRequest(workbook.id, ids))
-        .expect(401)
+        .expect(UNAUTHORIZED)
         .then(() => {});
     });
 
-    it('나의 문제집에 질문 순서를 바꾸면 성공적으로 인덱스를 수정한다.', async () => {
+    it('다른 사람의 인덱스를 수정하려하면 403에러를 반환한다.', async () => {
       //given
       await memberRepository.save(memberFixture);
       await categoryRepository.save(categoryFixtureWithId);
@@ -458,10 +459,10 @@ describe('QuestionController 통합테스트', () => {
       await agent
         .patch('/api/question/index')
         .set('Cookie', [
-          `accessToken=${await authService.login(memberFixturesOAuthRequest)}`,
+          `accessToken=${await authService.login(oauthRequestFixture)}`,
         ])
         .send(new UpdateIndexInWorkbookRequest(workbook.id, ids))
-        .expect(200)
+        .expect(FORBIDDEN)
         .then(() => {});
     });
   });
