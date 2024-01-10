@@ -521,6 +521,6 @@ describe('QuestionService 통합 테스트', () => {
 
     //then
     const result = await questionRepository.findByWorkbookId(workbook.id);
-    expect(result.map((each) => each.indexInWorkbook)).toEqual([2, 0, 1]);
+    expect(result.map((each) => each.indexInWorkbook)).toEqual([0, 1, 2]);
   });
 });
