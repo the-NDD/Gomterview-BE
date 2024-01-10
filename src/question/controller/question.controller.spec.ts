@@ -39,7 +39,7 @@ import { CategoryModule } from '../../category/category.module';
 import { categoryFixtureWithId } from '../../category/fixture/category.fixture';
 import { CopyQuestionRequest } from '../dto/copyQuestionRequest';
 import { UpdateIndexInWorkbookRequest } from '../dto/updateIndexInWorkbookRequest';
-import { FORBIDDEN, OK, UNAUTHORIZED } from 'src/constant/constant';
+import { FORBIDDEN, NOT_FOUND, OK, UNAUTHORIZED } from 'src/constant/constant';
 
 describe('QuestionController', () => {
   let controller: QuestionController;
@@ -464,6 +464,37 @@ describe('QuestionController 통합테스트', () => {
         .set('Cookie', [`accessToken=${token}`])
         .send(new UpdateIndexInWorkbookRequest(workbook.id, ids))
         .expect(FORBIDDEN)
+        .then(() => {});
+    });
+
+    it('존재하지 않는 id가 들어있다면 404에러를 반환한다.', async () => {
+      //given
+      await memberRepository.save(memberFixture);
+      await categoryRepository.save(categoryFixtureWithId);
+      const workbook = await workbookRepository.save(workbookFixture);
+      const ids = [];
+      for (let index = 1; index <= 5; index++) {
+        ids.push(
+          (
+            await questionRepository.save(
+              Question.of(workbook, null, `tester${index}`),
+            )
+          ).id,
+        );
+      }
+
+      ids.push(ids.shift());
+      ids.push(ids.shift());
+      ids.push(10000);
+      //when&then
+      const agent = request.agent(app.getHttpServer());
+      await agent
+        .patch('/api/question/index')
+        .set('Cookie', [
+          `accessToken=${await authService.login(memberFixturesOAuthRequest)}`,
+        ])
+        .send(new UpdateIndexInWorkbookRequest(workbook.id, ids))
+        .expect(NOT_FOUND)
         .then(() => {});
     });
   });
