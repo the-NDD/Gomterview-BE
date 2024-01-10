@@ -107,6 +107,8 @@ export class QuestionController {
   }
 
   @Patch('/index')
+  @UseGuards(TokenHardGuard)
+  @ApiCookieAuth()
   @ApiOperation({
     summary: '질문들의 인덱스 조정',
   })
