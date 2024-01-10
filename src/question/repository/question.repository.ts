@@ -2,7 +2,6 @@ import { Repository } from 'typeorm';
 import { Question } from '../entity/question';
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { QueryDeepPartialEntity } from 'typeorm/query-builder/QueryPartialEntity';
 
 @Injectable()
 export class QuestionRepository {
@@ -34,6 +33,7 @@ export class QuestionRepository {
       .leftJoinAndSelect('Question.origin', 'origin')
       .leftJoinAndSelect('Question.defaultAnswer', 'defaultAnswer')
       .where('workbook.id = :workbookId', { workbookId })
+      .orderBy('Question.indexInWorkbook', 'ASC')
       .getMany();
   }
 
