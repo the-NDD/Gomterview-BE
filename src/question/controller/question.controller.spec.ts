@@ -38,6 +38,7 @@ import { CategoryRepository } from '../../category/repository/category.repositor
 import { CategoryModule } from '../../category/category.module';
 import { categoryFixtureWithId } from '../../category/fixture/category.fixture';
 import { CopyQuestionRequest } from '../dto/copyQuestionRequest';
+import { UpdateIndexInWorkbookRequest } from '../dto/updateIndexInWorkbookRequest';
 
 describe('QuestionController', () => {
   let controller: QuestionController;
@@ -247,7 +248,6 @@ describe('QuestionController 통합테스트', () => {
       await agent
         .delete(`/api/question/${question.id}`)
         .set('Cookie', [`accessToken=${token}`])
-        .expect((error) => console.log(error))
         .expect(403);
     });
   });
@@ -373,6 +373,38 @@ describe('QuestionController 통합테스트', () => {
         .set('Cookie', [`accessToken=${token}`])
         .send(copyRequest)
         .expect(404)
+        .then(() => {});
+    });
+  });
+
+  describe('질문의 인덱스를 수정한다.', () => {
+    it('나의 문제집에 질문 순서를 바꾸면 성공적으로 인덱스를 수정한다.', async () => {
+      //given
+      await memberRepository.save(memberFixture);
+      await categoryRepository.save(categoryFixtureWithId);
+      const workbook = await workbookRepository.save(workbookFixture);
+      const ids = [];
+      for (let index = 1; index <= 5; index++) {
+        ids.push(
+          (
+            await questionRepository.save(
+              Question.of(workbook, null, `tester${index}`),
+            )
+          ).id,
+        );
+      }
+
+      ids.push(ids.shift());
+      ids.push(ids.shift());
+      //when&then
+      const agent = request.agent(app.getHttpServer());
+      await agent
+        .patch('/api/question/index')
+        .set('Cookie', [
+          `accessToken=${await authService.login(memberFixturesOAuthRequest)}`,
+        ])
+        .send(new UpdateIndexInWorkbookRequest(workbook.id, ids))
+        .expect(200)
         .then(() => {});
     });
   });
