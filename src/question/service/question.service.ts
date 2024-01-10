@@ -104,9 +104,11 @@ export class QuestionService {
       updateIndexRequest.workbookId,
       member,
     );
-    await this.validateQuestionsByIds(updateIndexRequest.ids);
-
-    this.questionRepository.updateIndex(updateIndexRequest.ids);
+    const questions = await this.questionRepository.findAllByIds(
+      updateIndexRequest.ids,
+    );
+    this.validateQuestionsByIds(questions, updateIndexRequest.ids);
+    await this.questionRepository.updateIndex(updateIndexRequest.ids);
   }
 
   private async validateMembersWorkbookById(
@@ -118,8 +120,7 @@ export class QuestionService {
     validateWorkbookOwner(workbook, member);
   }
 
-  private async validateQuestionsByIds(ids: number[]) {
-    const questions = await this.questionRepository.findAllByIds(ids);
+  private validateQuestionsByIds(questions: Question[], ids: number[]) {
     if (questions.length != ids.length) throw new QuestionNotFoundException();
   }
 
