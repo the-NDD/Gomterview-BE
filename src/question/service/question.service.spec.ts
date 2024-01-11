@@ -5,6 +5,7 @@ import {
   copyQuestionRequestFixture,
   createQuestionRequestFixture,
   questionFixture,
+  updateIndexInWorkbookRequestFixture,
 } from '../fixture/question.fixture';
 import { QuestionResponse } from '../dto/questionResponse';
 import {
@@ -41,6 +42,7 @@ import { categoryFixtureWithId } from '../../category/fixture/category.fixture';
 import { CategoryModule } from '../../category/category.module';
 import { WorkbookIdResponse } from '../../workbook/dto/workbookIdResponse';
 import { CopyQuestionRequest } from '../dto/copyQuestionRequest';
+import { UpdateIndexInWorkbookRequest } from '../dto/updateIndexInWorkbookRequest';
 
 describe('QuestionService', () => {
   let service: QuestionService;
@@ -53,6 +55,7 @@ describe('QuestionService', () => {
     findById: jest.fn(),
     remove: jest.fn(),
     findAllByIds: jest.fn(),
+    updateIndex: jest.fn(),
   };
 
   const mockWorkbookRepository = {
@@ -271,6 +274,78 @@ describe('QuestionService', () => {
       ).rejects.toThrow(new WorkbookForbiddenException());
     });
   });
+
+  describe('질문 인덱스 변경', () => {
+    it('질문의 인덱스를 성공적으로 변경시킨다', async () => {
+      //given
+      mockQuestionRepository.findAllByIds.mockResolvedValue([
+        questionFixture,
+        questionFixture,
+        questionFixture,
+      ]);
+      mockQuestionRepository.updateIndex.mockResolvedValue(undefined);
+      mockWorkbookRepository.findById.mockResolvedValue(workbookFixtureWithId);
+      //when
+
+      //then
+      await expect(
+        service.updateIndex(updateIndexInWorkbookRequestFixture, memberFixture),
+      ).resolves.toBeUndefined();
+    });
+
+    it('문제집을 확인할 수 없으면 WorkbookNotFoundException을 반환한다', async () => {
+      //given
+      mockQuestionRepository.findAllByIds.mockResolvedValue([
+        questionFixture,
+        questionFixture,
+        questionFixture,
+      ]);
+      mockQuestionRepository.updateIndex.mockResolvedValue(undefined);
+      mockWorkbookRepository.findById.mockResolvedValue(undefined);
+      //when
+
+      //then
+      await expect(
+        service.updateIndex(updateIndexInWorkbookRequestFixture, memberFixture),
+      ).rejects.toThrow(new WorkbookNotFoundException());
+    });
+
+    it('문제집과 요청 회원이 다른 사람이면 WorkbookForbiddenException을 반환한다', async () => {
+      //given
+      mockQuestionRepository.findAllByIds.mockResolvedValue([
+        questionFixture,
+        questionFixture,
+        questionFixture,
+      ]);
+      mockQuestionRepository.updateIndex.mockResolvedValue(undefined);
+      mockWorkbookRepository.findById.mockResolvedValue(workbookFixtureWithId);
+      //when
+
+      //then
+      await expect(
+        service.updateIndex(
+          updateIndexInWorkbookRequestFixture,
+          otherMemberFixture,
+        ),
+      ).rejects.toThrow(new WorkbookForbiddenException());
+    });
+
+    it('질문이 존재하지 않는경우(입력받은 id배열의 길이와 DB에서 id로 조회한 결과가 다른 경우) QuestionNotFoundException을 반환한다', async () => {
+      //given
+      mockQuestionRepository.findAllByIds.mockResolvedValue([
+        questionFixture,
+        questionFixture,
+      ]);
+      mockQuestionRepository.updateIndex.mockResolvedValue(undefined);
+      mockWorkbookRepository.findById.mockResolvedValue(workbookFixtureWithId);
+      //when
+
+      //then
+      await expect(
+        service.updateIndex(updateIndexInWorkbookRequestFixture, memberFixture),
+      ).rejects.toThrow(new QuestionNotFoundException());
+    });
+  });
 });
 
 describe('QuestionService 통합 테스트', () => {
@@ -419,5 +494,33 @@ describe('QuestionService 통합 테스트', () => {
     const result = await questionService.copyQuestions(copyRequest, other);
     expect(result).toBeInstanceOf(WorkbookIdResponse);
     expect(result.workbookId).toBe(othersWorkbook.id);
+  });
+
+  it('질문을 수정할 때 정상적으로 데이터를 넣고, 인덱스를 수정요청하면, 조회시에 다른 인덱스로 반환된다.', async () => {
+    //given
+    await memberRepository.save(memberFixture);
+    await categoryRepository.save(categoryFixtureWithId);
+    const workbook = await workbookRepository.save(workbookFixture);
+
+    const questionIds = [];
+
+    for (let index = 0; index < 3; index++) {
+      const question = await questionRepository.save(
+        Question.of(workbook, null, 'tester'),
+      );
+      questionIds.push(question.id); // 1, 2, 3
+    }
+
+    questionIds.push(questionIds.shift()); // 2, 3, 1
+
+    //when
+    await questionService.updateIndex(
+      new UpdateIndexInWorkbookRequest(workbook.id, questionIds),
+      memberFixture,
+    );
+
+    //then
+    const result = await questionRepository.findByWorkbookId(workbook.id);
+    expect(result.map((each) => each.indexInWorkbook)).toEqual([0, 1, 2]);
   });
 });

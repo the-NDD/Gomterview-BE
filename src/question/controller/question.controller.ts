@@ -4,6 +4,7 @@ import {
   Delete,
   Get,
   Param,
+  Patch,
   Post,
   Req,
   Res,
@@ -25,6 +26,17 @@ import { Member } from '../../member/entity/member';
 import { CopyQuestionRequest } from '../dto/copyQuestionRequest';
 import { WorkbookIdResponse } from '../../workbook/dto/workbookIdResponse';
 import { TokenHardGuard } from 'src/token/guard/token.hard.guard';
+import {
+  BAD_REQUEST,
+  FORBIDDEN,
+  GONE,
+  INTERNAL_SERVER_ERROR,
+  NOT_FOUND,
+  NO_CONTENT,
+  OK,
+  UNAUTHORIZED,
+} from 'src/constant/constant';
+import { UpdateIndexInWorkbookRequest } from '../dto/updateIndexInWorkbookRequest';
 
 @ApiTags('question')
 @Controller('/api/question')
@@ -86,12 +98,35 @@ export class QuestionController {
   @ApiResponse(
     createApiResponseOption(200, 'QuestionResponse 리스트', [QuestionResponse]),
   )
-  @ApiResponse(createApiResponseOption(500, 'SERVER', null))
-  @ApiResponse(createApiResponseOption(401, 'T01', null))
-  @ApiResponse(createApiResponseOption(410, 'T02', null))
-  @ApiResponse(createApiResponseOption(400, 'W03', null))
+  @ApiResponse(createApiResponseOption(INTERNAL_SERVER_ERROR, 'SERVER', null))
+  @ApiResponse(createApiResponseOption(UNAUTHORIZED, 'T01', null))
+  @ApiResponse(createApiResponseOption(GONE, 'T02', null))
+  @ApiResponse(createApiResponseOption(BAD_REQUEST, 'W03', null))
   async findWorkbookQuestions(@Param('workbookId') workbookId: number) {
     return await this.questionService.findAllByWorkbookId(workbookId);
+  }
+
+  @Patch('/index')
+  @UseGuards(TokenHardGuard)
+  @ApiCookieAuth()
+  @ApiOperation({
+    summary: '질문들의 인덱스 조정',
+  })
+  @ApiResponse(createApiResponseOption(OK, '없음', null))
+  @ApiResponse(createApiResponseOption(INTERNAL_SERVER_ERROR, 'SERVER', null))
+  @ApiResponse(createApiResponseOption(UNAUTHORIZED, 'T01', null))
+  @ApiResponse(createApiResponseOption(NOT_FOUND, 'W01', null))
+  @ApiResponse(createApiResponseOption(FORBIDDEN, 'W02', null))
+  @ApiResponse(createApiResponseOption(GONE, 'T02', null))
+  @ApiResponse(createApiResponseOption(BAD_REQUEST, 'W03', null))
+  async updateIndex(
+    @Body() updateIndexInWorkbookRequest: UpdateIndexInWorkbookRequest,
+    @Req() req: Request,
+  ) {
+    await this.questionService.updateIndex(
+      updateIndexInWorkbookRequest,
+      req.user as Member,
+    );
   }
 
   @Delete(':questionId')
@@ -100,12 +135,12 @@ export class QuestionController {
   @ApiOperation({
     summary: '질문 삭제',
   })
-  @ApiResponse(createApiResponseOption(204, '질문 삭제', null))
-  @ApiResponse(createApiResponseOption(401, 'T01', null))
-  @ApiResponse(createApiResponseOption(403, 'W02', null))
-  @ApiResponse(createApiResponseOption(404, 'W01, Q01', null))
-  @ApiResponse(createApiResponseOption(410, 'T02', null))
-  @ApiResponse(createApiResponseOption(500, 'SERVER', null))
+  @ApiResponse(createApiResponseOption(NO_CONTENT, '질문 삭제', null))
+  @ApiResponse(createApiResponseOption(UNAUTHORIZED, 'T01', null))
+  @ApiResponse(createApiResponseOption(FORBIDDEN, 'W02', null))
+  @ApiResponse(createApiResponseOption(NOT_FOUND, 'W01, Q01', null))
+  @ApiResponse(createApiResponseOption(GONE, 'T02', null))
+  @ApiResponse(createApiResponseOption(INTERNAL_SERVER_ERROR, 'SERVER', null))
   async deleteQuestionById(
     @Param('questionId') questionId: number,
     @Req() req: Request,

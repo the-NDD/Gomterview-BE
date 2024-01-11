@@ -30,6 +30,7 @@ import { WorkbookRepository } from '../../workbook/repository/workbook.repositor
 import {
   otherWorkbookFixture,
   workbookFixture,
+  workbookFixtureWithId,
 } from '../../workbook/fixture/workbook.fixture';
 import { WorkbookModule } from '../../workbook/workbook.module';
 import { Workbook } from '../../workbook/entity/workbook';
@@ -38,6 +39,8 @@ import { CategoryRepository } from '../../category/repository/category.repositor
 import { CategoryModule } from '../../category/category.module';
 import { categoryFixtureWithId } from '../../category/fixture/category.fixture';
 import { CopyQuestionRequest } from '../dto/copyQuestionRequest';
+import { UpdateIndexInWorkbookRequest } from '../dto/updateIndexInWorkbookRequest';
+import { FORBIDDEN, NOT_FOUND, OK, UNAUTHORIZED } from 'src/constant/constant';
 
 describe('QuestionController', () => {
   let controller: QuestionController;
@@ -151,11 +154,15 @@ describe('QuestionController 통합테스트', () => {
       moduleFixture.get<CategoryRepository>(CategoryRepository);
   });
 
+  beforeEach(async () => {
+    await memberRepository.save(memberFixture);
+    await categoryRepository.save(categoryFixtureWithId);
+    await workbookRepository.save(workbookFixtureWithId);
+  });
+
   it('쿠키를 가지고 질문 생성을 요청하면 201코드와 생성된 질문의 Response가 반환된다.', async () => {
     //given
-    const token = await authService.login(oauthRequestFixture);
-    await categoryRepository.save(categoryFixtureWithId);
-    await workbookRepository.save(workbookFixture);
+    const token = await authService.login(memberFixturesOAuthRequest);
 
     //when
     const agent = request.agent(app.getHttpServer());
@@ -170,17 +177,14 @@ describe('QuestionController 통합테스트', () => {
 
   it('content가 isEmpty면 예외처리한다.', async () => {
     //given
-    await memberRepository.save(memberFixture);
     const token = await authService.login(memberFixturesOAuthRequest);
-    await categoryRepository.save(categoryFixtureWithId);
-    const workbook = await workbookRepository.save(workbookFixture);
 
     //when
     const agent = request.agent(app.getHttpServer());
     await agent
       .post('/api/question')
       .set('Cookie', [`accessToken=${token}`])
-      .send(new CreateQuestionRequest(workbook.id, null))
+      .send(new CreateQuestionRequest(workbookFixtureWithId.id, null))
       .expect(400)
       .then(() => {});
     //then
@@ -189,11 +193,8 @@ describe('QuestionController 통합테스트', () => {
   describe('질문 삭제', () => {
     it('Member객체와 questionId를 입력했을 때 정상적으로 질문을 삭제한다.', async () => {
       //given
-      await memberRepository.save(memberFixture);
-      await categoryRepository.save(categoryFixtureWithId);
-      const workbook = await workbookRepository.save(workbookFixture);
       const question = await questionRepository.save(
-        Question.of(workbook, null, 'tester'),
+        Question.of(workbookFixtureWithId, null, 'tester'),
       );
 
       //when & then
@@ -207,11 +208,8 @@ describe('QuestionController 통합테스트', () => {
 
     it('토큰이 없으면 UnauthorizedException을 발생시킨다.', async () => {
       //given
-      await memberRepository.save(memberFixture);
-      await categoryRepository.save(categoryFixtureWithId);
-      const workbook = await workbookRepository.save(workbookFixture);
       const question = await questionRepository.save(
-        Question.of(workbook, null, 'tester'),
+        Question.of(workbookFixtureWithId, null, 'tester'),
       );
 
       //when & then
@@ -223,8 +221,6 @@ describe('QuestionController 통합테스트', () => {
       //given
 
       //when & then
-      await memberRepository.save(memberFixture);
-      await categoryRepository.save(categoryFixtureWithId);
       const token = await authService.login(memberFixturesOAuthRequest);
       const agent = request.agent(app.getHttpServer());
       await agent
@@ -247,7 +243,6 @@ describe('QuestionController 통합테스트', () => {
       await agent
         .delete(`/api/question/${question.id}`)
         .set('Cookie', [`accessToken=${token}`])
-        .expect((error) => console.log(error))
         .expect(403);
     });
   });
@@ -255,11 +250,8 @@ describe('QuestionController 통합테스트', () => {
   describe('문제집의 질문을 복제한다.', () => {
     it('문제집을 복제하면 201코드를 반환한다.', async () => {
       //given
-      await memberRepository.save(memberFixture);
-      const category = await categoryRepository.save(categoryFixtureWithId);
-      const workbook = await workbookRepository.save(workbookFixture);
       const question = await questionRepository.save(
-        Question.of(workbook, null, 'tester'),
+        Question.of(workbookFixtureWithId, null, 'tester'),
       );
 
       const token = await authService.login(memberFixturesOAuthRequest);
@@ -267,7 +259,7 @@ describe('QuestionController 통합테스트', () => {
         memberFixturesOAuthRequest.email,
       );
       const copyWorkbook = await workbookRepository.save(
-        Workbook.of('copy', 'copy', category, requester, true),
+        Workbook.of('copy', 'copy', categoryFixtureWithId, requester, true),
       );
 
       const copyRequest = new CopyQuestionRequest(copyWorkbook.id, [
@@ -286,11 +278,8 @@ describe('QuestionController 통합테스트', () => {
 
     it('문제집을 복제 권한이 없으면 403 코드를 반환한다.', async () => {
       //given
-      await memberRepository.save(memberFixture);
-      const category = await categoryRepository.save(categoryFixtureWithId);
-      const workbook = await workbookRepository.save(workbookFixture);
       const question = await questionRepository.save(
-        Question.of(workbook, null, 'tester'),
+        Question.of(workbookFixtureWithId, null, 'tester'),
       );
 
       await authService.login(oauthRequestFixture);
@@ -298,7 +287,7 @@ describe('QuestionController 통합테스트', () => {
         oauthRequestFixture.email,
       );
       const copyWorkbook = await workbookRepository.save(
-        Workbook.of('copy', 'copy', category, requester, true),
+        Workbook.of('copy', 'copy', categoryFixtureWithId, requester, true),
       );
 
       const copyRequest = new CopyQuestionRequest(copyWorkbook.id, [
@@ -319,11 +308,8 @@ describe('QuestionController 통합테스트', () => {
 
     it('토큰이 없으면 401코드를 반환한다.', async () => {
       //given
-      await memberRepository.save(memberFixture);
-      const category = await categoryRepository.save(categoryFixtureWithId);
-      const workbook = await workbookRepository.save(workbookFixture);
       const question = await questionRepository.save(
-        Question.of(workbook, null, 'tester'),
+        Question.of(workbookFixtureWithId, null, 'tester'),
       );
 
       await authService.login(oauthRequestFixture);
@@ -331,7 +317,7 @@ describe('QuestionController 통합테스트', () => {
         oauthRequestFixture.email,
       );
       const copyWorkbook = await workbookRepository.save(
-        Workbook.of('copy', 'copy', category, requester, true),
+        Workbook.of('copy', 'copy', categoryFixtureWithId, requester, true),
       );
 
       const copyRequest = new CopyQuestionRequest(copyWorkbook.id, [
@@ -349,11 +335,8 @@ describe('QuestionController 통합테스트', () => {
 
     it('문제집이 없다면 404를 반환한다.', async () => {
       //given
-      await memberRepository.save(memberFixture);
-      const category = await categoryRepository.save(categoryFixtureWithId);
-      const workbook = await workbookRepository.save(workbookFixture);
       const question = await questionRepository.save(
-        Question.of(workbook, null, 'tester'),
+        Question.of(workbookFixtureWithId, null, 'tester'),
       );
 
       const token = await authService.login(oauthRequestFixture);
@@ -361,7 +344,7 @@ describe('QuestionController 통합테스트', () => {
         oauthRequestFixture.email,
       );
       await workbookRepository.save(
-        Workbook.of('copy', 'copy', category, requester, true),
+        Workbook.of('copy', 'copy', categoryFixtureWithId, requester, true),
       );
 
       const copyRequest = new CopyQuestionRequest(135124, [question.id]);
@@ -377,10 +360,123 @@ describe('QuestionController 통합테스트', () => {
     });
   });
 
+  describe('질문의 인덱스를 수정한다.', () => {
+    it('나의 문제집에 질문 순서를 바꾸면 성공적으로 인덱스를 수정한다.', async () => {
+      //given
+      const ids = await saveDummyArray();
+
+      ids.push(ids.shift()); // 2, 3, 4, 5, 1
+      ids.push(ids.shift()); // 3, 4, 5, 1, 2
+      //when&then
+      const agent = request.agent(app.getHttpServer());
+      await agent
+        .patch('/api/question/index')
+        .set('Cookie', [
+          `accessToken=${await authService.login(memberFixturesOAuthRequest)}`,
+        ])
+        .send(new UpdateIndexInWorkbookRequest(workbookFixtureWithId.id, ids))
+        .expect(OK)
+        .then(() => {});
+      const result = await questionRepository.findByWorkbookId(
+        workbookFixtureWithId.id,
+      );
+      expect(result.map((each) => each.content)).toEqual([
+        'tester3',
+        'tester4',
+        'tester5',
+        'tester1',
+        'tester2',
+      ]);
+    });
+
+    it('존재하지 않는 문제집은 404에러를 반환한다.', async () => {
+      //given
+      const ids = await saveDummyArray();
+
+      ids.push(ids.shift());
+      ids.push(ids.shift());
+      //when&then
+      const agent = request.agent(app.getHttpServer());
+      await agent
+        .patch('/api/question/index')
+        .set('Cookie', [
+          `accessToken=${await authService.login(memberFixturesOAuthRequest)}`,
+        ])
+        .send(new UpdateIndexInWorkbookRequest(10000, ids))
+        .expect(NOT_FOUND)
+        .then(() => {});
+    });
+
+    it('로그인을 하지 않으면 401에러를 반환한다.', async () => {
+      //given
+      const ids = await saveDummyArray();
+
+      ids.push(ids.shift());
+      ids.push(ids.shift());
+      //when&then
+      const agent = request.agent(app.getHttpServer());
+      await agent
+        .patch('/api/question/index')
+        .send(new UpdateIndexInWorkbookRequest(workbookFixtureWithId.id, ids))
+        .expect(UNAUTHORIZED)
+        .then(() => {});
+    });
+
+    it('다른 사람의 인덱스를 수정하려하면 403에러를 반환한다.', async () => {
+      //given
+      const token = await authService.login(oauthRequestFixture);
+      const ids = await saveDummyArray();
+
+      ids.push(ids.shift());
+      ids.push(ids.shift());
+      //when&then
+      const agent = request.agent(app.getHttpServer());
+      await agent
+        .patch('/api/question/index')
+        .set('Cookie', [`accessToken=${token}`])
+        .send(new UpdateIndexInWorkbookRequest(workbookFixtureWithId.id, ids))
+        .expect(FORBIDDEN)
+        .then(() => {});
+    });
+
+    it('존재하지 않는 id가 들어있다면 404에러를 반환한다.', async () => {
+      //given
+      const ids = await saveDummyArray();
+
+      ids.push(ids.shift());
+      ids.push(ids.shift());
+      ids.push(10000);
+      //when&then
+      const agent = request.agent(app.getHttpServer());
+      await agent
+        .patch('/api/question/index')
+        .set('Cookie', [
+          `accessToken=${await authService.login(memberFixturesOAuthRequest)}`,
+        ])
+        .send(new UpdateIndexInWorkbookRequest(workbookFixtureWithId.id, ids))
+        .expect(NOT_FOUND)
+        .then(() => {});
+    });
+  });
+
   afterEach(async () => {
     await workbookRepository.query('delete from Question');
     await workbookRepository.query('delete from Workbook');
     await workbookRepository.query('delete from Member');
     await workbookRepository.query('DELETE FROM sqlite_sequence'); // Auto Increment 초기화
   });
+
+  const saveDummyArray = async () => {
+    const ids = [];
+    for (let index = 1; index <= 5; index++) {
+      ids.push(
+        (
+          await questionRepository.save(
+            Question.of(workbookFixtureWithId, null, `tester${index}`),
+          )
+        ).id,
+      );
+    }
+    return ids;
+  };
 });

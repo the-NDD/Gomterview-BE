@@ -33,6 +33,7 @@ export class QuestionRepository {
       .leftJoinAndSelect('Question.origin', 'origin')
       .leftJoinAndSelect('Question.defaultAnswer', 'defaultAnswer')
       .where('workbook.id = :workbookId', { workbookId })
+      .orderBy('Question.indexInWorkbook', 'ASC')
       .getMany();
   }
 
@@ -70,6 +71,20 @@ export class QuestionRepository {
 
   async remove(question: Question) {
     await this.repository.remove(question);
+  }
+
+  async updateIndex(ids: number[]) {
+    const caseStatements = ids.map(
+      (id) => `WHEN id = ${id} THEN ${ids.indexOf(id)}`,
+    );
+
+    const updateQuery = `
+      UPDATE Question
+      SET indexInWorkbook = CASE ${caseStatements.join(' ')} END
+      WHERE id IN (${ids.join(', ')})
+    `;
+
+    await this.repository.query(updateQuery);
   }
 
   private fetchOrigin(question: Question) {

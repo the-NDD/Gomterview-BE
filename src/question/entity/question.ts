@@ -1,9 +1,10 @@
 import { DefaultEntity } from '../../app.entity';
-import { Column, Entity, JoinColumn, ManyToOne } from 'typeorm';
+import { Column, Entity, Index, JoinColumn, ManyToOne } from 'typeorm';
 import { Answer } from '../../answer/entity/answer';
 import { Workbook } from '../../workbook/entity/workbook';
 
 @Entity({ name: 'Question' })
+@Index('idx_indexInWorkbook', ['indexInWorkbook'])
 export class Question extends DefaultEntity {
   @Column({ type: 'text' })
   readonly content: string;
@@ -24,6 +25,9 @@ export class Question extends DefaultEntity {
   @JoinColumn({ name: 'defaultAnswer' })
   defaultAnswer: Answer;
 
+  @Column({ default: 0 })
+  indexInWorkbook: number;
+
   constructor(
     id: number,
     content: string,
@@ -37,6 +41,7 @@ export class Question extends DefaultEntity {
     this.workbook = workbook;
     this.origin = origin;
     this.defaultAnswer = defaultAnswer;
+    this.indexInWorkbook = 0;
   }
 
   static of(workbook: Workbook, origin: Question, content: string) {
