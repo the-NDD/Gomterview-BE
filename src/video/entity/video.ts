@@ -8,7 +8,7 @@ import { DEFAULT_THUMBNAIL } from 'src/constant/constant';
 
 @Entity({ name: 'Video' })
 @Index('idx_video_url', ['url'])
-// @Index('idx_video_createdAt', ['createdAt']) TODO: 추후 기능 구현 상황에 따라 인덱싱하기
+@Index('idx_video_index', ['index'])
 export class Video extends DefaultEntity {
   @Column({ nullable: true })
   memberId: number;
@@ -38,6 +38,9 @@ export class Video extends DefaultEntity {
 
   @Column({ default: false })
   isPublic: boolean;
+
+  @Column({ default: 0 })
+  index: number;
 
   constructor(
     memberId: number,
