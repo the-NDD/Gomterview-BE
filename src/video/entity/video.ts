@@ -59,6 +59,7 @@ export class Video extends DefaultEntity {
     this.thumbnail = thumbnail;
     this.videoLength = videoLength;
     this.isPublic = isPublic;
+    this.index = 0;
   }
 
   static from(member: Member, createVideoRequest: CreateVideoRequest): Video {
