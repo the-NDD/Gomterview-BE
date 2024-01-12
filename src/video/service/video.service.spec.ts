@@ -12,6 +12,7 @@ import {
   privateVideoFixture,
   updateVideoRequestFixture,
   videoFixture,
+  videoListExample,
   videoListFixture,
   videoOfOtherFixture,
   videoOfWithdrawnMemberFixture,
@@ -49,6 +50,7 @@ import { CreateVideoRequest } from '../dto/createVideoRequest';
 import { DEFAULT_THUMBNAIL } from '../../constant/constant';
 import * as idriveUtil from 'src/util/idrive.util';
 import redisMock from 'ioredis-mock';
+import { UpdateVideoIndexRequest } from '../dto/updateVideoIndexRequest';
 
 describe('VideoService 단위 테스트', () => {
   let videoService: VideoService;
@@ -61,6 +63,7 @@ describe('VideoService 단위 테스트', () => {
     toggleVideoStatus: jest.fn(),
     updateVideoName: jest.fn(),
     remove: jest.fn(),
+    updateIndex: jest.fn(),
   };
 
   const mockMemberRepository = {
@@ -686,6 +689,88 @@ describe('VideoService 단위 테스트', () => {
           updateVideoRequestFixture.videoName,
         ),
       ).rejects.toThrow(VideoAccessForbiddenException);
+    });
+  });
+
+  describe('updateIndex', () => {
+    it('배열에 회원의 소유인 영상의 id들이 있으면 아무것도 반환하지 않는다.', async () => {
+      // given
+      const ids = videoListExample.map((each) => each.id);
+
+      // when
+      mockMemberRepository.findById.mockResolvedValue(memberFixture);
+      mockVideoRepository.findAllVideosByMemberId.mockResolvedValue(
+        videoListExample,
+      );
+      mockVideoRepository.updateIndex.mockResolvedValue(undefined);
+
+      // then
+      await expect(
+        videoService.updateIndex(
+          UpdateVideoIndexRequest.of(ids),
+          memberFixture,
+        ),
+      ).resolves.toBeUndefined();
+    });
+
+    it('배열의 길이가 다르면 VideoAccessForbiddenException을 반환한다.', async () => {
+      // given
+      const ids = videoListExample.map((each) => each.id);
+      ids.pop();
+
+      // when
+      mockMemberRepository.findById.mockResolvedValue(memberFixture);
+      mockVideoRepository.findAllVideosByMemberId.mockResolvedValue(
+        videoListExample,
+      );
+      mockVideoRepository.updateIndex.mockResolvedValue(undefined);
+
+      // then
+      await expect(
+        videoService.updateIndex(
+          UpdateVideoIndexRequest.of(ids),
+          memberFixture,
+        ),
+      ).rejects.toThrow(new VideoAccessForbiddenException());
+    });
+
+    it('배열의 길이가 같지만 원소의 값이 하나라도 다르면 VideoAccessForbiddenException을 반환한다.', async () => {
+      // given
+      const ids = videoListExample.map((each) => each.id);
+      ids.pop();
+      ids.push(100);
+
+      // when
+      mockMemberRepository.findById.mockResolvedValue(memberFixture);
+      mockVideoRepository.findAllVideosByMemberId.mockResolvedValue(
+        videoListExample,
+      );
+      mockVideoRepository.updateIndex.mockResolvedValue(undefined);
+
+      // then
+      await expect(
+        videoService.updateIndex(
+          UpdateVideoIndexRequest.of(ids),
+          memberFixture,
+        ),
+      ).rejects.toThrow(new VideoAccessForbiddenException());
+    });
+
+    it('회원이 주어지지 않으면 ManipulatedTokenException을 반환한다.', async () => {
+      // given
+      const ids = videoListExample.map((each) => each.id);
+
+      // when
+      mockMemberRepository.findById.mockResolvedValue(memberFixture);
+      mockVideoRepository.findAllVideosByMemberId.mockResolvedValue(
+        videoListExample,
+      );
+      mockVideoRepository.updateIndex.mockResolvedValue(undefined);
+
+      // then
+      await expect(
+        videoService.updateIndex(UpdateVideoIndexRequest.of(ids), undefined),
+      ).rejects.toThrow(new ManipulatedTokenNotFiltered());
     });
   });
 
