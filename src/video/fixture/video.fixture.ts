@@ -5,6 +5,7 @@ import { PreSignedInfo } from '../interface/video.interface';
 export const videoListExample = [
   {
     id: 5,
+    memberId: 1,
     thumbnail: 'https://test-thumbnail1.com',
     videoName: 'test1.webm',
     videoLength: '02:42',
@@ -13,6 +14,7 @@ export const videoListExample = [
   },
   {
     id: 4,
+    memberId: 1,
     thumbnail: 'https://test-thumbnail2.com',
     videoName: 'test2.webm',
     videoLength: '03:29',
@@ -21,6 +23,7 @@ export const videoListExample = [
   },
   {
     id: 3,
+    memberId: 1,
     thumbnail: 'https://test-thumbnail3.com',
     videoName: 'test.mp4',
     videoLength: '05:22',
