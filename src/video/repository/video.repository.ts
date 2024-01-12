@@ -18,7 +18,7 @@ export class VideoRepository {
     return this.videoRepository
       .createQueryBuilder('video')
       .where('video.memberId = :memberId', { memberId })
-      .orderBy('video.createdAt', 'DESC')
+      .orderBy('video.index', 'ASC')
       .getMany();
   }
 
@@ -46,6 +46,20 @@ export class VideoRepository {
       .set({ name })
       .where('id = :id', { id: Number(videoId) })
       .execute();
+  }
+
+  async updateIndex(ids: number[]) {
+    const caseStatements = ids.map(
+      (id) => `WHEN id = ${id} THEN ${ids.indexOf(id)}`,
+    );
+
+    const updateQuery = `
+      UPDATE Video
+      SET index = CASE ${caseStatements.join(' ')} END
+      WHERE id IN (${ids.join(', ')})
+    `;
+
+    await this.videoRepository.query(updateQuery);
   }
 
   async remove(video: Video) {
