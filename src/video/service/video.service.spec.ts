@@ -697,7 +697,7 @@ describe('VideoService 단위 테스트', () => {
       const video = videoFixture;
 
       // when
-      // mockVideoRepository.findById.mockResolvedValue(video);
+      mockVideoRepository.findById.mockResolvedValue(video);
       mockVideoRepository.remove.mockResolvedValue(undefined);
 
       // then
