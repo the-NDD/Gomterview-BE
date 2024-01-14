@@ -27,6 +27,7 @@ import { VideoDetailResponse } from '../dto/videoDetailResponse';
 import { VideoHashResponse } from '../dto/videoHashResponse';
 import { SingleVideoResponse } from '../dto/singleVideoResponse';
 import { TokenHardGuard } from 'src/token/guard/token.hard.guard';
+import { UpdateVideoRequest } from '../dto/updateVideoRequest';
 
 @Controller('/api/video')
 @ApiTags('video')
@@ -175,6 +176,7 @@ export class VideoController {
   @Patch('/name/:videoId')
   @UseGuards(TokenHardGuard)
   @ApiCookieAuth()
+  @ApiBody({ type: UpdateVideoRequest })
   @ApiOperation({
     summary: '비디오 이름 변경',
   })
@@ -185,11 +187,12 @@ export class VideoController {
   async updateVideoName(
     @Param('videoId') videoId: number,
     @Req() req: Request,
+    @Body() updateVideoRequest: UpdateVideoRequest,
   ) {
     await this.videoService.updateVideoName(
       videoId,
       req.user as Member,
-      req.body.name,
+      updateVideoRequest.videoName,
     );
   }
 
