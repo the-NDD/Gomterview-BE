@@ -1279,6 +1279,10 @@ describe('VideoService 통합 테스트', () => {
     });
   });
 
+  describe('updateIndex', () => {
+    it('영상의 인덱스 수정을 성공하면 undefined를 반환한다. 그리고 조회시에 변경된 인덱스 순으로 정렬된다.', async () => {});
+  });
+
   describe('deleteVideo', () => {
     it('비디오 삭제에 성공하면 undefined를 반환한다.', async () => {
       // given
