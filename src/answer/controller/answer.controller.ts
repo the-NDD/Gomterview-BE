@@ -24,6 +24,19 @@ import { Member } from '../../member/entity/member';
 import { AnswerResponse } from '../dto/answerResponse';
 import { DefaultAnswerRequest } from '../dto/defaultAnswerRequest';
 import { TokenHardGuard } from 'src/token/guard/token.hard.guard';
+import {
+  InvalidTokenException,
+  ManipulatedTokenNotFiltered,
+  TokenExpiredException,
+} from 'src/token/exception/token.exception';
+import {
+  QuestionForbiddenException,
+  QuestionNotFoundException,
+} from 'src/question/exception/question.exception';
+import {
+  AnswerForbiddenException,
+  AnswerNotFoundException,
+} from '../exception/answer.exception';
 
 @ApiTags('answer')
 @Controller('/api/answer')
@@ -38,10 +51,10 @@ export class AnswerController {
     summary: '질문에 새로운 답변 추가',
   })
   @ApiResponse(createApiResponseOption(201, '답변 생성 완료', AnswerResponse))
-  @ApiResponse(createApiResponseOption(401, 'T01', null))
-  @ApiResponse(createApiResponseOption(404, 'Q01', null))
-  @ApiResponse(createApiResponseOption(410, 'T02', null))
-  @ApiResponse(createApiResponseOption(500, 'SERVER', null))
+  @ApiResponse(InvalidTokenException.response())
+  @ApiResponse(QuestionNotFoundException.response())
+  @ApiResponse(TokenExpiredException.response())
+  @ApiResponse(ManipulatedTokenNotFiltered.response())
   async createAnswer(
     @Body() createAnswerRequest: CreateAnswerRequest,
     @Req() req: Request,
@@ -60,11 +73,11 @@ export class AnswerController {
     summary: '질문의 대표답변 설정',
   })
   @ApiResponse(createApiResponseOption(201, '대표답변 설정 완료', null))
-  @ApiResponse(createApiResponseOption(401, 'T01', null))
-  @ApiResponse(createApiResponseOption(403, 'Q02', null))
-  @ApiResponse(createApiResponseOption(404, 'A01, Q01', null))
-  @ApiResponse(createApiResponseOption(410, 'T02', null))
-  @ApiResponse(createApiResponseOption(500, 'SERVER', null))
+  @ApiResponse(InvalidTokenException.response())
+  @ApiResponse(QuestionForbiddenException.response())
+  @ApiResponse(AnswerNotFoundException.response())
+  @ApiResponse(TokenExpiredException.response())
+  @ApiResponse(ManipulatedTokenNotFiltered.response())
   async updateDefaultAnswer(
     @Body() defaultAnswerRequest: DefaultAnswerRequest,
     @Req() req: Request,
@@ -82,7 +95,7 @@ export class AnswerController {
   @ApiResponse(
     createApiResponseOption(200, '답변 리스트 캡슐화해 반환', [AnswerResponse]),
   )
-  @ApiResponse(createApiResponseOption(404, 'Q01', null))
+  @ApiResponse(QuestionNotFoundException.response())
   async getQuestionAnswers(@Param('questionId') questionId: number) {
     return await this.answerService.getAnswerList(questionId);
   }
@@ -94,11 +107,11 @@ export class AnswerController {
     summary: '답변 삭제',
   })
   @ApiResponse(createApiResponseOption(204, '답변 삭제 완료', null))
-  @ApiResponse(createApiResponseOption(401, 'T01', null))
-  @ApiResponse(createApiResponseOption(403, 'A02', null))
-  @ApiResponse(createApiResponseOption(404, 'A01', null))
-  @ApiResponse(createApiResponseOption(410, 'T02', null))
-  @ApiResponse(createApiResponseOption(500, 'SERVER', null))
+  @ApiResponse(InvalidTokenException.response())
+  @ApiResponse(AnswerForbiddenException.response())
+  @ApiResponse(AnswerNotFoundException.response())
+  @ApiResponse(TokenExpiredException.response())
+  @ApiResponse(ManipulatedTokenNotFiltered.response())
   async deleteAnswer(
     @Param('answerId') answerId: number,
     @Req() req: Request,
