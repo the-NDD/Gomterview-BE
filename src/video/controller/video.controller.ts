@@ -28,6 +28,12 @@ import { VideoHashResponse } from '../dto/videoHashResponse';
 import { SingleVideoResponse } from '../dto/singleVideoResponse';
 import { TokenHardGuard } from 'src/token/guard/token.hard.guard';
 import { UpdateVideoRequest } from '../dto/updateVideoRequest';
+import {
+  InvalidHashException,
+  VideoAccessForbiddenException,
+  VideoNotFoundException,
+} from '../exception/video.exception';
+import { ManipulatedTokenNotFiltered } from 'src/token/exception/token.exception';
 
 @Controller('/api/video')
 @ApiTags('video')
@@ -70,7 +76,7 @@ export class VideoController {
     summary: '비디오 정보를 DB에 저장',
   })
   @ApiResponse(createApiResponseOption(201, '비디오 정보 저장 완료', null))
-  @ApiResponse(createApiResponseOption(500, 'SERVER', null))
+  @ApiResponse(ManipulatedTokenNotFiltered.response())
   async createVideo(
     @Req() req: Request,
     @Body() createVideoRequest: CreateVideoRequest,
@@ -107,7 +113,7 @@ export class VideoController {
       SingleVideoResponse,
     ]),
   )
-  @ApiResponse(createApiResponseOption(500, 'SERVER', null))
+  @ApiResponse(ManipulatedTokenNotFiltered.response())
   async getAllVideo(@Req() req: Request) {
     return await this.videoService.getAllVideosByMemberId(req.user as Member);
   }
@@ -123,8 +129,8 @@ export class VideoController {
       VideoDetailResponse,
     ),
   )
-  @ApiResponse(createApiResponseOption(400, 'V10', null))
-  @ApiResponse(createApiResponseOption(403, 'V02', null))
+  @ApiResponse(InvalidHashException.response())
+  @ApiResponse(VideoAccessForbiddenException.response())
   @ApiResponse(createApiResponseOption(404, 'V03, V04, V09, M01', null))
   @ApiResponse(createApiResponseOption(500, 'V06', null))
   async getVideoDetailByHash(@Param('hash') hash: string) {
@@ -144,8 +150,8 @@ export class VideoController {
       VideoDetailResponse,
     ),
   )
-  @ApiResponse(createApiResponseOption(403, 'V02', null))
-  @ApiResponse(createApiResponseOption(404, 'V03', null))
+  @ApiResponse(VideoAccessForbiddenException.response())
+  @ApiResponse(VideoNotFoundException.response())
   @ApiResponse(createApiResponseOption(500, 'V08, SERVER', null))
   async getVideoDetail(@Param('videoId') videoId: number, @Req() req: Request) {
     return await this.videoService.getVideoDetail(videoId, req.user as Member);
@@ -160,8 +166,8 @@ export class VideoController {
   @ApiResponse(
     createApiResponseOption(200, '비디오 상태 전환 완료', VideoHashResponse),
   )
-  @ApiResponse(createApiResponseOption(403, 'V02', null))
-  @ApiResponse(createApiResponseOption(404, 'V03', null))
+  @ApiResponse(VideoAccessForbiddenException.response())
+  @ApiResponse(VideoNotFoundException.response())
   @ApiResponse(createApiResponseOption(500, 'V05, V06, V07, SERVER', null))
   async toggleVideoStatus(
     @Param('videoId') videoId: number,
@@ -181,9 +187,9 @@ export class VideoController {
     summary: '비디오 이름 변경',
   })
   @ApiResponse(createApiResponseOption(200, '비디오 이름 변경 완료', null))
-  @ApiResponse(createApiResponseOption(403, 'V02', null))
-  @ApiResponse(createApiResponseOption(404, 'V03', null))
-  @ApiResponse(createApiResponseOption(500, 'SERVER', null))
+  @ApiResponse(VideoAccessForbiddenException.response())
+  @ApiResponse(VideoNotFoundException.response())
+  @ApiResponse(ManipulatedTokenNotFiltered.response())
   async updateVideoName(
     @Param('videoId') videoId: number,
     @Req() req: Request,
@@ -203,9 +209,9 @@ export class VideoController {
     summary: '비디오 삭제',
   })
   @ApiResponse(createApiResponseOption(204, '비디오 삭제 완료', null))
-  @ApiResponse(createApiResponseOption(403, 'V02', null))
-  @ApiResponse(createApiResponseOption(404, 'V03', null))
-  @ApiResponse(createApiResponseOption(500, 'SERVER', null))
+  @ApiResponse(VideoAccessForbiddenException.response())
+  @ApiResponse(VideoNotFoundException.response())
+  @ApiResponse(ManipulatedTokenNotFiltered.response())
   async deleteVideo(
     @Param('videoId') videoId: number,
     @Req() req: Request,
