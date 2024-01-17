@@ -13,6 +13,11 @@ import { MemberService } from '../service/member.service';
 import { validateManipulatedToken } from 'src/util/token.util';
 import { MemberNicknameResponse } from '../dto/memberNicknameResponse';
 import { TokenHardGuard } from 'src/token/guard/token.hard.guard';
+import {
+  InvalidTokenException,
+  ManipulatedTokenNotFiltered,
+  TokenExpiredException,
+} from 'src/token/exception/token.exception';
 
 @Controller('/api/member')
 @ApiTags('member')
@@ -32,7 +37,7 @@ export class MemberController {
       MemberResponse,
     ),
   )
-  @ApiResponse(createApiResponseOption(500, 'SERVER', null))
+  @ApiResponse(ManipulatedTokenNotFiltered.response())
   getMyInfo(@Req() req: Request) {
     validateManipulatedToken(req.user as Member);
     return MemberResponse.from(req.user as Member);
@@ -49,8 +54,8 @@ export class MemberController {
       MemberNicknameResponse,
     ),
   )
-  @ApiResponse(createApiResponseOption(401, 'T01', null))
-  @ApiResponse(createApiResponseOption(410, 'T02', null))
+  @ApiResponse(InvalidTokenException.response())
+  @ApiResponse(TokenExpiredException.response())
   async getNameForInterview(@Req() req: Request) {
     return await this.memberService.getNameForInterview(req);
   }

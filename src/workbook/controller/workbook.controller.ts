@@ -31,6 +31,16 @@ import { TokenSoftGuard } from '../../token/guard/token.soft.guard';
 import { isEmpty } from 'class-validator';
 import { UpdateWorkbookRequest } from '../dto/updateWorkbookRequest';
 import { TokenHardGuard } from 'src/token/guard/token.hard.guard';
+import {
+  InvalidTokenException,
+  ManipulatedTokenNotFiltered,
+  TokenExpiredException,
+} from 'src/token/exception/token.exception';
+import { CategoryNotFoundException } from 'src/category/exception/category.exception';
+import {
+  WorkbookForbiddenException,
+  WorkbookNotFoundException,
+} from '../exception/workbook.exception';
 
 @ApiTags('workbook')
 @Controller('/api/workbook')
@@ -47,10 +57,10 @@ export class WorkbookController {
   @ApiResponse(
     createApiResponseOption(201, '문제집 생성 완료', WorkbookIdResponse),
   )
-  @ApiResponse(createApiResponseOption(500, 'SERVER', null))
-  @ApiResponse(createApiResponseOption(401, 'T01', null))
-  @ApiResponse(createApiResponseOption(404, 'C02', null))
-  @ApiResponse(createApiResponseOption(410, 'T02', null))
+  @ApiResponse(ManipulatedTokenNotFiltered.response())
+  @ApiResponse(InvalidTokenException.response())
+  @ApiResponse(CategoryNotFoundException.response())
+  @ApiResponse(TokenExpiredException.response())
   async createAnswer(
     @Body() createWorkbookRequest: CreateWorkbookRequest,
     @Req() req: Request,
@@ -74,7 +84,7 @@ export class WorkbookController {
       WorkbookResponse,
     ]),
   )
-  @ApiResponse(createApiResponseOption(404, 'C02', null))
+  @ApiResponse(CategoryNotFoundException.response())
   async findWorkbooks(@Query('category') categoryId: number) {
     return await this.workbookService.findWorkbooks(categoryId);
   }
@@ -90,9 +100,9 @@ export class WorkbookController {
       WorkbookTitleResponse,
     ]),
   )
-  @ApiResponse(createApiResponseOption(500, 'SERVER', null))
-  @ApiResponse(createApiResponseOption(401, 'T01', null))
-  @ApiResponse(createApiResponseOption(410, 'T02', null))
+  @ApiResponse(ManipulatedTokenNotFiltered.response())
+  @ApiResponse(InvalidTokenException.response())
+  @ApiResponse(TokenExpiredException.response())
   async findMembersWorkbook(@Req() req: Request) {
     const member = isEmpty(req) ? null : (req.user as Member);
     return await this.workbookService.findWorkbookTitles(member);
@@ -105,7 +115,7 @@ export class WorkbookController {
   @ApiResponse(
     createApiResponseOption(200, '문제집 단건 조회', WorkbookResponse),
   )
-  @ApiResponse(createApiResponseOption(404, 'W01', null))
+  @ApiResponse(WorkbookNotFoundException.response())
   async findSingleWorkbook(@Param('workbookId') workbookId: number) {
     return await this.workbookService.findSingleWorkbook(workbookId);
   }
@@ -120,9 +130,9 @@ export class WorkbookController {
   @ApiResponse(
     createApiResponseOption(200, '문제집 수정 완료', WorkbookResponse),
   )
-  @ApiResponse(createApiResponseOption(500, 'SERVER', null))
-  @ApiResponse(createApiResponseOption(404, 'C02, W01', null))
-  @ApiResponse(createApiResponseOption(403, 'W02', null))
+  @ApiResponse(ManipulatedTokenNotFiltered.response())
+  @ApiResponse(CategoryNotFoundException.response())
+  @ApiResponse(WorkbookForbiddenException.response())
   async updateAnswer(
     @Body() updateWorkbookRequest: UpdateWorkbookRequest,
     @Req() req: Request,
@@ -140,9 +150,9 @@ export class WorkbookController {
     summary: '문제집 삭제',
   })
   @ApiResponse(createApiResponseOption(204, '문제집 삭제 완료', null))
-  @ApiResponse(createApiResponseOption(500, 'SERVER', null))
-  @ApiResponse(createApiResponseOption(404, 'W01', null))
-  @ApiResponse(createApiResponseOption(403, 'W02', null))
+  @ApiResponse(ManipulatedTokenNotFiltered.response())
+  @ApiResponse(WorkbookNotFoundException.response())
+  @ApiResponse(WorkbookForbiddenException.response())
   async deleteAnswer(
     @Req() req: Request,
     @Param('workbookId') workbookId: number,

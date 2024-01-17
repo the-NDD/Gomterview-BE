@@ -26,6 +26,7 @@ import {
   createVideoRequestFixture,
   privateVideoFixture,
   thumbnailPreSignedInfoFixture,
+  updateVideoRequestFixture,
   videoFixture,
   videoListFixture,
   videoOfOtherFixture,
@@ -65,6 +66,7 @@ describe('VideoController 단위 테스트', () => {
     getVideoDetail: jest.fn(),
     getVideoDetailByHash: jest.fn(),
     toggleVideoStatus: jest.fn(),
+    updateVideoName: jest.fn(),
     deleteVideo: jest.fn(),
   };
 
@@ -135,7 +137,7 @@ describe('VideoController 단위 테스트', () => {
       expect(result.thumbnail).toBe(thumbnailPreSignedInfoFixture);
     });
 
-    it('Pre-Signed URL 생성 도중 에러가 발생하면 IDriveException을 반환해야한다.', async () => {
+    it('Pre-Signed URL 생성 도중 에러가 발생하면 IDriveException을 반환한다.', async () => {
       //given
 
       // when
@@ -560,6 +562,65 @@ describe('VideoController 단위 테스트', () => {
       expect(controller.toggleVideoStatus(1, member)).rejects.toThrow(
         RedisDeleteException,
       );
+    });
+  });
+
+  describe('updateVideoName', () => {
+    const member = mockReqWithMemberFixture;
+
+    it('비디오 이름 변경 성공 시 undefined를 반환한다.', async () => {
+      // given
+
+      // when
+      mockVideoService.updateVideoName.mockResolvedValue(undefined);
+
+      // then
+      expect(
+        controller.updateVideoName(1, member, updateVideoRequestFixture),
+      ).resolves.toBeUndefined();
+    });
+
+    it('비디오 이름 변경 시 회원 객체가 없으면 ManipulatedTokenNotFilteredException을 반환한다.', async () => {
+      // given
+      const member = { user: null } as unknown as Request;
+
+      // when
+      mockVideoService.updateVideoName.mockRejectedValue(
+        new ManipulatedTokenNotFiltered(),
+      );
+
+      // then
+      expect(
+        controller.updateVideoName(1, member, updateVideoRequestFixture),
+      ).rejects.toThrow(ManipulatedTokenNotFiltered);
+    });
+
+    it('비디오 이름 변경 시 해당 비디오가 삭제되었다면 VideoNotFoundException를 반환한다.', async () => {
+      // given
+
+      // when
+      mockVideoService.updateVideoName.mockRejectedValue(
+        new VideoNotFoundException(),
+      );
+
+      // then
+      expect(
+        controller.updateVideoName(1, member, updateVideoRequestFixture),
+      ).rejects.toThrow(VideoNotFoundException);
+    });
+
+    it('비디오 이름 변경 시 다른 회원의 비디오의 이름을 변경하려 한다면 VideoAccessForbiddenException를 반환한다.', async () => {
+      // given
+
+      // when
+      mockVideoService.updateVideoName.mockRejectedValue(
+        new VideoAccessForbiddenException(),
+      );
+
+      // then
+      expect(
+        controller.updateVideoName(1, member, updateVideoRequestFixture),
+      ).rejects.toThrow(VideoAccessForbiddenException);
     });
   });
 
@@ -1019,6 +1080,63 @@ describe('VideoController 통합 테스트', () => {
       await agent
         .patch(`/api/video/${video.id + 1000}`)
         .set('Cookie', [`accessToken=${token}`])
+        .expect(404);
+    });
+  });
+
+  describe('updateVideoName', () => {
+    it('쿠키를 가지고 비디오 이름 변경을 요청하면 200 상태 코드와 undefined가 반환된다.', async () => {
+      // given
+      const video = await videoRepository.save(videoFixture);
+
+      // when & then
+      const agent = request.agent(app.getHttpServer());
+      await agent
+        .patch(`/api/video/name/${video.id}`)
+        .set('Cookie', [`accessToken=${token}`])
+        .send(updateVideoRequestFixture)
+        .expect(200)
+        .expect((res) => {
+          expect(res.body).toStrictEqual({});
+        });
+    });
+
+    it('쿠키 없이 비디오 이름 변경을 요청하면 401 상태코드가 반환된다.', async () => {
+      // given
+      const video = await videoRepository.save(videoFixture);
+
+      // when & then
+      const agent = request.agent(app.getHttpServer());
+      await agent
+        .patch(`/api/video/name/${video.id}`)
+        .send(updateVideoRequestFixture)
+        .expect(401);
+    });
+
+    it('다른 사람의 비디오 이름 변경을 요청하면 403 상태 코드가 반환된다.', async () => {
+      // give
+      await memberRepository.save(otherMemberFixture);
+      const video = await videoRepository.save(videoOfOtherFixture);
+
+      // when & then
+      const agent = request.agent(app.getHttpServer());
+      await agent
+        .patch(`/api/video/name/${video.id}`)
+        .set('Cookie', [`accessToken=${token}`])
+        .send(updateVideoRequestFixture)
+        .expect(403);
+    });
+
+    it('존재하지 않는 비디오의 이름 변경을 요청하면 404 상태 코드가 반환된다.', async () => {
+      // give
+      const video = await videoRepository.save(videoFixture);
+
+      // when & then
+      const agent = request.agent(app.getHttpServer());
+      await agent
+        .patch(`/api/video/name/${video.id + 1000}`)
+        .set('Cookie', [`accessToken=${token}`])
+        .send(updateVideoRequestFixture)
         .expect(404);
     });
   });

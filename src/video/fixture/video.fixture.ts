@@ -110,3 +110,7 @@ export const thumbnailPreSignedInfoFixture = {
   preSignedUrl: 'https://thumbnail-example.com',
   key: 'thumbnail-example.png',
 } as PreSignedInfo;
+
+export const updateVideoRequestFixture = {
+  videoName: 'example.mp4',
+};
