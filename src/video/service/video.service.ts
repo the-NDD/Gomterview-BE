@@ -160,6 +160,14 @@ export class VideoService {
     return this.updateVideoHashInRedis(video);
   }
 
+  async updateVideoName(videoId: number, member: Member, name: string) {
+    validateManipulatedToken(member);
+    const video = await this.videoRepository.findById(videoId);
+    this.validateVideoOwnership(video, member.id);
+
+    await this.videoRepository.updateVideoName(videoId, name);
+  }
+
   async deleteVideo(videoId: number, member: Member) {
     validateManipulatedToken(member);
     const memberId = member.id;

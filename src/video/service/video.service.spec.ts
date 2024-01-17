@@ -10,6 +10,7 @@ import { MemberRepository } from 'src/member/repository/member.repository';
 import {
   createVideoRequestFixture,
   privateVideoFixture,
+  updateVideoRequestFixture,
   videoFixture,
   videoListFixture,
   videoOfOtherFixture,
@@ -58,6 +59,7 @@ describe('VideoService 단위 테스트', () => {
     findByUrl: jest.fn(),
     findAllVideosByMemberId: jest.fn(),
     toggleVideoStatus: jest.fn(),
+    updateVideoName: jest.fn(),
     remove: jest.fn(),
   };
 
@@ -69,9 +71,9 @@ describe('VideoService 단위 테스트', () => {
     findById: jest.fn(),
   };
 
-  jest.mock('typeorm-transactional', () => ({
-    Transactional: () => () => ({}),
-  }));
+  // jest.mock('typeorm-transactional', () => ({
+  //   Transactional: () => () => ({}),
+  // }));
 
   beforeAll(async () => {
     const module: TestingModule = await Test.createTestingModule({
@@ -100,7 +102,7 @@ describe('VideoService 단위 테스트', () => {
   describe('createVideo', () => {
     const request = createVideoRequestFixture;
 
-    it('비디오 저장 성공시 undefined로 반환된다.', () => {
+    it('비디오 저장 성공 시 undefined로 반환된다.', () => {
       // given
       const member = memberFixture;
 
@@ -614,6 +616,79 @@ describe('VideoService 단위 테스트', () => {
     });
   });
 
+  describe('updateVideoName', () => {
+    const member = memberFixture;
+
+    it('비디오 이름 변경 성공 시 undefined로 반환된다.', async () => {
+      // give
+      const video = videoFixture;
+
+      // when
+      mockVideoRepository.findById.mockResolvedValue(video);
+      mockVideoRepository.updateVideoName.mockResolvedValue(undefined);
+
+      // then
+      expect(
+        videoService.updateVideoName(
+          video.id,
+          member,
+          updateVideoRequestFixture.videoName,
+        ),
+      ).resolves.toBeUndefined();
+    });
+
+    it('비디오 이름 변경 시 member가 없으면 ManipulatedTokenNotFiltered을 반환한다.', () => {
+      // given
+      const video = videoFixture;
+      const member = undefined;
+
+      // when
+
+      // then
+      expect(
+        videoService.updateVideoName(
+          video.id,
+          member,
+          updateVideoRequestFixture.videoName,
+        ),
+      ).rejects.toThrow(ManipulatedTokenNotFiltered);
+    });
+
+    it('비디오 이름 변경 시 이미 삭제된 비디오의 이름을 변경하려고 하면 VideoNotFoundException을 반환한다.', () => {
+      // given
+      const video = videoFixture;
+
+      // when
+      mockVideoRepository.findById.mockResolvedValue(undefined);
+
+      // then
+      expect(
+        videoService.updateVideoName(
+          video.id,
+          member,
+          updateVideoRequestFixture.videoName,
+        ),
+      ).rejects.toThrow(VideoNotFoundException);
+    });
+
+    it('비디오 이름 변경 시 자신의 것이 아닌 비디오의 이름을 변경하려고 하면 VideoAccessForbiddenException을 반환한다.', () => {
+      // given
+      const video = videoOfOtherFixture;
+
+      // when
+      mockVideoRepository.findById.mockResolvedValue(video);
+
+      // then
+      expect(
+        videoService.updateVideoName(
+          video.id,
+          member,
+          updateVideoRequestFixture.videoName,
+        ),
+      ).rejects.toThrow(VideoAccessForbiddenException);
+    });
+  });
+
   describe('deleteVideo', () => {
     const member = memberFixture;
 
@@ -622,6 +697,7 @@ describe('VideoService 단위 테스트', () => {
       const video = videoFixture;
 
       // when
+      mockVideoRepository.findById.mockResolvedValue(video);
       mockVideoRepository.remove.mockResolvedValue(undefined);
 
       // then
@@ -1052,6 +1128,69 @@ describe('VideoService 통합 테스트', () => {
       expect(videoService.toggleVideoStatus(video.id, member)).rejects.toThrow(
         VideoAccessForbiddenException,
       );
+    });
+  });
+
+  describe('updateVideoName', () => {
+    it('비디오 이름 변경 성공 시 undefined로 반환된다.', async () => {
+      // given
+      const member = memberFixture;
+      const video = await videoRepository.save(videoFixture);
+
+      // when & then
+      expect(
+        videoService.updateVideoName(
+          video.id,
+          member,
+          updateVideoRequestFixture.videoName,
+        ),
+      ).resolves.toBeUndefined();
+    });
+
+    it('비디오 이름 변경 시 member가 없으면 ManipulatedTokenNotFiltered를 반환한다.', async () => {
+      // given
+      const member = null;
+      const video = await videoRepository.save(videoFixture);
+
+      // when & then
+      expect(
+        videoService.updateVideoName(
+          video.id,
+          member,
+          updateVideoRequestFixture.videoName,
+        ),
+      ).rejects.toThrow(ManipulatedTokenNotFiltered);
+    });
+
+    it('비디오 이름 변경 시 존재하지 않는 비디오의 이름을 변경하려 하면 VideoNotFoundException을 반환한다.', async () => {
+      // given
+      const member = memberFixture;
+      const video = await videoRepository.save(videoFixture);
+
+      // when & then
+      expect(
+        videoService.updateVideoName(
+          video.id + 1000,
+          member,
+          updateVideoRequestFixture.videoName,
+        ),
+      ).rejects.toThrow(VideoNotFoundException);
+    });
+
+    it('비디오 이름 변경 시 다른 사람의 비디오 이름을 변경하려 하면 VideoAccessForbiddenException을 반환한다.', async () => {
+      // given
+      const member = memberFixture;
+      await memberRepository.save(otherMemberFixture);
+      const video = await videoRepository.save(videoOfOtherFixture);
+
+      // when & then
+      expect(
+        videoService.updateVideoName(
+          video.id,
+          member,
+          updateVideoRequestFixture.videoName,
+        ),
+      ).rejects.toThrow(VideoAccessForbiddenException);
     });
   });
 
