@@ -51,6 +51,8 @@ import { DEFAULT_THUMBNAIL } from '../../constant/constant';
 import * as idriveUtil from 'src/util/idrive.util';
 import redisMock from 'ioredis-mock';
 import { UpdateVideoIndexRequest } from '../dto/updateVideoIndexRequest';
+import { Member } from 'src/member/entity/member';
+import { UpdateVideoRequest } from '../dto/updateVideoRequest';
 
 describe('VideoService 단위 테스트', () => {
   let videoService: VideoService;
@@ -1280,7 +1282,29 @@ describe('VideoService 통합 테스트', () => {
   });
 
   describe('updateIndex', () => {
-    it('영상의 인덱스 수정을 성공하면 undefined를 반환한다. 그리고 조회시에 변경된 인덱스 순으로 정렬된다.', async () => {});
+    const saveDummyVideos = async () =>
+      Promise.all(
+        videoListExample.map(
+          async (video) => await videoRepository.save(video),
+        ),
+      );
+
+    it('영상의 인덱스 수정을 성공하면 undefined를 반환한다. 그리고 조회시에 변경된 인덱스 순으로 정렬된다.', async () => {
+      // given
+      const member = await memberRepository.save(memberFixture);
+      const videos = await saveDummyVideos();
+
+      // when
+      const ids = videos.map((each) => each.id); // 1, 2, 3, 4
+      ids.unshift(ids.pop()); // 4, 1, 2, 3
+      ids.unshift(ids.pop()); // 3, 4, 1, 2
+      const indexRequest = new UpdateVideoIndexRequest(ids);
+
+      // then
+      await expect(
+        videoService.updateIndex(indexRequest, member),
+      ).resolves.toBeUndefined();
+    });
   });
 
   describe('deleteVideo', () => {
