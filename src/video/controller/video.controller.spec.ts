@@ -26,6 +26,7 @@ import {
   createVideoRequestFixture,
   privateVideoFixture,
   thumbnailPreSignedInfoFixture,
+  updateVideoIndexRequestFixture,
   updateVideoRequestFixture,
   videoFixture,
   videoListFixture,
@@ -68,6 +69,7 @@ describe('VideoController 단위 테스트', () => {
     toggleVideoStatus: jest.fn(),
     updateVideoName: jest.fn(),
     deleteVideo: jest.fn(),
+    updateIndex: jest.fn(),
   };
 
   beforeAll(async () => {
@@ -621,6 +623,22 @@ describe('VideoController 단위 테스트', () => {
       expect(
         controller.updateVideoName(1, member, updateVideoRequestFixture),
       ).rejects.toThrow(VideoAccessForbiddenException);
+    });
+  });
+
+  describe('updateIndex', () => {
+    const member = mockReqWithMemberFixture;
+
+    it('영상 인덱스 수정 성공시 undefined를 반환한다', async () => {
+      //given
+
+      //when
+      mockVideoService.updateIndex.mockResolvedValue(undefined);
+
+      //then
+      await expect(
+        controller.updateIndex(updateVideoIndexRequestFixture, member),
+      ).resolves.toBeUndefined();
     });
   });
 

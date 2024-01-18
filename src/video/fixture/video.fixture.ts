@@ -1,4 +1,5 @@
 import { CreateVideoRequest } from '../dto/createVideoRequest';
+import { UpdateVideoIndexRequest } from '../dto/updateVideoIndexRequest';
 import { Video } from '../entity/video';
 import { PreSignedInfo } from '../interface/video.interface';
 
@@ -123,3 +124,7 @@ export const thumbnailPreSignedInfoFixture = {
 export const updateVideoRequestFixture = {
   videoName: 'example.mp4',
 };
+
+export const updateVideoIndexRequestFixture = UpdateVideoIndexRequest.of([
+  2, 1, 4, 3,
+]);

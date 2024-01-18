@@ -34,6 +34,7 @@ import {
   VideoNotFoundException,
 } from '../exception/video.exception';
 import { ManipulatedTokenNotFiltered } from 'src/token/exception/token.exception';
+import { UpdateVideoIndexRequest } from '../dto/updateVideoIndexRequest';
 
 @Controller('/api/video')
 @ApiTags('video')
@@ -201,6 +202,22 @@ export class VideoController {
       updateVideoRequest.videoName,
     );
   }
+
+  @Patch('/index')
+  @UseGuards(TokenHardGuard)
+  @ApiCookieAuth()
+  @ApiBody({ type: UpdateVideoRequest })
+  @ApiOperation({
+    summary: '비디오 이름 변경',
+  })
+  @ApiResponse(createApiResponseOption(200, '비디오 이름 변경 완료', null))
+  @ApiResponse(VideoAccessForbiddenException.response())
+  @ApiResponse(VideoNotFoundException.response())
+  @ApiResponse(ManipulatedTokenNotFiltered.response())
+  async updateIndex(
+    @Body() updateVideoIndexRequest: UpdateVideoIndexRequest,
+    @Req() req: Request,
+  ) {}
 
   @Delete(':videoId')
   @UseGuards(TokenHardGuard)
