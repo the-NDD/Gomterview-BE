@@ -54,7 +54,7 @@ export class VideoRepository {
     );
 
     const updateQuery = `
-      UPDATE Video
+      UPDATE video
       SET myPageIndex = CASE ${caseStatements.join(' ')} END
       WHERE id IN (${ids.join(', ')})
     `;

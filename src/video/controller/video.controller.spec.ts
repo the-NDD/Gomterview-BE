@@ -66,6 +66,7 @@ import {
   NOT_FOUND,
   UNAUTHORIZED,
 } from 'src/constant/constant';
+import { Video } from '../entity/video';
 
 describe('VideoController 단위 테스트', () => {
   let controller: VideoController;
@@ -647,7 +648,7 @@ describe('VideoController 단위 테스트', () => {
 
       //then
       await expect(
-        controller.updateIndex(updateVideoIndexRequestFixture, member),
+        controller.updateIndex(member, updateVideoIndexRequestFixture),
       ).resolves.toBeUndefined();
     });
   });
@@ -1170,28 +1171,31 @@ describe('VideoController 통합 테스트', () => {
   });
 
   describe('updateIndex', () => {
-    console.log('인덱스 테스트');
-    const saveDummy = async () => {
+    const saveDummy = async () =>
       await Promise.all(
-        videoListExample.map(
-          async (video) => await videoRepository.save(video),
-        ),
+        videoListExample.map(async (video) => {
+          return await videoRepository.save(video);
+        }),
       );
-    };
+
+    const mapIds = (videos: Video[]) => videos.map((each) => Number(each.id));
 
     it('쿠키를 가지고 비디오 인덱스 수정을 요청하면 200 상태코드가 반환된다', async () => {
       // given
-      await saveDummy();
+      const videos = await saveDummy();
+      const ids = mapIds(videos);
+      ids.unshift(ids.pop());
+      ids.unshift(ids.pop());
 
       // when & then
       const agent = request.agent(app.getHttpServer());
       await agent
         .patch(`/api/video/index`)
         .set('Cookie', [`accessToken=${token}`])
-        .send(updateVideoIndexRequestFixture)
+        .send(UpdateVideoIndexRequest.of(ids))
         .expect(200);
       const changedIndex = await videoRepository.findAllVideosByMemberId(1);
-      expect(changedIndex.map((video) => video.id)).toEqual([1, 2, 3, 4]);
+      expect(changedIndex.map((video) => video.id)).toEqual(ids);
     });
 
     it('쿠키가 없으면 401 상태코드를 반환한다.', async () => {

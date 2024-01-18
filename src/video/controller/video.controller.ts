@@ -215,8 +215,8 @@ export class VideoController {
   @ApiResponse(VideoNotFoundException.response())
   @ApiResponse(ManipulatedTokenNotFiltered.response())
   async updateIndex(
-    @Body() updateVideoIndexRequest: UpdateVideoIndexRequest,
     @Req() req: Request,
+    @Body() updateVideoIndexRequest: UpdateVideoIndexRequest,
   ) {
     await this.videoService.updateIndex(
       updateVideoIndexRequest,

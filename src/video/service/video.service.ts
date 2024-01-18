@@ -175,7 +175,6 @@ export class VideoService {
   ) {
     validateManipulatedToken(member);
     await this.validateMembersVideos(updateVideoIndexRequest, member);
-
     await this.videoRepository.updateIndex(updateVideoIndexRequest.ids);
   }
 

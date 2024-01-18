@@ -40,7 +40,7 @@ export const videoListExample = [
     '02:42',
     false,
   ),
-];
+].slice(0, 4);
 
 export const videoListFixture = [
   new Video(
