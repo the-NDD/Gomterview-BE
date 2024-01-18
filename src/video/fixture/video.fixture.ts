@@ -125,6 +125,5 @@ export const updateVideoRequestFixture = {
   videoName: 'example.mp4',
 };
 
-export const updateVideoIndexRequestFixture = UpdateVideoIndexRequest.of([
-  2, 1, 4, 3,
-]);
+const arr = [2, 1, 4, 3];
+export const updateVideoIndexRequestFixture = UpdateVideoIndexRequest.of(arr);
