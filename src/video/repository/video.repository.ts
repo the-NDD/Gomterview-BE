@@ -18,7 +18,7 @@ export class VideoRepository {
     return this.videoRepository
       .createQueryBuilder('video')
       .where('video.memberId = :memberId', { memberId })
-      .orderBy('video.index', 'ASC')
+      .orderBy('video.myPageIndex', 'ASC')
       .getMany();
   }
 
@@ -55,7 +55,7 @@ export class VideoRepository {
 
     const updateQuery = `
       UPDATE Video
-      SET index = CASE ${caseStatements.join(' ')} END
+      SET myPageIndex = CASE ${caseStatements.join(' ')} END
       WHERE id IN (${ids.join(', ')})
     `;
 

@@ -8,7 +8,7 @@ import { DEFAULT_THUMBNAIL } from 'src/constant/constant';
 
 @Entity({ name: 'Video' })
 @Index('idx_video_url', ['url'])
-@Index('idx_video_index', ['index'])
+@Index('idx_video_myPageIndex', ['myPageIndex'])
 export class Video extends DefaultEntity {
   @Column({ nullable: true })
   memberId: number;
@@ -40,7 +40,7 @@ export class Video extends DefaultEntity {
   isPublic: boolean;
 
   @Column({ default: 0 })
-  index: number;
+  myPageIndex: number;
 
   constructor(
     memberId: number,
@@ -59,7 +59,7 @@ export class Video extends DefaultEntity {
     this.thumbnail = thumbnail;
     this.videoLength = videoLength;
     this.isPublic = isPublic;
-    this.index = 0;
+    this.myPageIndex = 0;
   }
 
   static from(member: Member, createVideoRequest: CreateVideoRequest): Video {
