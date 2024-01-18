@@ -203,21 +203,26 @@ export class VideoController {
     );
   }
 
-  @Patch('/index')
+  @Patch('index')
   @UseGuards(TokenHardGuard)
   @ApiCookieAuth()
-  @ApiBody({ type: UpdateVideoRequest })
+  @ApiBody({ type: UpdateVideoIndexRequest })
   @ApiOperation({
-    summary: '비디오 이름 변경',
+    summary: '비디오 순서 변경',
   })
-  @ApiResponse(createApiResponseOption(200, '비디오 이름 변경 완료', null))
+  @ApiResponse(createApiResponseOption(200, '비디오 순서 변경 완료', null))
   @ApiResponse(VideoAccessForbiddenException.response())
   @ApiResponse(VideoNotFoundException.response())
   @ApiResponse(ManipulatedTokenNotFiltered.response())
   async updateIndex(
     @Body() updateVideoIndexRequest: UpdateVideoIndexRequest,
     @Req() req: Request,
-  ) {}
+  ) {
+    await this.videoService.updateIndex(
+      updateVideoIndexRequest,
+      req.user as Member,
+    );
+  }
 
   @Delete(':videoId')
   @UseGuards(TokenHardGuard)
