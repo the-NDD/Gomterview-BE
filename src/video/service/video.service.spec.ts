@@ -1282,6 +1282,8 @@ describe('VideoService 통합 테스트', () => {
   });
 
   describe('updateIndex', () => {
+    const member = memberFixture;
+
     const saveDummyVideos = async () =>
       Promise.all(
         videoListExample.map(
@@ -1291,19 +1293,67 @@ describe('VideoService 통합 테스트', () => {
 
     it('영상의 인덱스 수정을 성공하면 undefined를 반환한다. 그리고 조회시에 변경된 인덱스 순으로 정렬된다.', async () => {
       // given
-      const member = await memberRepository.save(memberFixture);
       const videos = await saveDummyVideos();
 
       // when
       const ids = videos.map((each) => each.id); // 1, 2, 3, 4
       ids.unshift(ids.pop()); // 4, 1, 2, 3
       ids.unshift(ids.pop()); // 3, 4, 1, 2
-      const indexRequest = new UpdateVideoIndexRequest(ids);
+      const indexRequest = UpdateVideoIndexRequest.of(ids);
 
       // then
       await expect(
         videoService.updateIndex(indexRequest, member),
       ).resolves.toBeUndefined();
+      const membersVideos = await videoService.getAllVideosByMemberId(member);
+      expect(membersVideos.map((each) => each.id)).toEqual(ids);
+    });
+
+    it('배열의 길이가 다르면 VideoAccessForbiddenException을 반환한다.', async () => {
+      // given
+      const videos = await saveDummyVideos();
+
+      // when
+      const ids = videos.map((each) => each.id); // 1, 2, 3, 4
+      ids.unshift(ids.pop()); // 4, 1, 2, 3
+      ids.pop(); // 3, 4, 1, 2
+
+      // then
+      await expect(
+        videoService.updateIndex(UpdateVideoIndexRequest.of(ids), member),
+      ).rejects.toThrow(new VideoAccessForbiddenException());
+    });
+
+    it('배열의 길이가 같지만 원소의 값이 하나라도 다르면 VideoAccessForbiddenException을 반환한다.', async () => {
+      // given
+      const videos = await saveDummyVideos();
+
+      // when
+      const ids = videos.map((each) => each.id); // 1, 2, 3, 4
+      ids.unshift(ids.pop()); // 4, 1, 2, 3
+      ids.pop(); // 3, 4, 1, 2
+      ids.push(1200);
+
+      // then
+      await expect(
+        videoService.updateIndex(UpdateVideoIndexRequest.of(ids), member),
+      ).rejects.toThrow(new VideoAccessForbiddenException());
+    });
+
+    it('회원이 주어지지 않으면 ManipulatedTokenException을 반환한다.', async () => {
+      // given
+      const videos = await saveDummyVideos();
+
+      // when
+      const ids = videos.map((each) => each.id); // 1, 2, 3, 4
+      ids.unshift(ids.pop()); // 4, 1, 2, 3
+      ids.unshift(ids.pop()); // 3, 4, 1, 2
+      const indexRequest = UpdateVideoIndexRequest.of(ids);
+
+      // then
+      await expect(
+        videoService.updateIndex(indexRequest, undefined),
+      ).rejects.toThrow(new ManipulatedTokenNotFiltered());
     });
   });
 
