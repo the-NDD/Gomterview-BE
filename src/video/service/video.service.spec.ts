@@ -26,6 +26,7 @@ import {
   RedisDeleteException,
   RedisRetrieveException,
   VideoAccessForbiddenException,
+  VideoLackException,
   VideoNotFoundException,
   VideoNotFoundWithHashException,
   VideoOfWithdrawnMemberException,
@@ -715,7 +716,7 @@ describe('VideoService 단위 테스트', () => {
       ).resolves.toBeUndefined();
     });
 
-    it('배열의 길이가 다르면 VideoAccessForbiddenException을 반환한다.', async () => {
+    it('배열의 길이가 다르면 VideoLackException을 반환한다.', async () => {
       // given
       const ids = videoListExample.map((each) => each.id);
       ids.pop();
@@ -733,7 +734,7 @@ describe('VideoService 단위 테스트', () => {
           UpdateVideoIndexRequest.of(ids),
           memberFixture,
         ),
-      ).rejects.toThrow(new VideoAccessForbiddenException());
+      ).rejects.toThrow(new VideoLackException());
     });
 
     it('배열의 길이가 같지만 원소의 값이 하나라도 다르면 VideoAccessForbiddenException을 반환한다.', async () => {
@@ -1309,7 +1310,7 @@ describe('VideoService 통합 테스트', () => {
       expect(membersVideos.map((each) => each.id)).toEqual(ids);
     });
 
-    it('배열의 길이가 다르면 VideoAccessForbiddenException을 반환한다.', async () => {
+    it('배열의 길이가 다르면 VideoLackException을 반환한다.', async () => {
       // given
       const videos = await saveDummyVideos();
 
@@ -1321,7 +1322,7 @@ describe('VideoService 통합 테스트', () => {
       // then
       await expect(
         videoService.updateIndex(UpdateVideoIndexRequest.of(ids), member),
-      ).rejects.toThrow(new VideoAccessForbiddenException());
+      ).rejects.toThrow(new VideoLackException());
     });
 
     it('배열의 길이가 같지만 원소의 값이 하나라도 다르면 VideoAccessForbiddenException을 반환한다.', async () => {
