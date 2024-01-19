@@ -9,6 +9,7 @@ import {
   InvalidHashException,
   Md5HashException,
   VideoAccessForbiddenException,
+  VideoLackException,
   VideoNotFoundException,
   VideoNotFoundWithHashException,
   VideoOfWithdrawnMemberException,
@@ -240,6 +241,11 @@ export class VideoService {
     const videos = await this.videoRepository.findAllVideosByMemberId(
       member.id,
     );
+
+    if (videos.length !== updateVideoIndexRequest.ids.length) {
+      throw new VideoLackException();
+    }
+
     if (!(await this.isMembersVideos(videos, updateVideoIndexRequest.ids))) {
       throw new VideoAccessForbiddenException();
     }

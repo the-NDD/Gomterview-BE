@@ -111,3 +111,16 @@ export class InvalidHashException extends HttpBadRequestException {
     return createApiResponseOption(BAD_REQUEST, 'V10', null);
   }
 }
+
+export class VideoLackException extends HttpBadRequestException {
+  constructor() {
+    super(
+      '현재 페이지에 존재하는 비디오와 요청된 비디오의 개수가 다릅니다.',
+      'V11',
+    );
+  }
+
+  static response() {
+    return createApiResponseOption(BAD_REQUEST, 'V11', null);
+  }
+}

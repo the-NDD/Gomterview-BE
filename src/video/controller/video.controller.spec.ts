@@ -61,6 +61,7 @@ import redisMock from 'ioredis-mock';
 import { Member } from 'src/member/entity/member';
 import { UpdateVideoIndexRequest } from '../dto/updateVideoIndexRequest';
 import {
+  BAD_REQUEST,
   FORBIDDEN,
   INTERNAL_SERVER_ERROR,
   NOT_FOUND,
@@ -1210,10 +1211,11 @@ describe('VideoController 통합 테스트', () => {
         .expect(UNAUTHORIZED);
     });
 
-    it('회원의 영상 길이와 입력받은 영상 id들의 개수가 다르면 404코드를 반환한다.', async () => {
+    it('회원의 영상 길이와 입력받은 영상 id들의 개수가 다르면 400코드를 반환한다.', async () => {
       // given
-      await saveDummy();
-      const ids = updateVideoIndexRequestFixture.ids;
+      const videos = await saveDummy();
+      const ids = mapIds(videos);
+      ids.unshift(ids.pop());
       ids.pop();
 
       // when & then
@@ -1222,7 +1224,7 @@ describe('VideoController 통합 테스트', () => {
         .patch(`/api/video/index`)
         .set('Cookie', [`accessToken=${token}`])
         .send(UpdateVideoIndexRequest.of(ids))
-        .expect(NOT_FOUND);
+        .expect(BAD_REQUEST);
     });
 
     it('회원의 영상이 아닌 다른 영상의 id가 들어오면 403코드를 반환한다.', async () => {
