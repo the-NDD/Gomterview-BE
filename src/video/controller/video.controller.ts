@@ -158,6 +158,27 @@ export class VideoController {
     return await this.videoService.getVideoDetail(videoId, req.user as Member);
   }
 
+  @Patch('/index')
+  @UseGuards(TokenHardGuard)
+  @ApiCookieAuth()
+  @ApiBody({ type: UpdateVideoIndexRequest })
+  @ApiOperation({
+    summary: '비디오 순서 변경',
+  })
+  @ApiResponse(createApiResponseOption(200, '비디오 순서 변경 완료', null))
+  @ApiResponse(VideoAccessForbiddenException.response())
+  @ApiResponse(VideoNotFoundException.response())
+  @ApiResponse(ManipulatedTokenNotFiltered.response())
+  async updateIndex(
+    @Req() req: Request,
+    @Body() updateVideoIndexRequest: UpdateVideoIndexRequest,
+  ) {
+    await this.videoService.updateIndex(
+      updateVideoIndexRequest,
+      req.user as Member,
+    );
+  }
+
   @Patch(':videoId')
   @UseGuards(TokenHardGuard)
   @ApiCookieAuth()
@@ -200,27 +221,6 @@ export class VideoController {
       videoId,
       req.user as Member,
       updateVideoRequest.videoName,
-    );
-  }
-
-  @Patch('index')
-  @UseGuards(TokenHardGuard)
-  @ApiCookieAuth()
-  @ApiBody({ type: UpdateVideoIndexRequest })
-  @ApiOperation({
-    summary: '비디오 순서 변경',
-  })
-  @ApiResponse(createApiResponseOption(200, '비디오 순서 변경 완료', null))
-  @ApiResponse(VideoAccessForbiddenException.response())
-  @ApiResponse(VideoNotFoundException.response())
-  @ApiResponse(ManipulatedTokenNotFiltered.response())
-  async updateIndex(
-    @Req() req: Request,
-    @Body() updateVideoIndexRequest: UpdateVideoIndexRequest,
-  ) {
-    await this.videoService.updateIndex(
-      updateVideoIndexRequest,
-      req.user as Member,
     );
   }
 
