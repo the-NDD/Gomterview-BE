@@ -8,7 +8,7 @@ export class UpdateIndexInWorkbookRequest {
   @IsNumber()
   workbookId: number;
 
-  @ApiProperty(createPropertyOption('1', '문제집 id', Number))
+  @ApiProperty(createPropertyOption([1, 2, 3, 4, 5], '질문의 id', [Number]))
   @IsArray()
   @ArrayMinSize(1) // 최소 1개의 원소를 가져야 합니다.
   @IsNumber({}, { each: true })

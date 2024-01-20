@@ -12,6 +12,7 @@ import {
   privateVideoFixture,
   updateVideoRequestFixture,
   videoFixture,
+  videoListExample,
   videoListFixture,
   videoOfOtherFixture,
   videoOfWithdrawnMemberFixture,
@@ -25,6 +26,7 @@ import {
   RedisDeleteException,
   RedisRetrieveException,
   VideoAccessForbiddenException,
+  VideoLackException,
   VideoNotFoundException,
   VideoNotFoundWithHashException,
   VideoOfWithdrawnMemberException,
@@ -49,6 +51,9 @@ import { CreateVideoRequest } from '../dto/createVideoRequest';
 import { DEFAULT_THUMBNAIL } from '../../constant/constant';
 import * as idriveUtil from 'src/util/idrive.util';
 import redisMock from 'ioredis-mock';
+import { UpdateVideoIndexRequest } from '../dto/updateVideoIndexRequest';
+import { Member } from 'src/member/entity/member';
+import { UpdateVideoRequest } from '../dto/updateVideoRequest';
 
 describe('VideoService 단위 테스트', () => {
   let videoService: VideoService;
@@ -61,6 +66,7 @@ describe('VideoService 단위 테스트', () => {
     toggleVideoStatus: jest.fn(),
     updateVideoName: jest.fn(),
     remove: jest.fn(),
+    updateIndex: jest.fn(),
   };
 
   const mockMemberRepository = {
@@ -689,6 +695,88 @@ describe('VideoService 단위 테스트', () => {
     });
   });
 
+  describe('updateIndex', () => {
+    it('배열에 회원의 소유인 영상의 id들이 있으면 아무것도 반환하지 않는다.', async () => {
+      // given
+      const ids = videoListExample.map((each) => each.id);
+
+      // when
+      mockMemberRepository.findById.mockResolvedValue(memberFixture);
+      mockVideoRepository.findAllVideosByMemberId.mockResolvedValue(
+        videoListExample,
+      );
+      mockVideoRepository.updateIndex.mockResolvedValue(undefined);
+
+      // then
+      await expect(
+        videoService.updateIndex(
+          UpdateVideoIndexRequest.of(ids),
+          memberFixture,
+        ),
+      ).resolves.toBeUndefined();
+    });
+
+    it('배열의 길이가 다르면 VideoLackException을 반환한다.', async () => {
+      // given
+      const ids = videoListExample.map((each) => each.id);
+      ids.pop();
+
+      // when
+      mockMemberRepository.findById.mockResolvedValue(memberFixture);
+      mockVideoRepository.findAllVideosByMemberId.mockResolvedValue(
+        videoListExample,
+      );
+      mockVideoRepository.updateIndex.mockResolvedValue(undefined);
+
+      // then
+      await expect(
+        videoService.updateIndex(
+          UpdateVideoIndexRequest.of(ids),
+          memberFixture,
+        ),
+      ).rejects.toThrow(new VideoLackException());
+    });
+
+    it('배열의 길이가 같지만 원소의 값이 하나라도 다르면 VideoAccessForbiddenException을 반환한다.', async () => {
+      // given
+      const ids = videoListExample.map((each) => each.id);
+      ids.pop();
+      ids.push(100);
+
+      // when
+      mockMemberRepository.findById.mockResolvedValue(memberFixture);
+      mockVideoRepository.findAllVideosByMemberId.mockResolvedValue(
+        videoListExample,
+      );
+      mockVideoRepository.updateIndex.mockResolvedValue(undefined);
+
+      // then
+      await expect(
+        videoService.updateIndex(
+          UpdateVideoIndexRequest.of(ids),
+          memberFixture,
+        ),
+      ).rejects.toThrow(new VideoAccessForbiddenException());
+    });
+
+    it('회원이 주어지지 않으면 ManipulatedTokenException을 반환한다.', async () => {
+      // given
+      const ids = videoListExample.map((each) => each.id);
+
+      // when
+      mockMemberRepository.findById.mockResolvedValue(memberFixture);
+      mockVideoRepository.findAllVideosByMemberId.mockResolvedValue(
+        videoListExample,
+      );
+      mockVideoRepository.updateIndex.mockResolvedValue(undefined);
+
+      // then
+      await expect(
+        videoService.updateIndex(UpdateVideoIndexRequest.of(ids), undefined),
+      ).rejects.toThrow(new ManipulatedTokenNotFiltered());
+    });
+  });
+
   describe('deleteVideo', () => {
     const member = memberFixture;
 
@@ -1191,6 +1279,82 @@ describe('VideoService 통합 테스트', () => {
           updateVideoRequestFixture.videoName,
         ),
       ).rejects.toThrow(VideoAccessForbiddenException);
+    });
+  });
+
+  describe('updateIndex', () => {
+    const member = memberFixture;
+
+    const saveDummyVideos = async () =>
+      Promise.all(
+        videoListExample.map(
+          async (video) => await videoRepository.save(video),
+        ),
+      );
+
+    it('영상의 인덱스 수정을 성공하면 undefined를 반환한다. 그리고 조회시에 변경된 인덱스 순으로 정렬된다.', async () => {
+      // given
+      const videos = await saveDummyVideos();
+
+      // when
+      const ids = videos.map((each) => each.id); // 1, 2, 3, 4
+      ids.unshift(ids.pop()); // 4, 1, 2, 3
+      ids.unshift(ids.pop()); // 3, 4, 1, 2
+      const indexRequest = UpdateVideoIndexRequest.of(ids);
+
+      // then
+      await expect(
+        videoService.updateIndex(indexRequest, member),
+      ).resolves.toBeUndefined();
+      const membersVideos = await videoService.getAllVideosByMemberId(member);
+      expect(membersVideos.map((each) => each.id)).toEqual(ids);
+    });
+
+    it('배열의 길이가 다르면 VideoLackException을 반환한다.', async () => {
+      // given
+      const videos = await saveDummyVideos();
+
+      // when
+      const ids = videos.map((each) => each.id); // 1, 2, 3, 4
+      ids.unshift(ids.pop()); // 4, 1, 2, 3
+      ids.pop(); // 3, 4, 1, 2
+
+      // then
+      await expect(
+        videoService.updateIndex(UpdateVideoIndexRequest.of(ids), member),
+      ).rejects.toThrow(new VideoLackException());
+    });
+
+    it('배열의 길이가 같지만 원소의 값이 하나라도 다르면 VideoAccessForbiddenException을 반환한다.', async () => {
+      // given
+      const videos = await saveDummyVideos();
+
+      // when
+      const ids = videos.map((each) => each.id); // 1, 2, 3, 4
+      ids.unshift(ids.pop()); // 4, 1, 2, 3
+      ids.pop(); // 3, 4, 1, 2
+      ids.push(1200);
+
+      // then
+      await expect(
+        videoService.updateIndex(UpdateVideoIndexRequest.of(ids), member),
+      ).rejects.toThrow(new VideoAccessForbiddenException());
+    });
+
+    it('회원이 주어지지 않으면 ManipulatedTokenException을 반환한다.', async () => {
+      // given
+      const videos = await saveDummyVideos();
+
+      // when
+      const ids = videos.map((each) => each.id); // 1, 2, 3, 4
+      ids.unshift(ids.pop()); // 4, 1, 2, 3
+      ids.unshift(ids.pop()); // 3, 4, 1, 2
+      const indexRequest = UpdateVideoIndexRequest.of(ids);
+
+      // then
+      await expect(
+        videoService.updateIndex(indexRequest, undefined),
+      ).rejects.toThrow(new ManipulatedTokenNotFiltered());
     });
   });
 

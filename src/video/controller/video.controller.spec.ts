@@ -3,6 +3,7 @@ import { VideoController } from './video.controller';
 import { VideoService } from '../service/video.service';
 import {
   memberFixture,
+  memberFixturesOAuthRequest,
   mockReqWithMemberFixture,
   oauthRequestFixture,
   otherMemberFixture,
@@ -26,8 +27,10 @@ import {
   createVideoRequestFixture,
   privateVideoFixture,
   thumbnailPreSignedInfoFixture,
+  updateVideoIndexRequestFixture,
   updateVideoRequestFixture,
   videoFixture,
+  videoListExample,
   videoListFixture,
   videoOfOtherFixture,
   videoOfWithdrawnMemberFixture,
@@ -55,6 +58,16 @@ import { CategoryRepository } from 'src/category/repository/category.repository'
 import { categoryFixtureWithId } from 'src/category/fixture/category.fixture';
 import { clearRedis, saveToRedis } from 'src/util/redis.util';
 import redisMock from 'ioredis-mock';
+import { Member } from 'src/member/entity/member';
+import { UpdateVideoIndexRequest } from '../dto/updateVideoIndexRequest';
+import {
+  BAD_REQUEST,
+  FORBIDDEN,
+  INTERNAL_SERVER_ERROR,
+  NOT_FOUND,
+  UNAUTHORIZED,
+} from 'src/constant/constant';
+import { Video } from '../entity/video';
 
 describe('VideoController 단위 테스트', () => {
   let controller: VideoController;
@@ -68,6 +81,7 @@ describe('VideoController 단위 테스트', () => {
     toggleVideoStatus: jest.fn(),
     updateVideoName: jest.fn(),
     deleteVideo: jest.fn(),
+    updateIndex: jest.fn(),
   };
 
   beforeAll(async () => {
@@ -624,6 +638,22 @@ describe('VideoController 단위 테스트', () => {
     });
   });
 
+  describe('updateIndex', () => {
+    const member = mockReqWithMemberFixture;
+
+    it('영상 인덱스 수정 성공시 undefined를 반환한다', async () => {
+      //given
+
+      //when
+      mockVideoService.updateIndex.mockResolvedValue(undefined);
+
+      //then
+      await expect(
+        controller.updateIndex(member, updateVideoIndexRequestFixture),
+      ).resolves.toBeUndefined();
+    });
+  });
+
   describe('deleteVideo', () => {
     const member = mockReqWithMemberFixture;
     const response = {
@@ -1138,6 +1168,79 @@ describe('VideoController 통합 테스트', () => {
         .set('Cookie', [`accessToken=${token}`])
         .send(updateVideoRequestFixture)
         .expect(404);
+    });
+  });
+
+  describe('updateIndex', () => {
+    const saveDummy = async () =>
+      await Promise.all(
+        videoListExample.map(async (video) => {
+          return await videoRepository.save(video);
+        }),
+      );
+
+    const mapIds = (videos: Video[]) => videos.map((each) => Number(each.id));
+
+    it('쿠키를 가지고 비디오 인덱스 수정을 요청하면 200 상태코드가 반환된다', async () => {
+      // given
+      const videos = await saveDummy();
+      const ids = mapIds(videos);
+      ids.unshift(ids.pop());
+      ids.unshift(ids.pop());
+
+      // when & then
+      const agent = request.agent(app.getHttpServer());
+      await agent
+        .patch(`/api/video/index`)
+        .set('Cookie', [`accessToken=${token}`])
+        .send(UpdateVideoIndexRequest.of(ids))
+        .expect(200);
+      const changedIndex = await videoRepository.findAllVideosByMemberId(1);
+      expect(changedIndex.map((video) => video.id)).toEqual(ids);
+    });
+
+    it('쿠키가 없으면 401 상태코드를 반환한다.', async () => {
+      // given
+      await saveDummy();
+
+      // when & then
+      const agent = request.agent(app.getHttpServer());
+      await agent
+        .patch(`/api/video/index`)
+        .send(updateVideoIndexRequestFixture)
+        .expect(UNAUTHORIZED);
+    });
+
+    it('회원의 영상 길이와 입력받은 영상 id들의 개수가 다르면 400코드를 반환한다.', async () => {
+      // given
+      const videos = await saveDummy();
+      const ids = mapIds(videos);
+      ids.unshift(ids.pop());
+      ids.pop();
+
+      // when & then
+      const agent = request.agent(app.getHttpServer());
+      await agent
+        .patch(`/api/video/index`)
+        .set('Cookie', [`accessToken=${token}`])
+        .send(UpdateVideoIndexRequest.of(ids))
+        .expect(BAD_REQUEST);
+    });
+
+    it('회원의 영상이 아닌 다른 영상의 id가 들어오면 403코드를 반환한다.', async () => {
+      // given
+      await saveDummy();
+      const ids = updateVideoIndexRequestFixture.ids;
+      ids.pop();
+      ids.push(1234);
+
+      // when & then
+      const agent = request.agent(app.getHttpServer());
+      await agent
+        .patch(`/api/video/index`)
+        .set('Cookie', [`accessToken=${token}`])
+        .send(UpdateVideoIndexRequest.of(ids))
+        .expect(FORBIDDEN);
     });
   });
 

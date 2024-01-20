@@ -9,6 +9,7 @@ import {
   InvalidHashException,
   Md5HashException,
   VideoAccessForbiddenException,
+  VideoLackException,
   VideoNotFoundException,
   VideoNotFoundWithHashException,
   VideoOfWithdrawnMemberException,
@@ -30,6 +31,7 @@ import { SingleVideoResponse } from '../dto/singleVideoResponse';
 import { MemberNotFoundException } from 'src/member/exception/member.exception';
 import { getSignedUrlWithKey } from 'src/util/idrive.util';
 import { PreSignedInfo } from '../interface/video.interface';
+import { UpdateVideoIndexRequest } from '../dto/updateVideoIndexRequest';
 
 @Injectable()
 export class VideoService {
@@ -168,6 +170,15 @@ export class VideoService {
     await this.videoRepository.updateVideoName(videoId, name);
   }
 
+  async updateIndex(
+    updateVideoIndexRequest: UpdateVideoIndexRequest,
+    member: Member,
+  ) {
+    validateManipulatedToken(member);
+    await this.validateMembersVideos(updateVideoIndexRequest, member);
+    await this.videoRepository.updateIndex(updateVideoIndexRequest.ids);
+  }
+
   async deleteVideo(videoId: number, member: Member) {
     validateManipulatedToken(member);
     const memberId = member.id;
@@ -221,5 +232,44 @@ export class VideoService {
 
     await saveToRedis(hash, video.url);
     return new VideoHashResponse(hash);
+  }
+
+  private async validateMembersVideos(
+    updateVideoIndexRequest: UpdateVideoIndexRequest,
+    member: Member,
+  ) {
+    const videos = await this.videoRepository.findAllVideosByMemberId(
+      member.id,
+    );
+
+    if (videos.length !== updateVideoIndexRequest.ids.length) {
+      throw new VideoLackException();
+    }
+
+    if (!(await this.isMembersVideos(videos, updateVideoIndexRequest.ids))) {
+      throw new VideoAccessForbiddenException();
+    }
+  }
+
+  private async isMembersVideos(videos: Video[], ids: number[]) {
+    const videoIds = videos.map((video) => video.id).sort();
+    const sortedIds = [...ids].sort();
+    return this.compareIds(videoIds, sortedIds);
+  }
+
+  private compareIds(videoIds: number[], sortedIds: number[]) {
+    if (videoIds.length !== sortedIds.length) {
+      console.log('길이 문제');
+      return false;
+    }
+
+    for (let index = 0; index < videoIds.length; index++) {
+      if (videoIds[index] !== sortedIds[index]) {
+        console.log(videoIds[index], sortedIds[index]);
+        return false;
+      }
+    }
+
+    return true;
   }
 }
