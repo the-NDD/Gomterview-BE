@@ -32,12 +32,14 @@ import { MemberNotFoundException } from 'src/member/exception/member.exception';
 import { getSignedUrlWithKey } from 'src/util/idrive.util';
 import { PreSignedInfo } from '../interface/video.interface';
 import { UpdateVideoIndexRequest } from '../dto/updateVideoIndexRequest';
+import { VideoRelationRepository } from '../repository/videoRelation.repository';
 
 @Injectable()
 export class VideoService {
   constructor(
     private videoRepository: VideoRepository,
     private memberRepository: MemberRepository,
+    private videoRelationRepository: VideoRelationRepository,
   ) {}
 
   // async saveVideoOnCloud(
@@ -150,6 +152,11 @@ export class VideoService {
     );
 
     return videoList.map(SingleVideoResponse.from);
+  }
+
+  async findAllRelatedVideoById(videoId: number, member: Member) {
+    const children =
+      await this.videoRelationRepository.findChildrenByParentId(videoId);
   }
 
   async toggleVideoStatus(videoId: number, member: Member) {
