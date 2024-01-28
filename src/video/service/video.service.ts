@@ -5,6 +5,7 @@ import { VideoRepository } from '../repository/video.repository';
 import { v4 as uuidv4 } from 'uuid';
 import { PreSignedUrlResponse } from '../dto/preSignedUrlResponse';
 import {
+  DeleteObjectFailedException,
   IDriveException,
   InvalidHashException,
   Md5HashException,
@@ -29,9 +30,16 @@ import {
 } from 'src/util/redis.util';
 import { SingleVideoResponse } from '../dto/singleVideoResponse';
 import { MemberNotFoundException } from 'src/member/exception/member.exception';
-import { getSignedUrlWithKey } from 'src/util/idrive.util';
+import {
+  deleteObjectInIdrive,
+  getSignedUrlWithKey,
+} from 'src/util/idrive.util';
 import { PreSignedInfo } from '../interface/video.interface';
 import { UpdateVideoIndexRequest } from '../dto/updateVideoIndexRequest';
+import {
+  IDRIVE_THUMBNAIL_ENDPOINT,
+  IDRIVE_VIDEO_ENDPOINT,
+} from 'src/constant/constant';
 
 @Injectable()
 export class VideoService {
@@ -185,6 +193,7 @@ export class VideoService {
     const video = await this.videoRepository.findById(videoId);
     this.validateVideoOwnership(video, memberId);
 
+    deleteVideoAndThumbnailInIDrive(video.url, video.thumbnail);
     await this.videoRepository.remove(video);
   }
 
@@ -271,5 +280,23 @@ export class VideoService {
     }
 
     return true;
+  }
+}
+function deleteVideoAndThumbnailInIDrive(
+  videoUrl: string,
+  thumbnailUrl: string,
+) {
+  const videoKey = videoUrl.split(IDRIVE_VIDEO_ENDPOINT)[1];
+  const thumbnailKey = thumbnailUrl.split(IDRIVE_THUMBNAIL_ENDPOINT)[1];
+  try {
+    deleteObjectInIdrive(videoKey, true);
+  } catch (error) {
+    throw new DeleteObjectFailedException('비디오');
+  }
+
+  try {
+    deleteObjectInIdrive(thumbnailKey, false);
+  } catch (error) {
+    throw new DeleteObjectFailedException('썸네일 이미지');
   }
 }
