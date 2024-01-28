@@ -1,4 +1,8 @@
-import { PutObjectCommand, S3Client } from '@aws-sdk/client-s3';
+import {
+  DeleteObjectCommand,
+  PutObjectCommand,
+  S3Client,
+} from '@aws-sdk/client-s3';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 import { IDRIVE_CONFIG } from 'src/config/idrive.config';
 
@@ -21,3 +25,16 @@ export async function getSignedUrlWithKey(key: string, isVideo: boolean) {
 
   return await getSignedUrl(s3, command, { expiresIn });
 }
+
+const getDeleteCommangObject = (
+  key: string,
+  isVideo: boolean,
+): DeleteObjectCommand =>
+  new DeleteObjectCommand({
+    Bucket: isVideo ? 'videos' : 'thumbnail',
+    Key: key,
+  });
+
+export const deleteObjectInIdrive = async (key: string, isVideo: boolean) => {
+  return await s3Client.send(getDeleteCommangObject(key, isVideo));
+};
