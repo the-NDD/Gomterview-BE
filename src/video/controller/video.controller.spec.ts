@@ -3,7 +3,6 @@ import { VideoController } from './video.controller';
 import { VideoService } from '../service/video.service';
 import {
   memberFixture,
-  memberFixturesOAuthRequest,
   mockReqWithMemberFixture,
   oauthRequestFixture,
   otherMemberFixture,
@@ -58,16 +57,10 @@ import { CategoryRepository } from 'src/category/repository/category.repository'
 import { categoryFixtureWithId } from 'src/category/fixture/category.fixture';
 import { clearRedis, saveToRedis } from 'src/util/redis.util';
 import redisMock from 'ioredis-mock';
-import { Member } from 'src/member/entity/member';
 import { UpdateVideoIndexRequest } from '../dto/updateVideoIndexRequest';
-import {
-  BAD_REQUEST,
-  FORBIDDEN,
-  INTERNAL_SERVER_ERROR,
-  NOT_FOUND,
-  UNAUTHORIZED,
-} from 'src/constant/constant';
+import { BAD_REQUEST, FORBIDDEN, UNAUTHORIZED } from 'src/constant/constant';
 import { Video } from '../entity/video';
+import * as idriveUtil from 'src/util/idrive.util';
 
 describe('VideoController 단위 테스트', () => {
   let controller: VideoController;
@@ -80,8 +73,8 @@ describe('VideoController 단위 테스트', () => {
     getVideoDetailByHash: jest.fn(),
     toggleVideoStatus: jest.fn(),
     updateVideoName: jest.fn(),
-    deleteVideo: jest.fn(),
     updateIndex: jest.fn(),
+    deleteVideo: jest.fn(),
   };
 
   beforeAll(async () => {
@@ -1247,6 +1240,13 @@ describe('VideoController 통합 테스트', () => {
   describe('deleteVideo', () => {
     it('쿠키를 가지고 비디오의 삭제를 요청하면 204 상태 코드가 반환된다.', async () => {
       // give
+      // deleteObjectInIdrive 함수를 jest.fn()으로 모킹
+      const deleteObjectInIDriveSpy = jest.spyOn(
+        idriveUtil,
+        'deleteObjectInIDrive',
+      );
+      deleteObjectInIDriveSpy.mockResolvedValue(undefined);
+
       const video = await videoRepository.save(videoFixture);
 
       // when & then
@@ -1256,6 +1256,8 @@ describe('VideoController 통합 테스트', () => {
         .set('Cookie', [`accessToken=${token}`])
         .expect(204)
         .expect((res) => expect(res.body).toEqual({}));
+
+      deleteObjectInIDriveSpy.mockRestore();
     });
 
     it('쿠키 없이 비디오의 삭제를 요청하면 401 상태 코드가 반환된다.', async () => {

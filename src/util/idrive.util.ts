@@ -35,6 +35,6 @@ const getDeleteCommangObject = (
     Key: key,
   });
 
-export const deleteObjectInIdrive = async (key: string, isVideo: boolean) => {
+export const deleteObjectInIDrive = async (key: string, isVideo: boolean) => {
   return await s3Client.send(getDeleteCommangObject(key, isVideo));
 };

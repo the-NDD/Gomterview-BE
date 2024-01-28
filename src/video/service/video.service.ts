@@ -31,7 +31,7 @@ import {
 import { SingleVideoResponse } from '../dto/singleVideoResponse';
 import { MemberNotFoundException } from 'src/member/exception/member.exception';
 import {
-  deleteObjectInIdrive,
+  deleteObjectInIDrive,
   getSignedUrlWithKey,
 } from 'src/util/idrive.util';
 import { PreSignedInfo } from '../interface/video.interface';
@@ -193,7 +193,7 @@ export class VideoService {
     const video = await this.videoRepository.findById(videoId);
     this.validateVideoOwnership(video, memberId);
 
-    deleteVideoAndThumbnailInIDrive(video.url, video.thumbnail);
+    await this.deleteVideoAndThumbnailInIDrive(video.url, video.thumbnail);
     await this.videoRepository.remove(video);
   }
 
@@ -281,22 +281,23 @@ export class VideoService {
 
     return true;
   }
-}
-function deleteVideoAndThumbnailInIDrive(
-  videoUrl: string,
-  thumbnailUrl: string,
-) {
-  const videoKey = videoUrl.split(IDRIVE_VIDEO_ENDPOINT)[1];
-  const thumbnailKey = thumbnailUrl.split(IDRIVE_THUMBNAIL_ENDPOINT)[1];
-  try {
-    deleteObjectInIdrive(videoKey, true);
-  } catch (error) {
-    throw new DeleteObjectFailedException('비디오');
-  }
 
-  try {
-    deleteObjectInIdrive(thumbnailKey, false);
-  } catch (error) {
-    throw new DeleteObjectFailedException('썸네일 이미지');
+  private async deleteVideoAndThumbnailInIDrive(
+    videoUrl: string,
+    thumbnailUrl: string,
+  ) {
+    const videoKey = videoUrl.split(IDRIVE_VIDEO_ENDPOINT)[1];
+    const thumbnailKey = thumbnailUrl.split(IDRIVE_THUMBNAIL_ENDPOINT)[1];
+    try {
+      await deleteObjectInIDrive(videoKey, true);
+    } catch (error) {
+      throw new DeleteObjectFailedException('비디오');
+    }
+
+    try {
+      await deleteObjectInIDrive(thumbnailKey, false);
+    } catch (error) {
+      throw new DeleteObjectFailedException('썸네일 이미지');
+    }
   }
 }
