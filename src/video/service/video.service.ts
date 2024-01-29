@@ -155,8 +155,14 @@ export class VideoService {
   }
 
   async findAllRelatedVideoById(videoId: number, member: Member) {
-    const children =
+    let children =
       await this.videoRelationRepository.findChildrenByParentId(videoId);
+
+    if (!children[0].isOwnedBy(member)) {
+      children = children.filter((each) => each.isPublic);
+    }
+
+    return children.map(SingleVideoResponse.from);
   }
 
   async toggleVideoStatus(videoId: number, member: Member) {

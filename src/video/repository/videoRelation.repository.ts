@@ -23,6 +23,7 @@ export class VideoRelationRepository {
       .createQueryBuilder('VideoRelation')
       .leftJoinAndSelect('VideoRelation.parent', 'parent')
       .leftJoinAndSelect('VideoRelation.child', 'child')
+      .leftJoinAndSelect('child.memberId', 'memberId')
       .where('parent.id = :parentId', { parentId })
       .getMany();
     return relations.map((relation) => relation.child);
