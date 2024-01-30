@@ -23,6 +23,13 @@ export class VideoRepository {
       .getMany();
   }
 
+  async findAllByIds(ids: Number[]) {
+    return await this.videoRepository
+      .createQueryBuilder('video')
+      .where('video.id IN (:...ids)', { ids })
+      .getMany();
+  }
+
   async findById(id: number) {
     return await this.videoRepository.findOneBy({ id: Number(id) });
   }

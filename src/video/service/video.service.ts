@@ -34,6 +34,7 @@ import { PreSignedInfo } from '../interface/video.interface';
 import { UpdateVideoIndexRequest } from '../dto/updateVideoIndexRequest';
 import { VideoRelationRepository } from '../repository/videoRelation.repository';
 import { UpdateVideoRequest } from '../dto/updateVideoRequest';
+import { VideoRelation } from '../entity/videoRelation';
 
 @Injectable()
 export class VideoService {
@@ -124,8 +125,7 @@ export class VideoService {
     const memberId = member.id;
     const video = await this.videoRepository.findById(videoId);
     this.validateVideoOwnership(video, memberId);
-
-    const hash = video.isPrivate() ? null : this.getHashedUrl(video.url);
+    const hash = video.isPrivate() ? null : await this.getHashedUrl(video.url);
     return VideoDetailResponse.from(video, member.nickname, hash);
   }
 
@@ -159,11 +159,9 @@ export class VideoService {
     let children =
       await this.videoRelationRepository.findChildrenByParentId(videoId);
 
-    if (!children[0].isOwnedBy(member)) {
-      children = children.filter((each) => each.isPublic());
-    }
-
-    return children.map(SingleVideoResponse.from);
+    return children
+      .filter((each) => each.isPublic() || each.isOwnedBy(member))
+      .map(SingleVideoResponse.from);
   }
 
   async updateVideo(
@@ -174,8 +172,12 @@ export class VideoService {
     validateManipulatedToken(member);
     const video = await this.videoRepository.findById(videoId);
     this.validateVideoOwnership(video, member.id);
+    video.updateVideoInfo(updateVideoRequest);
 
+    // 비디오 엔티티 변경사항 저장
+    await this.updateRelatedVideos(updateVideoRequest.relatedVideoIds, video);
     await this.videoRepository.updateVideo(updateVideoRequest, videoId);
+    await this.updateVideoHashInRedis(video);
   }
 
   async updateIndex(
@@ -232,14 +234,17 @@ export class VideoService {
   private async updateVideoHashInRedis(video: Video) {
     const hash = this.getHashedUrl(video.url);
 
-    if (!video.isPrivate()) {
+    if (video.isPrivate()) {
       // 현재가 private이 아니면 토글 후 private이 되기에 redis에서 해시값 삭제 후 null 반환
-      await deleteFromRedis(hash);
-      return new VideoHashResponse(null);
+      try {
+        await deleteFromRedis(hash);
+        return;
+      } catch (e) {
+        return;
+      }
     }
 
     await saveToRedis(hash, video.url);
-    return new VideoHashResponse(hash);
   }
 
   private async validateMembersVideos(
@@ -263,6 +268,42 @@ export class VideoService {
     const videoIds = videos.map((video) => video.id).sort();
     const sortedIds = [...ids].sort();
     return this.compareIds(videoIds, sortedIds);
+  }
+
+  private async updateRelatedVideos(relatedVideoIds: number[], video: Video) {
+    const relations = await this.videoRelationRepository.findAllByParentId(
+      video.id,
+    );
+    await this.deleteByChildId(relations, relatedVideoIds);
+    await this.addNewRelations(relations, relatedVideoIds);
+  }
+
+  private async addNewRelations(
+    relations: VideoRelation[],
+    relatedVideoIds: number[],
+  ) {
+    const relationsIds = relations.map((each) => each.id);
+    const newIds = relatedVideoIds.filter((id) => !relationsIds.includes(id));
+    const foundVideos = await this.videoRepository.findAllByIds(newIds);
+    const parent = relations[0].parent;
+
+    if (foundVideos.length !== newIds.length)
+      throw new VideoNotFoundException();
+
+    await this.videoRelationRepository.insert(
+      foundVideos.map((child) => VideoRelation.of(parent, child)),
+    );
+  }
+
+  private async deleteByChildId(
+    relations: VideoRelation[],
+    relatedVideoIds: number[],
+  ) {
+    await this.videoRelationRepository.deleteAll(
+      relations.filter(
+        (relation) => !relatedVideoIds.includes(relation.child.id),
+      ),
+    );
   }
 
   private compareIds(videoIds: number[], sortedIds: number[]) {

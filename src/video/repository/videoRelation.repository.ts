@@ -10,7 +10,7 @@ export class VideoRelationRepository {
     private repository: Repository<VideoRelation>,
   ) {}
 
-  async insert(videoRelation: VideoRelation) {
+  async insert(videoRelation: VideoRelation | VideoRelation[]) {
     await this.repository.insert(videoRelation);
   }
 
@@ -18,14 +18,23 @@ export class VideoRelationRepository {
     await this.repository.delete({ id: videoRelation.id });
   }
 
+  async deleteAll(relations: VideoRelation[]) {
+    await this.repository.remove(relations);
+  }
+
   async findChildrenByParentId(parentId: number) {
-    const relations = await this.repository
+    return (await this.findAllByParentId(parentId)).map(
+      (relation) => relation.child,
+    );
+  }
+
+  async findAllByParentId(parentId: number) {
+    return await this.repository
       .createQueryBuilder('VideoRelation')
       .leftJoinAndSelect('VideoRelation.parent', 'parent')
       .leftJoinAndSelect('VideoRelation.child', 'child')
       .leftJoinAndSelect('child.memberId', 'memberId')
       .where('parent.id = :parentId', { parentId })
       .getMany();
-    return relations.map((relation) => relation.child);
   }
 }

@@ -66,6 +66,7 @@ describe('VideoService 단위 테스트', () => {
     updateVideo: jest.fn(),
     remove: jest.fn(),
     updateIndex: jest.fn(),
+    findAllByIds: jest.fn(),
   };
 
   const mockMemberRepository = {
@@ -74,6 +75,11 @@ describe('VideoService 단위 테스트', () => {
 
   const mockQuestionRepository = {
     findById: jest.fn(),
+  };
+
+  const mockVideoRelationRepository = {
+    findAllByParentId: jest.fn(),
+    deleteAll: jest.fn(),
   };
 
   // jest.mock('typeorm-transactional', () => ({
@@ -97,7 +103,7 @@ describe('VideoService 단위 테스트', () => {
       .overrideProvider(QuestionRepository)
       .useValue(mockQuestionRepository)
       .overrideProvider(VideoRelationRepository)
-      .useValue({})
+      .useValue(mockVideoRelationRepository)
       .compile();
 
     videoService = module.get<VideoService>(VideoService);
@@ -511,6 +517,9 @@ describe('VideoService 단위 테스트', () => {
       // when
       mockVideoRepository.findById.mockResolvedValue(video);
       mockVideoRepository.updateVideo.mockResolvedValue(undefined);
+      mockVideoRepository.findAllByIds.mockResolvedValue([]);
+      mockVideoRelationRepository.findAllByParentId.mockResolvedValue([]);
+      mockVideoRelationRepository.deleteAll.mockResolvedValue(undefined);
 
       // then
       expect(

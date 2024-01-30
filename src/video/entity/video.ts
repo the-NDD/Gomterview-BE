@@ -6,6 +6,7 @@ import { Question } from 'src/question/entity/question';
 import { CreateVideoRequest } from '../dto/createVideoRequest';
 import { DEFAULT_THUMBNAIL } from 'src/constant/constant';
 import { LINK_ONLY, PRIVATE, PUBLIC } from '../constant/videoVisibility';
+import { UpdateVideoRequest } from '../dto/updateVideoRequest';
 
 @Entity({ name: 'Video' })
 @Index('idx_video_url', ['url'])
@@ -90,5 +91,10 @@ export class Video extends DefaultEntity {
 
   public isLinkOnly() {
     return this.visibility === LINK_ONLY;
+  }
+
+  public updateVideoInfo(updateVideoRequest: UpdateVideoRequest) {
+    this.visibility = updateVideoRequest.visibility;
+    this.name = updateVideoRequest.videoName;
   }
 }
