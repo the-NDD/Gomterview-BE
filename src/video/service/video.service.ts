@@ -124,7 +124,7 @@ export class VideoService {
     const video = await this.videoRepository.findById(videoId);
     this.validateVideoOwnership(video, memberId);
 
-    const hash = video.isPublic ? this.getHashedUrl(video.url) : null;
+    const hash = !video.isPrivate() ? this.getHashedUrl(video.url) : null;
     return VideoDetailResponse.from(video, member.nickname, hash);
   }
 
@@ -136,7 +136,7 @@ export class VideoService {
 
     const video = await this.videoRepository.findByUrl(originUrl);
     if (isEmpty(video)) throw new VideoNotFoundException();
-    if (!video.isPublic) throw new VideoAccessForbiddenException();
+    if (video.isPrivate()) throw new VideoAccessForbiddenException();
     if (isEmpty(video.memberId)) throw new VideoOfWithdrawnMemberException();
 
     const videoOwner = await this.memberRepository.findById(video.memberId);
@@ -159,7 +159,7 @@ export class VideoService {
       await this.videoRelationRepository.findChildrenByParentId(videoId);
 
     if (!children[0].isOwnedBy(member)) {
-      children = children.filter((each) => each.isPublic);
+      children = children.filter((each) => each.isPublic());
     }
 
     return children.map(SingleVideoResponse.from);
@@ -237,8 +237,8 @@ export class VideoService {
   private async updateVideoHashInRedis(video: Video) {
     const hash = this.getHashedUrl(video.url);
 
-    if (video.isPublic) {
-      // 현재가 public이었으면 토글 후 private이 되기에 redis에서 해시값 삭제 후 null 반환
+    if (!video.isPrivate()) {
+      // 현재가 private이 아니면 토글 후 private이 되기에 redis에서 해시값 삭제 후 null 반환
       await deleteFromRedis(hash);
       return new VideoHashResponse(null);
     }
