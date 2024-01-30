@@ -52,8 +52,6 @@ import { DEFAULT_THUMBNAIL } from '../../constant/constant';
 import * as idriveUtil from 'src/util/idrive.util';
 import redisMock from 'ioredis-mock';
 import { UpdateVideoIndexRequest } from '../dto/updateVideoIndexRequest';
-import { Member } from 'src/member/entity/member';
-import { UpdateVideoRequest } from '../dto/updateVideoRequest';
 import { VideoRelationRepository } from '../repository/videoRelation.repository';
 
 describe('VideoService 단위 테스트', () => {
@@ -65,7 +63,7 @@ describe('VideoService 단위 테스트', () => {
     findByUrl: jest.fn(),
     findAllVideosByMemberId: jest.fn(),
     toggleVideoStatus: jest.fn(),
-    updateVideoName: jest.fn(),
+    updateVideo: jest.fn(),
     remove: jest.fn(),
     updateIndex: jest.fn(),
   };
@@ -503,130 +501,7 @@ describe('VideoService 단위 테스트', () => {
     });
   });
 
-  describe('toggleVideoStatus', () => {
-    const member = memberFixture;
-
-    it('비디오 상태 토글 시 VideoHashResponse의 형태로 반환된다.', async () => {
-      // give
-      const video = videoFixture;
-
-      // when
-      mockVideoRepository.findById.mockResolvedValue(video);
-
-      // then
-      const result = await videoService.toggleVideoStatus(video.id, member);
-
-      expect(result).toBeInstanceOf(VideoHashResponse);
-      expect(result.hash).toBeNull(); // public 비디오를 토글했으므로, 해시는 null값이 와야함
-    });
-
-    it('비디오 상태 토글 시 비디오가 원래 private이었다면 토글 후 url의 해시값이 반환된다.', async () => {
-      // give
-      const video = privateVideoFixture;
-
-      // when
-      mockVideoRepository.findById.mockResolvedValue(video);
-
-      // then
-      const result = await videoService.toggleVideoStatus(video.id, member);
-
-      expect(result).toBeInstanceOf(VideoHashResponse);
-      expect(result.hash).toBe(
-        crypto.createHash('md5').update(video.url).digest('hex'),
-      );
-      expect(result.hash).toHaveLength(32);
-    });
-
-    it('비디오 상태 토글 시 member가 없으면 ManipulatedTokenNotFiltered을 반환한다.', () => {
-      // given
-      const video = videoFixture;
-      const member = undefined;
-
-      // when
-
-      // then
-      expect(videoService.toggleVideoStatus(video.id, member)).rejects.toThrow(
-        ManipulatedTokenNotFiltered,
-      );
-    });
-
-    it('비디오 상태 토글 시 이미 삭제된 비디오의 상태를 토글하려고 하면 VideoNotFoundException을 반환한다.', () => {
-      // given
-      const video = videoFixture;
-
-      // when
-      mockVideoRepository.findById.mockResolvedValue(undefined);
-
-      // then
-      expect(videoService.toggleVideoStatus(video.id, member)).rejects.toThrow(
-        VideoNotFoundException,
-      );
-    });
-
-    it('비디오 상태 토글 시 자신의 것이 아닌 비디오의 상태를 토글하려고 하면 VideoAccessForbiddenException을 반환한다.', () => {
-      // given
-      const video = videoOfOtherFixture;
-
-      // when
-      mockVideoRepository.findById.mockResolvedValue(video);
-
-      // then
-      expect(videoService.toggleVideoStatus(video.id, member)).rejects.toThrow(
-        VideoAccessForbiddenException,
-      );
-    });
-
-    it('비디오 상태 토글 시 해시값을 생성하던 중 오류가 발생하면 Md5HashException을 반환한다.', () => {
-      // given
-      const video = videoFixture;
-
-      // when
-      const createHashSpy = jest.spyOn(crypto, 'createHash');
-      createHashSpy.mockImplementationOnce(() => {
-        throw new Md5HashException();
-      });
-      mockVideoRepository.findById.mockResolvedValue(video);
-
-      // then
-      expect(videoService.toggleVideoStatus(video.id, member)).rejects.toThrow(
-        Md5HashException,
-      );
-    });
-
-    it('비디오 상태 토글 시 redis에서 값을 삭제하던 중 오류가 발생하면 RedisDeleteException을 반환한다.', async () => {
-      // given
-      const video = videoFixture;
-      const deleteFromRedisSpy = jest.spyOn(redisUtil, 'deleteFromRedis');
-
-      // when
-      deleteFromRedisSpy.mockRejectedValue(new RedisDeleteException());
-      mockVideoRepository.findById.mockResolvedValue(video);
-
-      // then
-      await expect(
-        videoService.toggleVideoStatus(video.id, member),
-      ).rejects.toThrow(RedisDeleteException);
-      deleteFromRedisSpy.mockRestore();
-    });
-
-    it('비디오 상태 토글 시 redis에서 값을 얻어오던 중 오류가 발생하면 RedisRetrieveException을 반환한다.', async () => {
-      // given
-      const video = privateVideoFixture;
-      const saveToRedisSpy = jest.spyOn(redisUtil, 'saveToRedis');
-
-      // when
-      saveToRedisSpy.mockRejectedValue(new RedisRetrieveException());
-      mockVideoRepository.findById.mockResolvedValue(video);
-
-      // then
-      await expect(
-        videoService.toggleVideoStatus(video.id, member),
-      ).rejects.toThrow(RedisRetrieveException);
-      saveToRedisSpy.mockRestore();
-    });
-  });
-
-  describe('updateVideoName', () => {
+  describe('updateVideo', () => {
     const member = memberFixture;
 
     it('비디오 이름 변경 성공 시 undefined로 반환된다.', async () => {
@@ -635,15 +510,11 @@ describe('VideoService 단위 테스트', () => {
 
       // when
       mockVideoRepository.findById.mockResolvedValue(video);
-      mockVideoRepository.updateVideoName.mockResolvedValue(undefined);
+      mockVideoRepository.updateVideo.mockResolvedValue(undefined);
 
       // then
       expect(
-        videoService.updateVideoName(
-          video.id,
-          member,
-          updateVideoRequestFixture.videoName,
-        ),
+        videoService.updateVideo(updateVideoRequestFixture, member, video.id),
       ).resolves.toBeUndefined();
     });
 
@@ -656,11 +527,7 @@ describe('VideoService 단위 테스트', () => {
 
       // then
       expect(
-        videoService.updateVideoName(
-          video.id,
-          member,
-          updateVideoRequestFixture.videoName,
-        ),
+        videoService.updateVideo(updateVideoRequestFixture, member, video.id),
       ).rejects.toThrow(ManipulatedTokenNotFiltered);
     });
 
@@ -673,11 +540,7 @@ describe('VideoService 단위 테스트', () => {
 
       // then
       expect(
-        videoService.updateVideoName(
-          video.id,
-          member,
-          updateVideoRequestFixture.videoName,
-        ),
+        videoService.updateVideo(updateVideoRequestFixture, member, video.id),
       ).rejects.toThrow(VideoNotFoundException);
     });
 
@@ -690,11 +553,7 @@ describe('VideoService 단위 테스트', () => {
 
       // then
       expect(
-        videoService.updateVideoName(
-          video.id,
-          member,
-          updateVideoRequestFixture.videoName,
-        ),
+        videoService.updateVideo(updateVideoRequestFixture, member, video.id),
       ).rejects.toThrow(VideoAccessForbiddenException);
     });
   });
@@ -1125,7 +984,7 @@ describe('VideoService 통합 테스트', () => {
       expect(result[0].thumbnail).toBe(video.thumbnail);
       expect(result[0].videoName).toBe(video.name);
       expect(result[0].videoLength).toBe(video.videoLength);
-      expect(result[0].isPublic).toBe(video.isPublic);
+      expect(result[0].visibility).toBe(video.visibility);
     });
 
     it('비디오 전체 조회 시 비디오가 없다면 빈 배열을 반환한다.', async () => {
@@ -1153,77 +1012,7 @@ describe('VideoService 통합 테스트', () => {
     });
   });
 
-  describe('toggleVideoStatus', () => {
-    it('비디오 상태 토글 시 private 비디오를 토글하면 VideoHashResponse 형식으로 반횐된다.', async () => {
-      // given
-      const member = memberFixture;
-      const video = await videoRepository.save(privateVideoFixture);
-
-      // when
-      const result = await videoService.toggleVideoStatus(video.id, member);
-
-      // then
-      expect(result).toBeInstanceOf(VideoHashResponse);
-      expect(result.hash).toBe(
-        crypto.createHash('md5').update(video.url).digest('hex'),
-      );
-    });
-
-    it('비디오 상태 토글 시 public 비디오를 토글하면 해시가 null로 반환된다.', async () => {
-      // given
-      const member = memberFixture;
-      const video = await videoRepository.save(videoFixture);
-
-      // when
-      const result = await videoService.toggleVideoStatus(video.id, member);
-
-      // then
-      expect(result).toBeInstanceOf(VideoHashResponse);
-      expect(result.hash).toBeNull();
-    });
-
-    it('비디오 상태 토글 시 member가 없으면 ManipulatedTokenNotFiltered를 반환한다.', async () => {
-      //given
-      const member = null;
-      const video = await videoRepository.save(videoFixture);
-
-      //when
-
-      //then
-      expect(videoService.toggleVideoStatus(video.id, member)).rejects.toThrow(
-        ManipulatedTokenNotFiltered,
-      );
-    });
-
-    it('비디오 상태 토글 시 존재하지 않는 비디오의 상태를 토글하려 하면 VideoNotFoundException을 반환한다.', async () => {
-      //given
-      const member = memberFixture;
-      const video = await videoRepository.save(videoFixture);
-
-      //when
-
-      //then
-      expect(
-        videoService.toggleVideoStatus(video.id + 1000, member),
-      ).rejects.toThrow(VideoNotFoundException);
-    });
-
-    it('비디오 상태 토글 시 다른 사람의 비디오를 토글하려 하면 VideoAccessForbiddenException을 반환한다.', async () => {
-      //given
-      const member = memberFixture;
-      await memberRepository.save(otherMemberFixture);
-      const video = await videoRepository.save(videoOfOtherFixture);
-
-      //when
-
-      //then
-      expect(videoService.toggleVideoStatus(video.id, member)).rejects.toThrow(
-        VideoAccessForbiddenException,
-      );
-    });
-  });
-
-  describe('updateVideoName', () => {
+  describe('updateVideo', () => {
     it('비디오 이름 변경 성공 시 undefined로 반환된다.', async () => {
       // given
       const member = memberFixture;
@@ -1231,11 +1020,7 @@ describe('VideoService 통합 테스트', () => {
 
       // when & then
       expect(
-        videoService.updateVideoName(
-          video.id,
-          member,
-          updateVideoRequestFixture.videoName,
-        ),
+        videoService.updateVideo(updateVideoRequestFixture, member, video.id),
       ).resolves.toBeUndefined();
     });
 
@@ -1246,11 +1031,7 @@ describe('VideoService 통합 테스트', () => {
 
       // when & then
       expect(
-        videoService.updateVideoName(
-          video.id,
-          member,
-          updateVideoRequestFixture.videoName,
-        ),
+        videoService.updateVideo(updateVideoRequestFixture, member, video.id),
       ).rejects.toThrow(ManipulatedTokenNotFiltered);
     });
 
@@ -1261,11 +1042,7 @@ describe('VideoService 통합 테스트', () => {
 
       // when & then
       expect(
-        videoService.updateVideoName(
-          video.id + 1000,
-          member,
-          updateVideoRequestFixture.videoName,
-        ),
+        videoService.updateVideo(updateVideoRequestFixture, member, 100),
       ).rejects.toThrow(VideoNotFoundException);
     });
 
@@ -1277,11 +1054,7 @@ describe('VideoService 통합 테스트', () => {
 
       // when & then
       expect(
-        videoService.updateVideoName(
-          video.id,
-          member,
-          updateVideoRequestFixture.videoName,
-        ),
+        videoService.updateVideo(updateVideoRequestFixture, member, video.id),
       ).rejects.toThrow(VideoAccessForbiddenException);
     });
   });

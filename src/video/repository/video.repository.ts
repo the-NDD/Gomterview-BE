@@ -2,6 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Video } from '../entity/video';
+import { UpdateVideoRequest } from '../dto/updateVideoRequest';
 
 @Injectable()
 export class VideoRepository {
@@ -45,6 +46,18 @@ export class VideoRepository {
       .update(Video)
       .set({ name })
       .where('id = :id', { id: Number(videoId) })
+      .execute();
+  }
+
+  async updateVideo(updateRequest: UpdateVideoRequest, videoId: number) {
+    return await this.videoRepository
+      .createQueryBuilder()
+      .update(Video)
+      .set({
+        name: updateRequest.videoName,
+        visibility: updateRequest.visibility,
+      })
+      .where('id= :id', { id: Number(videoId) })
       .execute();
   }
 

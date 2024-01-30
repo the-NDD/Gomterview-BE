@@ -33,6 +33,7 @@ import { getSignedUrlWithKey } from 'src/util/idrive.util';
 import { PreSignedInfo } from '../interface/video.interface';
 import { UpdateVideoIndexRequest } from '../dto/updateVideoIndexRequest';
 import { VideoRelationRepository } from '../repository/videoRelation.repository';
+import { UpdateVideoRequest } from '../dto/updateVideoRequest';
 
 @Injectable()
 export class VideoService {
@@ -124,7 +125,7 @@ export class VideoService {
     const video = await this.videoRepository.findById(videoId);
     this.validateVideoOwnership(video, memberId);
 
-    const hash = !video.isPrivate() ? this.getHashedUrl(video.url) : null;
+    const hash = video.isPrivate() ? null : this.getHashedUrl(video.url);
     return VideoDetailResponse.from(video, member.nickname, hash);
   }
 
@@ -165,22 +166,16 @@ export class VideoService {
     return children.map(SingleVideoResponse.from);
   }
 
-  async toggleVideoStatus(videoId: number, member: Member) {
-    validateManipulatedToken(member);
-    const memberId = member.id;
-    const video = await this.videoRepository.findById(videoId);
-    this.validateVideoOwnership(video, memberId);
-
-    await this.videoRepository.toggleVideoStatus(videoId); // TODO: 좀 더 효율적인 Patch 로직이 있나 확인
-    return this.updateVideoHashInRedis(video);
-  }
-
-  async updateVideoName(videoId: number, member: Member, name: string) {
+  async updateVideo(
+    updateVideoRequest: UpdateVideoRequest,
+    member: Member,
+    videoId: number,
+  ) {
     validateManipulatedToken(member);
     const video = await this.videoRepository.findById(videoId);
     this.validateVideoOwnership(video, member.id);
 
-    await this.videoRepository.updateVideoName(videoId, name);
+    await this.videoRepository.updateVideo(updateVideoRequest, videoId);
   }
 
   async updateIndex(

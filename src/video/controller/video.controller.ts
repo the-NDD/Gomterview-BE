@@ -202,48 +202,48 @@ export class VideoController {
     );
   }
 
-  @Patch(':videoId')
-  @UseGuards(TokenHardGuard)
-  @ApiCookieAuth()
-  @ApiOperation({
-    summary: '비디오 공개/비공개 상태를 전환',
-  })
-  @ApiResponse(
-    createApiResponseOption(200, '비디오 상태 전환 완료', VideoHashResponse),
-  )
-  @ApiResponse(VideoAccessForbiddenException.response())
-  @ApiResponse(VideoNotFoundException.response())
-  @ApiResponse(createApiResponseOption(500, 'V05, V06, V07, SERVER', null))
-  async toggleVideoStatus(
-    @Param('videoId') videoId: number,
-    @Req() req: Request,
-  ) {
-    return await this.videoService.toggleVideoStatus(
-      videoId,
-      req.user as Member,
-    );
-  }
+  // @Patch(':videoId')
+  // @UseGuards(TokenHardGuard)
+  // @ApiCookieAuth()
+  // @ApiOperation({
+  //   summary: '비디오 공개/비공개 상태를 전환',
+  // })
+  // @ApiResponse(
+  //   createApiResponseOption(200, '비디오 상태 전환 완료', VideoHashResponse),
+  // )
+  // @ApiResponse(VideoAccessForbiddenException.response())
+  // @ApiResponse(VideoNotFoundException.response())
+  // @ApiResponse(createApiResponseOption(500, 'V05, V06, V07, SERVER', null))
+  // async toggleVideoStatus(
+  //   @Param('videoId') videoId: number,
+  //   @Req() req: Request,
+  // ) {
+  //   return await this.videoService.toggleVideoStatus(
+  //     videoId,
+  //     req.user as Member,
+  //   );
+  // }
 
-  @Patch('/name/:videoId')
+  @Patch('/:videoId')
   @UseGuards(TokenHardGuard)
   @ApiCookieAuth()
   @ApiBody({ type: UpdateVideoRequest })
   @ApiOperation({
-    summary: '비디오 이름 변경',
+    summary: '비디오 정보 수정(이름/공개여부/관계 영상 수정)',
   })
-  @ApiResponse(createApiResponseOption(200, '비디오 이름 변경 완료', null))
+  @ApiResponse(createApiResponseOption(200, '비디오 수정 완료', null))
   @ApiResponse(VideoAccessForbiddenException.response())
   @ApiResponse(VideoNotFoundException.response())
   @ApiResponse(ManipulatedTokenNotFiltered.response())
-  async updateVideoName(
+  async updateVideoInfo(
     @Param('videoId') videoId: number,
     @Req() req: Request,
     @Body() updateVideoRequest: UpdateVideoRequest,
   ) {
-    await this.videoService.updateVideoName(
-      videoId,
+    await this.videoService.updateVideo(
+      updateVideoRequest,
       req.user as Member,
-      updateVideoRequest.videoName,
+      videoId,
     );
   }
 

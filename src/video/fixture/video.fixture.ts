@@ -81,7 +81,7 @@ export const privateVideoFixture = new Video(
   'https://priavte-test.com',
   'https://thumbnail-test.com',
   '03:29',
-  PUBLIC,
+  PRIVATE,
 );
 
 export const videoOfOtherFixture = new Video(
@@ -124,6 +124,8 @@ export const thumbnailPreSignedInfoFixture = {
 
 export const updateVideoRequestFixture = {
   videoName: 'example.mp4',
+  visibility: 'PUBLIC',
+  relatedVideoIds: [],
 };
 
 const arr = [2, 1, 4, 3];
