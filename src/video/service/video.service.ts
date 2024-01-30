@@ -35,6 +35,7 @@ import { UpdateVideoIndexRequest } from '../dto/updateVideoIndexRequest';
 import { VideoRelationRepository } from '../repository/videoRelation.repository';
 import { UpdateVideoRequest } from '../dto/updateVideoRequest';
 import { VideoRelation } from '../entity/videoRelation';
+import { MemberVideoResponse } from '../dto/MemberVideoResponse';
 
 @Injectable()
 export class VideoService {
@@ -162,6 +163,12 @@ export class VideoService {
     return children
       .filter((each) => each.isPublic() || each.isOwnedBy(member))
       .map(SingleVideoResponse.from);
+  }
+
+  async findPublicVideos() {
+    return (await this.videoRepository.findAllPublicVideos()).map((video) =>
+      MemberVideoResponse.from(video),
+    );
   }
 
   async updateVideo(

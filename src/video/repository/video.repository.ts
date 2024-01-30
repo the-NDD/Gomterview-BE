@@ -3,6 +3,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Video } from '../entity/video';
 import { UpdateVideoRequest } from '../dto/updateVideoRequest';
+import { PUBLIC } from '../constant/videoVisibility';
 
 @Injectable()
 export class VideoRepository {
@@ -27,6 +28,15 @@ export class VideoRepository {
     return await this.videoRepository
       .createQueryBuilder('video')
       .where('video.id IN (:...ids)', { ids })
+      .getMany();
+  }
+
+  async findAllPublicVideos() {
+    return await this.videoRepository
+      .createQueryBuilder('video')
+      .leftJoin('video.member', 'member')
+      .where('video.visibility =:visibility', { visibility: PUBLIC })
+      .orderBy('video.createdAt')
       .getMany();
   }
 

@@ -181,6 +181,11 @@ export class VideoController {
     );
   }
 
+  @Get('/public')
+  async findPublicVideos() {
+    return await this.videoService.findPublicVideos();
+  }
+
   @Patch('/index')
   @UseGuards(TokenHardGuard)
   @ApiCookieAuth()
