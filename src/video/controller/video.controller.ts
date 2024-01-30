@@ -36,6 +36,7 @@ import {
 import { ManipulatedTokenNotFiltered } from 'src/token/exception/token.exception';
 import { UpdateVideoIndexRequest } from '../dto/updateVideoIndexRequest';
 import { TokenSoftGuard } from 'src/token/guard/token.soft.guard';
+import { RelatableVideoResponse } from '../dto/RelatableVideoResponse';
 
 @Controller('/api/video')
 @ApiTags('video')
@@ -157,6 +158,33 @@ export class VideoController {
   @ApiResponse(createApiResponseOption(500, 'V08, SERVER', null))
   async getVideoDetail(@Param('videoId') videoId: number, @Req() req: Request) {
     return await this.videoService.getVideoDetail(videoId, req.user as Member);
+  }
+
+  @Get('/relate/:videoId')
+  @UseGuards(TokenHardGuard)
+  @ApiCookieAuth()
+  @ApiOperation({
+    summary: '연관영상으로 등록할 수 있는 모든 영상을 조회한다.',
+  })
+  @ApiResponse(
+    createApiResponseOption(
+      200,
+      '연관영상으로 등록할 수 있는 모든 영상 조회 완료',
+      [RelatableVideoResponse],
+    ),
+  )
+  @ApiResponse(VideoAccessForbiddenException.response())
+  @ApiResponse(VideoNotFoundException.response())
+  @ApiResponse(ManipulatedTokenNotFiltered.response())
+  @ApiResponse(createApiResponseOption(500, 'V08, SERVER', null))
+  async getRelatableVideos(
+    @Param('videoId') videoId: number,
+    @Req() req: Request,
+  ) {
+    return await this.videoService.findRelatableVideos(
+      videoId,
+      req.user as Member,
+    );
   }
 
   @Get('/related/:videoId')
