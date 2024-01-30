@@ -73,4 +73,8 @@ export class Video extends DefaultEntity {
       false,
     );
   }
+
+  public isOwnedBy(member?: Member) {
+    return !!member && this.memberId === member.getId();
+  }
 }

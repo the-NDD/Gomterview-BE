@@ -35,6 +35,7 @@ import {
 } from '../exception/video.exception';
 import { ManipulatedTokenNotFiltered } from 'src/token/exception/token.exception';
 import { UpdateVideoIndexRequest } from '../dto/updateVideoIndexRequest';
+import { TokenSoftGuard } from 'src/token/guard/token.soft.guard';
 
 @Controller('/api/video')
 @ApiTags('video')
@@ -156,6 +157,28 @@ export class VideoController {
   @ApiResponse(createApiResponseOption(500, 'V08, SERVER', null))
   async getVideoDetail(@Param('videoId') videoId: number, @Req() req: Request) {
     return await this.videoService.getVideoDetail(videoId, req.user as Member);
+  }
+
+  @Get('/related/:videoId')
+  @UseGuards(TokenSoftGuard)
+  @ApiCookieAuth()
+  @ApiOperation({
+    summary: '관계된 비디오 정보 조회',
+  })
+  @ApiResponse(
+    createApiResponseOption(200, '관계된 비디오 조회 완료', [
+      SingleVideoResponse,
+    ]),
+  )
+  @ApiResponse(VideoNotFoundException.response())
+  async findRelatedVideoById(
+    @Param('videoId') videoId: number,
+    @Req() req: Request,
+  ) {
+    return await this.videoService.findAllRelatedVideoById(
+      videoId,
+      req.user as Member,
+    );
   }
 
   @Patch('/index')
