@@ -176,7 +176,7 @@ export class VideoService {
 
     // 비디오 엔티티 변경사항 저장
     await this.updateRelatedVideos(updateVideoRequest.relatedVideoIds, video);
-    await this.videoRepository.updateVideo(updateVideoRequest, videoId);
+    await this.videoRepository.save(video);
     await this.updateVideoHashInRedis(video);
   }
 
@@ -275,23 +275,23 @@ export class VideoService {
       video.id,
     );
     await this.deleteByChildId(relations, relatedVideoIds);
-    await this.addNewRelations(relations, relatedVideoIds);
+    await this.addNewRelations(relations, relatedVideoIds, video);
   }
 
   private async addNewRelations(
     relations: VideoRelation[],
     relatedVideoIds: number[],
+    video: Video,
   ) {
     const relationsIds = relations.map((each) => each.id);
     const newIds = relatedVideoIds.filter((id) => !relationsIds.includes(id));
     const foundVideos = await this.videoRepository.findAllByIds(newIds);
-    const parent = relations[0].parent;
 
     if (foundVideos.length !== newIds.length)
       throw new VideoNotFoundException();
 
     await this.videoRelationRepository.insert(
-      foundVideos.map((child) => VideoRelation.of(parent, child)),
+      foundVideos.map((child) => VideoRelation.of(video, child)),
     );
   }
 
