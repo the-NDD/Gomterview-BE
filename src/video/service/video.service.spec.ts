@@ -80,6 +80,7 @@ describe('VideoService 단위 테스트', () => {
   const mockVideoRelationRepository = {
     findAllByParentId: jest.fn(),
     deleteAll: jest.fn(),
+    insert: jest.fn(),
   };
 
   // jest.mock('typeorm-transactional', () => ({
@@ -520,6 +521,7 @@ describe('VideoService 단위 테스트', () => {
       mockVideoRepository.findAllByIds.mockResolvedValue([]);
       mockVideoRelationRepository.findAllByParentId.mockResolvedValue([]);
       mockVideoRelationRepository.deleteAll.mockResolvedValue(undefined);
+      mockVideoRelationRepository.insert.mockResolvedValue(undefined);
 
       // then
       expect(
