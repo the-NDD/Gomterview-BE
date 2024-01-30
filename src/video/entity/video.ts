@@ -9,6 +9,7 @@ import { DEFAULT_THUMBNAIL } from 'src/constant/constant';
 @Entity({ name: 'Video' })
 @Index('idx_video_url', ['url'])
 @Index('idx_video_myPageIndex', ['myPageIndex'])
+@Index('idx_visibility', ['visibility'])
 export class Video extends DefaultEntity {
   @Column({ nullable: true })
   memberId: number;
