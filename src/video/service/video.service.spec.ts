@@ -54,6 +54,7 @@ import redisMock from 'ioredis-mock';
 import { UpdateVideoIndexRequest } from '../dto/updateVideoIndexRequest';
 import { Member } from 'src/member/entity/member';
 import { UpdateVideoRequest } from '../dto/updateVideoRequest';
+import { VideoRelationRepository } from '../repository/videoRelation.repository';
 
 describe('VideoService 단위 테스트', () => {
   let videoService: VideoService;
@@ -86,6 +87,7 @@ describe('VideoService 단위 테스트', () => {
       providers: [
         VideoService,
         VideoRepository,
+        VideoRelationRepository,
         MemberRepository,
         QuestionRepository,
       ],
@@ -96,6 +98,8 @@ describe('VideoService 단위 테스트', () => {
       .useValue(mockMemberRepository)
       .overrideProvider(QuestionRepository)
       .useValue(mockQuestionRepository)
+      .overrideProvider(VideoRelationRepository)
+      .useValue({})
       .compile();
 
     videoService = module.get<VideoService>(VideoService);
