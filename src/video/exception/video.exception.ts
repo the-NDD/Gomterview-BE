@@ -124,3 +124,13 @@ export class VideoLackException extends HttpBadRequestException {
     return createApiResponseOption(BAD_REQUEST, 'V11', null);
   }
 }
+
+export class DeleteObjectFailedException extends HttpInternalServerError {
+  constructor(type: string) {
+    super(`IDrive에서 ${type} 삭제 중에 오류가 발생했습니다.`, 'V12');
+  }
+
+  static response() {
+    return createApiResponseOption(INTERNAL_SERVER_ERROR, 'V12', null);
+  }
+}

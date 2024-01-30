@@ -52,8 +52,6 @@ import { DEFAULT_THUMBNAIL } from '../../constant/constant';
 import * as idriveUtil from 'src/util/idrive.util';
 import redisMock from 'ioredis-mock';
 import { UpdateVideoIndexRequest } from '../dto/updateVideoIndexRequest';
-import { Member } from 'src/member/entity/member';
-import { UpdateVideoRequest } from '../dto/updateVideoRequest';
 
 describe('VideoService 단위 테스트', () => {
   let videoService: VideoService;
@@ -780,8 +778,14 @@ describe('VideoService 단위 테스트', () => {
   describe('deleteVideo', () => {
     const member = memberFixture;
 
-    it('비디오 삭제 성공 시 undefined로 반환된다.', () => {
+    it('비디오 삭제 성공 시 undefined로 반환된다.', async () => {
       // given
+      const deleteObjectInIDriveSpy = jest.spyOn(
+        idriveUtil,
+        'deleteObjectInIDrive',
+      );
+      deleteObjectInIDriveSpy.mockResolvedValue(undefined);
+
       const video = videoFixture;
 
       // when
@@ -789,9 +793,11 @@ describe('VideoService 단위 테스트', () => {
       mockVideoRepository.remove.mockResolvedValue(undefined);
 
       // then
-      expect(
+      await expect(
         videoService.deleteVideo(video.id, member),
       ).resolves.toBeUndefined();
+
+      deleteObjectInIDriveSpy.mockRestore();
     });
 
     it('비디오 삭제 시 member가 없으면 ManipulatedTokenNotFiltered을 반환한다.', () => {
@@ -1361,6 +1367,12 @@ describe('VideoService 통합 테스트', () => {
   describe('deleteVideo', () => {
     it('비디오 삭제에 성공하면 undefined를 반환한다.', async () => {
       // given
+      const deleteObjectInIDriveSpy = jest.spyOn(
+        idriveUtil,
+        'deleteObjectInIDrive',
+      );
+      deleteObjectInIDriveSpy.mockResolvedValue(undefined);
+
       const member = memberFixture;
       const video = await videoRepository.save(videoFixture);
 
@@ -1370,6 +1382,8 @@ describe('VideoService 통합 테스트', () => {
       await expect(
         videoService.deleteVideo(video.id, member),
       ).resolves.toBeUndefined();
+
+      deleteObjectInIDriveSpy.mockRestore();
     });
 
     it('비디오 삭제 시 member가 없으면 ManipulatedTokenNotFiltered를 반환한다.', async () => {

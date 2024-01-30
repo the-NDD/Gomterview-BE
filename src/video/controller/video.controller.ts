@@ -233,7 +233,7 @@ export class VideoController {
   @ApiResponse(createApiResponseOption(204, '비디오 삭제 완료', null))
   @ApiResponse(VideoAccessForbiddenException.response())
   @ApiResponse(VideoNotFoundException.response())
-  @ApiResponse(ManipulatedTokenNotFiltered.response())
+  @ApiResponse(createApiResponseOption(500, 'V12, SERVER', null))
   async deleteVideo(
     @Param('videoId') videoId: number,
     @Req() req: Request,
