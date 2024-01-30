@@ -36,6 +36,7 @@ import { VideoRelationRepository } from '../repository/videoRelation.repository'
 import { UpdateVideoRequest } from '../dto/updateVideoRequest';
 import { VideoRelation } from '../entity/videoRelation';
 import { MemberVideoResponse } from '../dto/MemberVideoResponse';
+import { RelatableVideoResponse } from '../dto/RelatableVideoResponse';
 
 @Injectable()
 export class VideoService {
@@ -171,6 +172,22 @@ export class VideoService {
     );
   }
 
+  async findRelatableVideos(videoId: number, member: Member) {
+    validateManipulatedToken(member);
+    this.validateVideoOwnership(
+      await this.videoRepository.findById(videoId),
+      member.id,
+    );
+
+    const otherVideos = await this.findMyVideoOtherThan(videoId, member.id);
+    const videosChild =
+      await this.videoRelationRepository.findChildrenByParentId(videoId);
+
+    return otherVideos.map((video) =>
+      RelatableVideoResponse.from(video, videosChild.includes(video)),
+    );
+  }
+
   async updateVideo(
     updateVideoRequest: UpdateVideoRequest,
     member: Member,
@@ -300,6 +317,12 @@ export class VideoService {
     await this.videoRelationRepository.insert(
       foundVideos.map((child) => VideoRelation.of(video, child)),
     );
+  }
+
+  private async findMyVideoOtherThan(videoId: number, memberId: number) {
+    return (
+      await this.videoRepository.findAllVideosByMemberId(memberId)
+    ).filter((each) => each.id !== videoId);
   }
 
   private async deleteByChildId(
