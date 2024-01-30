@@ -36,8 +36,8 @@ export class Video extends DefaultEntity {
   @Column()
   videoLength: string;
 
-  @Column({ default: false })
-  isPublic: boolean;
+  @Column({ default: 'PUBLIC' })
+  visibility: string;
 
   @Column({ default: 0 })
   myPageIndex: number;
@@ -49,7 +49,7 @@ export class Video extends DefaultEntity {
     url: string,
     thumbnail: string,
     videoLength: string,
-    isPublic: boolean,
+    visibility: string,
   ) {
     super(undefined, new Date());
     this.memberId = memberId;
@@ -58,7 +58,7 @@ export class Video extends DefaultEntity {
     this.url = url;
     this.thumbnail = thumbnail;
     this.videoLength = videoLength;
-    this.isPublic = isPublic;
+    this.visibility = visibility;
     this.myPageIndex = 0;
   }
 
@@ -70,11 +70,23 @@ export class Video extends DefaultEntity {
       createVideoRequest.url,
       createVideoRequest.thumbnail || DEFAULT_THUMBNAIL,
       createVideoRequest.videoLength,
-      false,
+      'LINK_ONLY',
     );
   }
 
   public isOwnedBy(member?: Member) {
     return !!member && this.memberId === member.getId();
+  }
+
+  public isPublic() {
+    return this.visibility === 'PUBLIC';
+  }
+
+  public isPrivate() {
+    return this.visibility === 'PRIVATE';
+  }
+
+  public isLinkOnly() {
+    return this.visibility === 'LINK_ONLY';
   }
 }
