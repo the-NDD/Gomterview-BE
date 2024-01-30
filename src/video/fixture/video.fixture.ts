@@ -1,3 +1,4 @@
+import { PRIVATE, PUBLIC } from '../constant/videoVisibility';
 import { CreateVideoRequest } from '../dto/createVideoRequest';
 import { UpdateVideoIndexRequest } from '../dto/updateVideoIndexRequest';
 import { Video } from '../entity/video';
@@ -11,7 +12,7 @@ export const videoListExample = [
     'https://test-video1.com',
     'https://test-thumbnail1.com',
     '02:42',
-    false,
+    PRIVATE,
   ),
   new Video(
     1,
@@ -20,7 +21,7 @@ export const videoListExample = [
     'https://test-video2.com',
     'https://test-thumbnail2.com',
     '02:42',
-    false,
+    PRIVATE,
   ),
   new Video(
     1,
@@ -29,7 +30,7 @@ export const videoListExample = [
     'https://test-video3.com',
     'https://test-thumbnail3.com',
     '02:42',
-    false,
+    PRIVATE,
   ),
   new Video(
     1,
@@ -38,7 +39,7 @@ export const videoListExample = [
     'https://test-video4.com',
     'https://test-thumbnail4.com',
     '02:42',
-    false,
+    PRIVATE,
   ),
 ].slice(0, 4);
 
@@ -50,7 +51,7 @@ export const videoListFixture = [
     'https://test.com',
     'https://thumbnail-test.com',
     '03:29',
-    true,
+    PUBLIC,
   ),
   new Video(
     1,
@@ -59,7 +60,7 @@ export const videoListFixture = [
     'https://foo.com',
     'https://bar-test.com',
     '02:12',
-    false,
+    PUBLIC,
   ),
 ];
 
@@ -70,7 +71,7 @@ export const videoFixture = new Video(
   'https://test.com',
   'https://thumbnail-test.com',
   '03:29',
-  true,
+  PUBLIC,
 );
 
 export const privateVideoFixture = new Video(
@@ -80,7 +81,7 @@ export const privateVideoFixture = new Video(
   'https://priavte-test.com',
   'https://thumbnail-test.com',
   '03:29',
-  false,
+  PUBLIC,
 );
 
 export const videoOfOtherFixture = new Video(
@@ -90,7 +91,7 @@ export const videoOfOtherFixture = new Video(
   'https://test.com',
   'https://thumbnail-test.com',
   '03:29',
-  false,
+  PRIVATE,
 );
 
 export const videoOfWithdrawnMemberFixture = new Video(
@@ -100,7 +101,7 @@ export const videoOfWithdrawnMemberFixture = new Video(
   'https://test.com',
   'https://thumbnail-test.com',
   '03:29',
-  true,
+  PUBLIC,
 );
 
 export const createVideoRequestFixture = new CreateVideoRequest(

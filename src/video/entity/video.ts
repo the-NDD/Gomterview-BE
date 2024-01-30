@@ -5,6 +5,7 @@ import { Member } from 'src/member/entity/member';
 import { Question } from 'src/question/entity/question';
 import { CreateVideoRequest } from '../dto/createVideoRequest';
 import { DEFAULT_THUMBNAIL } from 'src/constant/constant';
+import { LINK_ONLY, PRIVATE, PUBLIC } from '../constant/videoVisibility';
 
 @Entity({ name: 'Video' })
 @Index('idx_video_url', ['url'])
@@ -71,7 +72,7 @@ export class Video extends DefaultEntity {
       createVideoRequest.url,
       createVideoRequest.thumbnail || DEFAULT_THUMBNAIL,
       createVideoRequest.videoLength,
-      'LINK_ONLY',
+      LINK_ONLY,
     );
   }
 
@@ -80,14 +81,14 @@ export class Video extends DefaultEntity {
   }
 
   public isPublic() {
-    return this.visibility === 'PUBLIC';
+    return this.visibility === PUBLIC;
   }
 
   public isPrivate() {
-    return this.visibility === 'PRIVATE';
+    return this.visibility === PRIVATE;
   }
 
   public isLinkOnly() {
-    return this.visibility === 'LINK_ONLY';
+    return this.visibility === LINK_ONLY;
   }
 }
