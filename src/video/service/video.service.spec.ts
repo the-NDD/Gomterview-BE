@@ -36,7 +36,6 @@ import * as crypto from 'crypto';
 import { SingleVideoResponse } from '../dto/singleVideoResponse';
 import * as redisUtil from 'src/util/redis.util';
 import { MemberNotFoundException } from 'src/member/exception/member.exception';
-import { VideoHashResponse } from '../dto/videoHashResponse';
 import { VideoModule } from '../video.module';
 import { Video } from '../entity/video';
 import { addAppModules, createIntegrationTestModule } from 'src/util/test.util';
@@ -654,8 +653,14 @@ describe('VideoService 단위 테스트', () => {
   describe('deleteVideo', () => {
     const member = memberFixture;
 
-    it('비디오 삭제 성공 시 undefined로 반환된다.', () => {
+    it('비디오 삭제 성공 시 undefined로 반환된다.', async () => {
       // given
+      const deleteObjectInIDriveSpy = jest.spyOn(
+        idriveUtil,
+        'deleteObjectInIDrive',
+      );
+      deleteObjectInIDriveSpy.mockResolvedValue(undefined);
+
       const video = videoFixture;
 
       // when
@@ -663,9 +668,11 @@ describe('VideoService 단위 테스트', () => {
       mockVideoRepository.remove.mockResolvedValue(undefined);
 
       // then
-      expect(
+      await expect(
         videoService.deleteVideo(video.id, member),
       ).resolves.toBeUndefined();
+
+      deleteObjectInIDriveSpy.mockRestore();
     });
 
     it('비디오 삭제 시 member가 없으면 ManipulatedTokenNotFiltered을 반환한다.', () => {
@@ -1149,6 +1156,12 @@ describe('VideoService 통합 테스트', () => {
   describe('deleteVideo', () => {
     it('비디오 삭제에 성공하면 undefined를 반환한다.', async () => {
       // given
+      const deleteObjectInIDriveSpy = jest.spyOn(
+        idriveUtil,
+        'deleteObjectInIDrive',
+      );
+      deleteObjectInIDriveSpy.mockResolvedValue(undefined);
+
       const member = memberFixture;
       const video = await videoRepository.save(videoFixture);
 
@@ -1158,6 +1171,8 @@ describe('VideoService 통합 테스트', () => {
       await expect(
         videoService.deleteVideo(video.id, member),
       ).resolves.toBeUndefined();
+
+      deleteObjectInIDriveSpy.mockRestore();
     });
 
     it('비디오 삭제 시 member가 없으면 ManipulatedTokenNotFiltered를 반환한다.', async () => {

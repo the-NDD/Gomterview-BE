@@ -35,3 +35,6 @@ export const REFRESH_TOKEN_EXPIRES_IN = process.env.REFRESH_TOKEN_EXPIRES_IN; //
 export const NO_CACHE_URL = ['/api/member', '/api/auth/reissue'];
 export const HOUR_IN_SECONDS = 60 * 60;
 export const WEEK_IN_SECONDS = 60 * 60 * 24 * 7;
+
+export const IDRIVE_VIDEO_ENDPOINT = `${process.env.IDRIVE_STORAGE_URL}/videos/`;
+export const IDRIVE_THUMBNAIL_ENDPOINT = `${process.env.IDRIVE_STORAGE_URL}/thumbnail/`;
