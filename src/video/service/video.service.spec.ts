@@ -52,6 +52,7 @@ import * as idriveUtil from 'src/util/idrive.util';
 import redisMock from 'ioredis-mock';
 import { UpdateVideoIndexRequest } from '../dto/updateVideoIndexRequest';
 import { VideoRelationRepository } from '../repository/videoRelation.repository';
+import { VideoRelation } from '../entity/videoRelation';
 
 describe('VideoService 단위 테스트', () => {
   let videoService: VideoService;
@@ -759,6 +760,7 @@ describe('VideoService 통합 테스트', () => {
   let questionRepository: QuestionRepository;
   let workbookRepository: WorkbookRepository;
   let videoRepository: VideoRepository;
+  let videoRelationRepository: VideoRelationRepository;
 
   beforeAll(async () => {
     const modules = [VideoModule, QuestionModule];
@@ -779,6 +781,9 @@ describe('VideoService 통합 테스트', () => {
     workbookRepository =
       moduleFixture.get<WorkbookRepository>(WorkbookRepository);
     videoRepository = moduleFixture.get<VideoRepository>(VideoRepository);
+    videoRelationRepository = moduleFixture.get<VideoRelationRepository>(
+      VideoRelationRepository,
+    );
   });
 
   beforeEach(async () => {
@@ -1062,6 +1067,66 @@ describe('VideoService 통합 테스트', () => {
       expect(videoService.getAllVideosByMemberId(member)).rejects.toThrow(
         ManipulatedTokenNotFiltered,
       );
+    });
+  });
+
+  describe('findAllRelatedVideoById', () => {
+    let member;
+    let video;
+
+    beforeEach(async () => {
+      member = await memberRepository.save(memberFixture);
+      video = await videoRepository.save(videoFixture);
+      const relations = videoListExample.map(async (each) => {
+        await videoRepository.save(each);
+        await videoRelationRepository.insert(VideoRelation.of(video, each));
+      });
+      await Promise.all(relations);
+    });
+
+    it('회원이 자신의 연관영상을 조회시 등록한 모든 연관영상을 조회한다', async () => {
+      // given
+
+      // when
+      const response = await videoService.findAllRelatedVideoById(
+        video.id,
+        member,
+      );
+
+      // then
+      response.forEach((singleVideoResponse) => {
+        expect(singleVideoResponse).toBeInstanceOf(SingleVideoResponse);
+      });
+      expect(response.length).toBe(videoListExample.length);
+    });
+
+    it('다른 회원이 연관영상을 조회시 공개여부가 PUBLIC인 연관영상을 조회한다', async () => {
+      // given
+
+      // when
+      const response = await videoService.findAllRelatedVideoById(
+        video.id,
+        null,
+      );
+
+      // then
+      response.forEach((singleVideoResponse) => {
+        expect(singleVideoResponse).toBeInstanceOf(SingleVideoResponse);
+      });
+      expect(response.length).toBe(
+        videoListExample.filter((each) => each.isPublic()).length,
+      );
+    });
+
+    it('존재하지 않는 id로 연관영상을 조회하면 VideoNotFoundException을 던진다.', async () => {
+      // given
+
+      // when
+
+      // then
+      await expect(
+        videoService.findAllRelatedVideoById(12345, null),
+      ).rejects.toThrow(VideoNotFoundException);
     });
   });
 
