@@ -207,6 +207,7 @@ describe('VideoService 단위 테스트', () => {
     it('비디오 상세 정보 조회 성공 시 VideoDetailResponse 형식으로 반환된다.', async () => {
       // given
       const video = videoFixture;
+      video.member = member;
 
       // when
       mockVideoRepository.findById.mockResolvedValue(video);
@@ -217,15 +218,14 @@ describe('VideoService 단위 테스트', () => {
       expect(response.id).toBe(video.getId());
       expect(response.nickname).toBe(member.nickname);
       expect(response.url).toBe(video.url);
-      expect(response.hash).toBe(
-        crypto.createHash('md5').update(video.url).digest('hex'),
-      );
+      expect(response.hash).toBe(null);
       expect(response.videoName).toBe(video.name);
     });
 
     it('비디오 상세 정보 조회 성공 시 비디오가 private이면 해시값으로 null을 반환한다.', async () => {
       // given
       const video = privateVideoFixture;
+      video.member = memberFixture;
 
       // when
       mockVideoRepository.findById.mockResolvedValue(video);
@@ -248,7 +248,7 @@ describe('VideoService 단위 테스트', () => {
 
       // then
       expect(videoService.getVideoDetail(videoId, member)).rejects.toThrow(
-        ManipulatedTokenNotFiltered,
+        VideoAccessForbiddenException,
       );
     });
 
@@ -273,23 +273,6 @@ describe('VideoService 단위 테스트', () => {
       // then
       expect(videoService.getVideoDetail(videoId, member)).rejects.toThrow(
         VideoAccessForbiddenException,
-      );
-    });
-
-    it('비디오 상태 정보 조회 시 해시값을 생성하던 중 오류가 발생하면 Md5HashException을 반환한다.', () => {
-      // given
-      const video = videoFixture;
-
-      // when
-      const createHashSpy = jest.spyOn(crypto, 'createHash');
-      createHashSpy.mockImplementationOnce(() => {
-        throw new Md5HashException();
-      });
-      mockVideoRepository.findById.mockResolvedValue(video);
-
-      // then
-      expect(videoService.getVideoDetail(video.id, member)).rejects.toThrow(
-        Md5HashException,
       );
     });
   });
@@ -867,12 +850,10 @@ describe('VideoService 통합 테스트', () => {
       expect(result.nickname).toBe(member.nickname);
       expect(result.url).toBe(video.url);
       expect(result.videoName).toBe(video.name);
-      expect(result.hash).toBe(
-        crypto.createHash('md5').update(video.url).digest('hex'),
-      );
+      expect(result.hash).toBe(null);
     });
 
-    it('비디오 세부 정보 조회 성공 시 비디오가 private이라면 해시로 null을 반환한다.', async () => {
+    it('비디오 세부 정보 조회 성공 시 비디오가 LINK_ONLY가 아니라면 해시를 null을 반환한다.', async () => {
       //given
       const member = memberFixture;
       const video = await videoRepository.save(privateVideoFixture);
@@ -888,17 +869,19 @@ describe('VideoService 통합 테스트', () => {
       expect(result.hash).toBeNull();
     });
 
-    it('비디오 세부 정보 조회 시 member가 없으면 ManipulatedTokenNotFiltered를 반환한다.', async () => {
+    it('비디오 세부 정보 조회 시 member가 없고 public이라면 정상적으로 반환한다.', async () => {
       //given
-      const member = null;
       const video = await videoRepository.save(videoFixture);
 
       //when
+      const result = await videoService.getVideoDetail(video.id, null);
 
       //then
-      expect(videoService.getVideoDetail(video.id, member)).rejects.toThrow(
-        ManipulatedTokenNotFiltered,
-      );
+      expect(result).toBeInstanceOf(VideoDetailResponse);
+      expect(result.nickname).toBe(memberFixture.nickname);
+      expect(result.url).toBe(video.url);
+      expect(result.videoName).toBe(video.name);
+      expect(result.hash).toBeNull();
     });
 
     it('비디오 세부 정보 조회 시 존재하지 않는 비디오를 조회하려 하면 VideoNotFoundException을 반환한다.', async () => {
@@ -914,7 +897,7 @@ describe('VideoService 통합 테스트', () => {
       ).rejects.toThrow(VideoNotFoundException);
     });
 
-    it('비디오 세부 정보 조회 시 다른 사람의 비디오를 조회하려 하면 VideoAccessForbiddenException을 반환한다.', async () => {
+    it('비디오 세부 정보 조회 시 다른 사람이 private/link_only 비디오를 조회하려 하면 VideoAccessForbiddenException을 반환한다.', async () => {
       //given
       const member = memberFixture;
       await memberRepository.save(otherMemberFixture);
