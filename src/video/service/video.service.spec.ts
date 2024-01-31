@@ -53,6 +53,7 @@ import redisMock from 'ioredis-mock';
 import { UpdateVideoIndexRequest } from '../dto/updateVideoIndexRequest';
 import { VideoRelationRepository } from '../repository/videoRelation.repository';
 import { VideoRelation } from '../entity/videoRelation';
+import { MemberVideoResponse } from '../dto/MemberVideoResponse';
 
 describe('VideoService 단위 테스트', () => {
   let videoService: VideoService;
@@ -1127,6 +1128,36 @@ describe('VideoService 통합 테스트', () => {
       await expect(
         videoService.findAllRelatedVideoById(12345, null),
       ).rejects.toThrow(VideoNotFoundException);
+    });
+  });
+
+  describe('findPublicVideos', () => {
+    let video;
+
+    beforeEach(async () => {
+      await memberRepository.save(memberFixture);
+      video = await videoRepository.save(videoFixture);
+      const relations = videoListExample.map(async (each) => {
+        await videoRepository.save(each);
+        await videoRelationRepository.insert(VideoRelation.of(video, each));
+      });
+      await Promise.all(relations);
+    });
+
+    it('조회시 PUBLIC인 영상만 조회된다.', async () => {
+      // given
+
+      // when
+      const publicVideoResponses = await videoService.findPublicVideos();
+
+      // then
+      expect(publicVideoResponses).toBeInstanceOf(Array);
+      expect(publicVideoResponses.length).toBe(2);
+      expect(publicVideoResponses[0]).toBeInstanceOf(MemberVideoResponse);
+      expect(publicVideoResponses[0].id).toBe(video.id);
+      expect(publicVideoResponses[1].videoName).toBe(
+        videoListExample.filter((each) => each.isPublic())[0].name,
+      );
     });
   });
 

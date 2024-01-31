@@ -34,7 +34,7 @@ export class VideoRepository {
   async findAllPublicVideos() {
     return await this.videoRepository
       .createQueryBuilder('video')
-      .leftJoin('video.member', 'member')
+      .leftJoinAndSelect('video.member', 'member')
       .where('video.visibility =:visibility', { visibility: PUBLIC })
       .orderBy('video.createdAt')
       .getMany();
