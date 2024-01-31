@@ -3,6 +3,7 @@ import { VideoController } from './video.controller';
 import { VideoService } from '../service/video.service';
 import {
   memberFixture,
+  memberFixturesOAuthRequest,
   mockReqWithMemberFixture,
   oauthRequestFixture,
   otherMemberFixture,
@@ -232,7 +233,7 @@ describe('VideoController 단위 테스트', () => {
       // when
       const mockVideoDetailWithHash = VideoDetailResponse.from(
         video,
-        nickname,
+        memberFixture,
         hash,
       );
       mockVideoService.getVideoDetailByHash.mockResolvedValue(
@@ -347,7 +348,6 @@ describe('VideoController 단위 테스트', () => {
 
   describe('getVideoDetail', () => {
     const mockReq = mockReqWithMemberFixture;
-    const nickname = memberFixture.nickname;
     const hash = 'fakeHash';
     const video = videoFixture;
 
@@ -357,7 +357,7 @@ describe('VideoController 단위 테스트', () => {
       // when
       const mockVideoDetailWithHash = VideoDetailResponse.from(
         video,
-        nickname,
+        memberFixture,
         hash,
       );
       mockVideoService.getVideoDetail.mockResolvedValue(
@@ -377,7 +377,7 @@ describe('VideoController 단위 테스트', () => {
       // when
       const mockVideoDetailWithHash = VideoDetailResponse.from(
         video,
-        nickname,
+        memberFixture,
         null,
       );
       mockVideoService.getVideoDetail.mockResolvedValue(
@@ -742,7 +742,7 @@ describe('VideoController 통합 테스트', () => {
   });
 
   beforeEach(async () => {
-    token = await authService.login(oauthRequestFixture);
+    token = await authService.login(memberFixturesOAuthRequest);
     await categoryRepository.save(categoryFixtureWithId);
     await workbookRepository.save(workbookFixtureWithId);
     await questionRepository.save(questionFixture);
@@ -859,11 +859,7 @@ describe('VideoController 통합 테스트', () => {
         .expect(200)
         .expect((res) =>
           expect(res.body).toMatchObject(
-            VideoDetailResponse.from(
-              videoFixture,
-              oauthRequestFixture.name,
-              hash,
-            ),
+            VideoDetailResponse.from(videoFixture, memberFixture, hash),
           ),
         );
     });
@@ -884,11 +880,7 @@ describe('VideoController 통합 테스트', () => {
         .expect(200)
         .expect((res) =>
           expect(res.body).toMatchObject(
-            VideoDetailResponse.from(
-              videoFixture,
-              oauthRequestFixture.name,
-              hash,
-            ),
+            VideoDetailResponse.from(videoFixture, memberFixture, hash),
           ),
         );
     });
@@ -978,11 +970,7 @@ describe('VideoController 통합 테스트', () => {
         .expect(200)
         .expect((res) =>
           expect(res.body).toMatchObject(
-            VideoDetailResponse.from(
-              videoFixture,
-              oauthRequestFixture.name,
-              hash,
-            ),
+            VideoDetailResponse.from(videoFixture, memberFixture, hash),
           ),
         );
     });
@@ -999,11 +987,7 @@ describe('VideoController 통합 테스트', () => {
         .expect(200)
         .expect((res) => {
           expect(res.body).toMatchObject(
-            VideoDetailResponse.from(
-              privateVideoFixture,
-              oauthRequestFixture.name,
-              null,
-            ),
+            VideoDetailResponse.from(privateVideoFixture, memberFixture, null),
           );
         });
     });

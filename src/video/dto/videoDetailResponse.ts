@@ -1,10 +1,14 @@
 import { Video } from '../entity/video';
 import { ApiProperty } from '@nestjs/swagger';
+import { Member } from 'src/member/entity/member';
 import { createPropertyOption } from 'src/util/swagger.util';
 
 export class VideoDetailResponse {
   @ApiProperty(createPropertyOption(1, '비디오의 ID', Number))
   readonly id: number;
+
+  @ApiProperty(createPropertyOption(1, '회원의 ID', Number))
+  readonly memberId: number;
 
   @ApiProperty(createPropertyOption('foobar', '회원의 닉네임', String))
   readonly nickname: string;
@@ -36,6 +40,7 @@ export class VideoDetailResponse {
 
   constructor(
     id: number,
+    memberId: number,
     nickname: string,
     url: string,
     videoName: string,
@@ -43,6 +48,7 @@ export class VideoDetailResponse {
     createdAt: number,
   ) {
     this.id = id;
+    this.memberId = memberId;
     this.nickname = nickname;
     this.url = url;
     this.videoName = videoName;
@@ -50,10 +56,11 @@ export class VideoDetailResponse {
     this.createdAt = createdAt;
   }
 
-  static from(video: Video, nickname: string, hash: string | null) {
+  static from(video: Video, member: Member, hash: string | null) {
     return new VideoDetailResponse(
       video.id,
-      nickname,
+      member.id,
+      member.nickname,
       video.url,
       video.name,
       hash,

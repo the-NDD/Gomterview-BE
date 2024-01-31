@@ -136,7 +136,7 @@ export class VideoService {
     const video = await this.videoRepository.findById(videoId);
     this.validateVideoOwnership(video, memberId);
     const hash = video.isPrivate() ? null : await this.getHashedUrl(video.url);
-    return VideoDetailResponse.from(video, member.nickname, hash);
+    return VideoDetailResponse.from(video, member, hash);
   }
 
   async getVideoDetailByHash(hash: string) {
@@ -153,7 +153,7 @@ export class VideoService {
     const videoOwner = await this.memberRepository.findById(video.memberId);
     if (isEmpty(videoOwner)) throw new MemberNotFoundException();
 
-    return VideoDetailResponse.from(video, videoOwner.nickname, hash);
+    return VideoDetailResponse.from(video, videoOwner, hash);
   }
 
   async getAllVideosByMemberId(member: Member) {
