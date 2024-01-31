@@ -64,6 +64,7 @@ import { Video } from '../entity/video';
 import * as idriveUtil from 'src/util/idrive.util';
 import { VideoRelationRepository } from '../repository/videoRelation.repository';
 import { VideoRelation } from '../entity/videoRelation';
+import { MemberVideoResponse } from '../dto/MemberVideoResponse';
 
 describe('VideoController 단위 테스트', () => {
   let controller: VideoController;
@@ -966,7 +967,6 @@ describe('VideoController 통합 테스트', () => {
     it('쿠키를 가지고 비디오 조회를 요청하면 200 상태 코드와 비디오 정보가 반환된다.', async () => {
       // given
       const video = await videoRepository.save(videoFixture);
-      const hash = crypto.createHash('md5').update(video.url).digest('hex');
 
       // when & then
       const agent = request.agent(app.getHttpServer());
@@ -976,9 +976,10 @@ describe('VideoController 통합 테스트', () => {
         .expect(200)
         .expect((res) =>
           expect(res.body).toMatchObject(
-            VideoDetailResponse.from(videoFixture, memberFixture, hash),
+            VideoDetailResponse.from(videoFixture, memberFixture, null),
           ),
-        );
+        )
+        .then((res) => console.log(res.body));
     });
 
     it('private 상태인 비디오 조회를 요청하면 200 상태 코드와 hash가 null인 상태로 비디오 정보가 반환된다.', async () => {
@@ -998,26 +999,22 @@ describe('VideoController 통합 테스트', () => {
         });
     });
 
-    it('쿠키 없이 해시로 비디오 조회를 요청하면 401 상태 코드가 반환된다.', async () => {
+    it('쿠키 없이 id로 비디오 조회를 요청하면 PUBLIC인 비디오는 정상적으로 반환된다.', async () => {
       // given
       const video = await videoRepository.save(videoFixture);
 
       // when & then
       const agent = request.agent(app.getHttpServer());
-      await agent.get(`/api/video/${video.id}`).expect(401);
+      await agent.get(`/api/video/${video.id}`).expect(200);
     });
 
-    it('다른 사람의 비디오 조회를 요청하면 403 상태 코드가 반환된다.', async () => {
-      // give
-      await memberRepository.save(otherMemberFixture);
-      const video = await videoRepository.save(videoOfOtherFixture);
+    it('쿠키 없이 id로 비디오 조회를 요청하면 PRIVATE인 비디오는 403을 반환된다.', async () => {
+      // given
+      const video = await videoRepository.save(privateVideoFixture);
 
       // when & then
       const agent = request.agent(app.getHttpServer());
-      await agent
-        .get(`/api/video/${video.id}`)
-        .set('Cookie', [`accessToken=${token}`])
-        .expect(403);
+      await agent.get(`/api/video/${video.id}`).expect(403);
     });
 
     it('존재하지 않는 비디오 조회를 요청하면 404 상태 코드가 반환된다.', async () => {
@@ -1076,6 +1073,41 @@ describe('VideoController 통합 테스트', () => {
       // when & then
       const agent = request.agent(app.getHttpServer());
       await agent.get(`/api/video/related/${65416}`).expect(404);
+    });
+  });
+
+  describe('findPublicVideos', () => {
+    let video;
+
+    beforeEach(async () => {
+      await memberRepository.save(memberFixture);
+      video = await videoRepository.save(videoFixture);
+      const relations = videoListExample.map(async (each) => {
+        await videoRepository.save(each);
+        await videoRelationRepository.insert(VideoRelation.of(video, each));
+      });
+      await Promise.all(relations);
+    });
+
+    it('조회시 PUBLIC인 영상만 조회된다.', async () => {
+      // given
+
+      // when & then
+      const agent = request.agent(app.getHttpServer());
+      await agent
+        .patch(`/api/video/public`)
+        .expect(200)
+        .then((res) => {
+          console.log(res.body);
+          const publicVideoResponses = res.body;
+          expect(publicVideoResponses).toBeInstanceOf(Array);
+          expect(publicVideoResponses.length).toBe(2);
+          expect(publicVideoResponses[0]).toBeInstanceOf(MemberVideoResponse);
+          expect(publicVideoResponses[0].id).toBe(video.id);
+          expect(publicVideoResponses[1].videoName).toBe(
+            videoListExample.filter((each) => each.isPublic())[0].name,
+          );
+        });
     });
   });
 

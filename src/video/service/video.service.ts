@@ -131,12 +131,18 @@ export class VideoService {
   }
 
   async getVideoDetail(videoId: number, member: Member) {
-    validateManipulatedToken(member);
-    const memberId = member.id;
     const video = await this.videoRepository.findById(videoId);
-    this.validateVideoOwnership(video, memberId);
-    const hash = video.isPrivate() ? null : await this.getHashedUrl(video.url);
-    return VideoDetailResponse.from(video, member, hash);
+    if (!video) throw new VideoNotFoundException();
+
+    if (video.isPublic()) {
+      return VideoDetailResponse.from(video, video.member, null);
+    }
+
+    if (!member) throw new VideoAccessForbiddenException();
+    this.validateVideoOwnership(video, member.id);
+
+    const hash = video.isLinkOnly() ? this.getHashedUrl(video.url) : null;
+    return VideoDetailResponse.from(video, video.member, hash);
   }
 
   async getVideoDetailByHash(hash: string) {
@@ -269,7 +275,7 @@ export class VideoService {
   private async updateVideoHashInRedis(video: Video) {
     const hash = this.getHashedUrl(video.url);
 
-    if (video.isPrivate()) {
+    if (!video.isLinkOnly()) {
       // 현재가 private이 아니면 토글 후 private이 되기에 redis에서 해시값 삭제 후 null 반환
       try {
         await deleteFromRedis(hash);

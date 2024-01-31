@@ -37,6 +37,7 @@ import { ManipulatedTokenNotFiltered } from 'src/token/exception/token.exception
 import { UpdateVideoIndexRequest } from '../dto/updateVideoIndexRequest';
 import { TokenSoftGuard } from 'src/token/guard/token.soft.guard';
 import { RelatableVideoResponse } from '../dto/RelatableVideoResponse';
+import { MemberVideoResponse } from '../dto/MemberVideoResponse';
 
 @Controller('/api/video')
 @ApiTags('video')
@@ -140,26 +141,6 @@ export class VideoController {
     return await this.videoService.getVideoDetailByHash(hash);
   }
 
-  @Get(':videoId')
-  @UseGuards(TokenHardGuard)
-  @ApiCookieAuth()
-  @ApiOperation({
-    summary: '비디오 상세 정보를 반환',
-  })
-  @ApiResponse(
-    createApiResponseOption(
-      200,
-      '비디오 상세 정보 조회 완료',
-      VideoDetailResponse,
-    ),
-  )
-  @ApiResponse(VideoAccessForbiddenException.response())
-  @ApiResponse(VideoNotFoundException.response())
-  @ApiResponse(createApiResponseOption(500, 'V08, SERVER', null))
-  async getVideoDetail(@Param('videoId') videoId: number, @Req() req: Request) {
-    return await this.videoService.getVideoDetail(videoId, req.user as Member);
-  }
-
   @Get('/relate/:videoId')
   @UseGuards(TokenHardGuard)
   @ApiCookieAuth()
@@ -210,8 +191,37 @@ export class VideoController {
   }
 
   @Get('/public')
+  @ApiOperation({
+    summary: '공개된 영상 조회',
+  })
+  @ApiResponse(
+    createApiResponseOption(200, 'PUBLIC 영상 조회 완료', [
+      MemberVideoResponse,
+    ]),
+  )
   async findPublicVideos() {
+    console.log('여기왔니?');
     return await this.videoService.findPublicVideos();
+  }
+
+  @Get(':videoId')
+  @UseGuards(TokenSoftGuard)
+  @ApiCookieAuth()
+  @ApiOperation({
+    summary: '비디오 상세 정보를 반환',
+  })
+  @ApiResponse(
+    createApiResponseOption(
+      200,
+      '비디오 상세 정보 조회 완료',
+      VideoDetailResponse,
+    ),
+  )
+  @ApiResponse(VideoAccessForbiddenException.response())
+  @ApiResponse(VideoNotFoundException.response())
+  @ApiResponse(createApiResponseOption(500, 'V08, SERVER', null))
+  async getVideoDetail(@Param('videoId') videoId: number, @Req() req: Request) {
+    return await this.videoService.getVideoDetail(videoId, req.user as Member);
   }
 
   @Patch('/index')
