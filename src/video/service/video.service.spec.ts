@@ -80,6 +80,7 @@ describe('VideoService 단위 테스트', () => {
     findAllByParentId: jest.fn(),
     deleteAll: jest.fn(),
     insert: jest.fn(),
+    findChildrenByParentId: jest.fn(),
   };
 
   // jest.mock('typeorm-transactional', () => ({
@@ -507,11 +508,58 @@ describe('VideoService 단위 테스트', () => {
     });
   });
 
+  describe('findAllRelatedVideoById', () => {
+    const member = memberFixture;
+    const videos = videoListExample;
+
+    it('연관지을 수 있는 영상을 조회하면, 이미 연관된 영상은 isRelated가 true, 아니면 false로 반환된다.', async () => {
+      // given
+      mockVideoRelationRepository.findChildrenByParentId.mockResolvedValue(
+        videos,
+      );
+
+      // when
+
+      // then
+      await expect(
+        videoService.findAllRelatedVideoById(1, member),
+      ).resolves.toEqual(videos.map(SingleVideoResponse.from));
+    });
+
+    it('회원정보가 주어지지 않았다면 ManipulatedTokenNotFiltered를 던진다.', async () => {
+      // given
+      mockVideoRelationRepository.findChildrenByParentId.mockResolvedValue(
+        videos,
+      );
+
+      // when
+
+      // then
+      await expect(
+        videoService.findAllRelatedVideoById(1, undefined),
+      ).rejects.toThrow(ManipulatedTokenNotFiltered);
+    });
+
+    it('video id가 존재하지 않는다면, VideoNotFoundException을 던진다.', async () => {
+      // given
+      mockVideoRelationRepository.findChildrenByParentId.mockResolvedValue(
+        videos,
+      );
+
+      // when
+
+      // then
+      await expect(
+        videoService.findAllRelatedVideoById(12345, member),
+      ).rejects.toThrow(VideoNotFoundException);
+    });
+  });
+
   describe('updateVideo', () => {
     const member = memberFixture;
 
     it('비디오 이름 변경 성공 시 undefined로 반환된다.', async () => {
-      // give
+      // given
       const video = videoFixture;
 
       // when

@@ -39,7 +39,7 @@ export const videoListExample = [
     'https://test-video4.com',
     'https://test-thumbnail4.com',
     '02:42',
-    PRIVATE,
+    PUBLIC,
   ),
 ].slice(0, 4);
 
