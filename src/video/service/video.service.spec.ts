@@ -514,7 +514,7 @@ describe('VideoService 단위 테스트', () => {
     const member = memberFixture;
     const videos = videoListExample;
 
-    it('연관지을 수 있는 영상을 조회하면, 이미 연관된 영상은 isRelated가 true, 아니면 false로 반환된다.', async () => {
+    it('연관된 영상을 조회하면, 이미 연관된 영상은 isRelated가 true, 아니면 false로 반환된다.', async () => {
       // given
       mockVideoRelationRepository.findChildrenByParentId.mockResolvedValue(
         videos,
