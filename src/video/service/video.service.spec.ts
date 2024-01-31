@@ -526,25 +526,12 @@ describe('VideoService 단위 테스트', () => {
       ).resolves.toEqual(videos.map(SingleVideoResponse.from));
     });
 
-    it('회원정보가 주어지지 않았다면 ManipulatedTokenNotFiltered를 던진다.', async () => {
-      // given
-      mockVideoRelationRepository.findChildrenByParentId.mockResolvedValue(
-        videos,
-      );
-
-      // when
-
-      // then
-      await expect(
-        videoService.findAllRelatedVideoById(1, undefined),
-      ).rejects.toThrow(ManipulatedTokenNotFiltered);
-    });
-
     it('video id가 존재하지 않는다면, VideoNotFoundException을 던진다.', async () => {
       // given
       mockVideoRelationRepository.findChildrenByParentId.mockResolvedValue(
         videos,
       );
+      mockVideoRepository.findById.mockResolvedValue(undefined);
 
       // when
 

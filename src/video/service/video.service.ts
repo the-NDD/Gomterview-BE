@@ -166,6 +166,8 @@ export class VideoService {
   }
 
   async findAllRelatedVideoById(videoId: number, member: Member) {
+    const video = await this.videoRepository.findById(videoId);
+    if (!video) throw new VideoNotFoundException();
     let children =
       await this.videoRelationRepository.findChildrenByParentId(videoId);
 
