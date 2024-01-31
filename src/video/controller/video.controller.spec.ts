@@ -62,6 +62,8 @@ import { UpdateVideoIndexRequest } from '../dto/updateVideoIndexRequest';
 import { BAD_REQUEST, FORBIDDEN, UNAUTHORIZED } from 'src/constant/constant';
 import { Video } from '../entity/video';
 import * as idriveUtil from 'src/util/idrive.util';
+import { VideoRelationRepository } from '../repository/videoRelation.repository';
+import { VideoRelation } from '../entity/videoRelation';
 
 describe('VideoController 단위 테스트', () => {
   let controller: VideoController;
@@ -718,6 +720,7 @@ describe('VideoController 통합 테스트', () => {
   let questionRepository: QuestionRepository;
   let workbookRepository: WorkbookRepository;
   let videoRepository: VideoRepository;
+  let videoRelationRepository: VideoRelationRepository;
   let token: string;
 
   beforeAll(async () => {
@@ -739,6 +742,9 @@ describe('VideoController 통합 테스트', () => {
     workbookRepository =
       moduleFixture.get<WorkbookRepository>(WorkbookRepository);
     videoRepository = moduleFixture.get<VideoRepository>(VideoRepository);
+    videoRelationRepository = moduleFixture.get<VideoRelationRepository>(
+      VideoRelationRepository,
+    );
   });
 
   beforeEach(async () => {
@@ -1024,6 +1030,52 @@ describe('VideoController 통합 테스트', () => {
         .get(`/api/video/${video.id + 1000}`)
         .set('Cookie', [`accessToken=${token}`])
         .expect(404);
+    });
+  });
+
+  describe('findRelatedVideoById', () => {
+    let member;
+    let video;
+
+    beforeEach(async () => {
+      member = await memberRepository.save(memberFixture);
+      video = await videoRepository.save(videoFixture);
+      const relations = videoListExample.map(async (each) => {
+        await videoRepository.save(each);
+        await videoRelationRepository.insert(VideoRelation.of(video, each));
+      });
+      await Promise.all(relations);
+    });
+
+    it('회원의 토큰을 가지고 연관영상을 조회하면 전체 영상이 반환된다.', async () => {
+      // when & then
+      const agent = request.agent(app.getHttpServer());
+      await agent
+        .get(`/api/video/related/${video.id}`)
+        .set('Cookie', [`accessToken=${token}`])
+        .expect(200)
+        .then((response) => {
+          expect(response.body.length).toBe(videoListExample.length);
+        });
+    });
+
+    it('토큰 없이 연관영상을 조회하면 PUBLIC 영상이 반환된다.', async () => {
+      // when & then
+      const agent = request.agent(app.getHttpServer());
+      await agent
+        .get(`/api/video/related/${video.id}`)
+        .expect(200)
+        .then((response) => {
+          expect(response.body.length).toBe(
+            videoListExample.filter((each) => each.isPublic()).length,
+          );
+        });
+    });
+
+    it('video id가 존재하지 않는 값이면 404에러를 반환한다..', async () => {
+      // when & then
+      const agent = request.agent(app.getHttpServer());
+      await agent.get(`/api/video/related/${65416}`).expect(404);
     });
   });
 

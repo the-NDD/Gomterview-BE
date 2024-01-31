@@ -349,13 +349,11 @@ export class VideoService {
 
   private compareIds(videoIds: number[], sortedIds: number[]) {
     if (videoIds.length !== sortedIds.length) {
-      console.log('길이 문제');
       return false;
     }
 
     for (let index = 0; index < videoIds.length; index++) {
       if (videoIds[index] !== sortedIds[index]) {
-        console.log(videoIds[index], sortedIds[index]);
         return false;
       }
     }
