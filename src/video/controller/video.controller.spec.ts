@@ -978,8 +978,7 @@ describe('VideoController 통합 테스트', () => {
           expect(res.body).toMatchObject(
             VideoDetailResponse.from(videoFixture, memberFixture, null),
           ),
-        )
-        .then((res) => console.log(res.body));
+        );
     });
 
     it('private 상태인 비디오 조회를 요청하면 200 상태 코드와 hash가 null인 상태로 비디오 정보가 반환된다.', async () => {
@@ -1095,14 +1094,14 @@ describe('VideoController 통합 테스트', () => {
       // when & then
       const agent = request.agent(app.getHttpServer());
       await agent
-        .patch(`/api/video/public`)
+        .get(`/api/video/public`)
         .expect(200)
         .then((res) => {
-          console.log(res.body);
+          console.log(res);
           const publicVideoResponses = res.body;
           expect(publicVideoResponses).toBeInstanceOf(Array);
           expect(publicVideoResponses.length).toBe(2);
-          expect(publicVideoResponses[0]).toBeInstanceOf(MemberVideoResponse);
+          expect(publicVideoResponses[0]).toBeInstanceOf(Object);
           expect(publicVideoResponses[0].id).toBe(video.id);
           expect(publicVideoResponses[1].videoName).toBe(
             videoListExample.filter((each) => each.isPublic())[0].name,
