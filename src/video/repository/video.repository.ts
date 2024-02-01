@@ -39,7 +39,7 @@ export class VideoRepository {
       .leftJoinAndSelect('video.member', 'member')
       .where('video.memberId = member.id')
       .where('video.visibility =:visibility', { visibility: PUBLIC })
-      .orderBy('video.createdAt')
+      .orderBy('video.createdAt', 'DESC')
       .getMany();
   }
 
