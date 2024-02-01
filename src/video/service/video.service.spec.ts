@@ -54,6 +54,7 @@ import { UpdateVideoIndexRequest } from '../dto/updateVideoIndexRequest';
 import { VideoRelationRepository } from '../repository/videoRelation.repository';
 import { VideoRelation } from '../entity/videoRelation';
 import { MemberVideoResponse } from '../dto/MemberVideoResponse';
+import { RelatableVideoResponse } from '../dto/RelatableVideoResponse';
 
 describe('VideoService 단위 테스트', () => {
   let videoService: VideoService;
@@ -528,13 +529,12 @@ describe('VideoService 단위 테스트', () => {
   });
 
   describe('findRelatableVideos', () => {
-    const member = memberFixture;
-    const requestVideo = videoFixture;
-    const videos = videoListExample;
-    const relatedVideos = videoListFixture;
-
     it('연관 가능 영상 전체를 조회할 때, 성공한다면 relatedVideo는 isRelated가 true로, videos는 false로 나온다.', async () => {
       // given
+      const member = memberFixture;
+      const requestVideo = videoFixture;
+      const videos = [...videoListExample, ...videoListFixture];
+      const relatedVideos = videoListFixture;
       mockVideoRepository.findById.mockResolvedValue(requestVideo);
       mockVideoRelationRepository.findChildrenByParentId.mockResolvedValue(
         relatedVideos,
@@ -548,7 +548,70 @@ describe('VideoService 단위 테스트', () => {
       );
 
       // then
-      expect(response.length).toBe(videos.length + relatedVideos.length);
+      expect(response.length).toBe(videos.length);
+      expect(response[0]).toBeInstanceOf(RelatableVideoResponse);
+      expect(response.filter((each) => each.isRelated).length).toBe(
+        relatedVideos.length,
+      );
+    });
+
+    it('Member 없이 요청을 할 경우 ManipulatedTokenNotFilteredException을 던진다.', async () => {
+      // given
+      const member = memberFixture;
+      const requestVideo = videoFixture;
+      const videos = [...videoListExample, ...videoListFixture];
+      const relatedVideos = videoListFixture;
+      mockVideoRepository.findById.mockResolvedValue(requestVideo);
+      mockVideoRelationRepository.findChildrenByParentId.mockResolvedValue(
+        relatedVideos,
+      );
+      mockVideoRepository.findAllVideosByMemberId.mockResolvedValue(videos);
+
+      // when
+
+      // then
+      await expect(
+        videoService.findRelatableVideos(requestVideo.id, null),
+      ).rejects.toThrow(ManipulatedTokenNotFiltered);
+    });
+
+    it('다른 회원이 요청을 할 경우 VideoAccessForbiddenException을 던진다.', async () => {
+      // given
+      const member = otherMemberFixture;
+      const requestVideo = videoFixture;
+      const videos = [...videoListExample, ...videoListFixture];
+      const relatedVideos = videoListFixture;
+      mockVideoRepository.findById.mockResolvedValue(requestVideo);
+      mockVideoRelationRepository.findChildrenByParentId.mockResolvedValue(
+        relatedVideos,
+      );
+      mockVideoRepository.findAllVideosByMemberId.mockResolvedValue(videos);
+
+      // when
+
+      // then
+      await expect(
+        videoService.findRelatableVideos(requestVideo.id, member),
+      ).rejects.toThrow(VideoAccessForbiddenException);
+    });
+
+    it('없는 영상의 id로 요청한 경우 VideoNotFoundException을 던진다.', async () => {
+      // given
+      const member = otherMemberFixture;
+      const videos = [...videoListExample, ...videoListFixture];
+      const relatedVideos = videoListFixture;
+      mockVideoRepository.findById.mockResolvedValue(undefined);
+      mockVideoRelationRepository.findChildrenByParentId.mockResolvedValue(
+        relatedVideos,
+      );
+      mockVideoRepository.findAllVideosByMemberId.mockResolvedValue(videos);
+
+      // when
+
+      // then
+      await expect(
+        videoService.findRelatableVideos(100000, member),
+      ).rejects.toThrow(VideoNotFoundException);
     });
   });
 
