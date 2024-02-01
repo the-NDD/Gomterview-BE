@@ -527,6 +527,31 @@ describe('VideoService 단위 테스트', () => {
     });
   });
 
+  describe('findRelatableVideos', () => {
+    const member = memberFixture;
+    const requestVideo = videoFixture;
+    const videos = videoListExample;
+    const relatedVideos = videoListFixture;
+
+    it('연관 가능 영상 전체를 조회할 때, 성공한다면 relatedVideo는 isRelated가 true로, videos는 false로 나온다.', async () => {
+      // given
+      mockVideoRepository.findById.mockResolvedValue(requestVideo);
+      mockVideoRelationRepository.findChildrenByParentId.mockResolvedValue(
+        relatedVideos,
+      );
+      mockVideoRepository.findAllVideosByMemberId.mockResolvedValue(videos);
+
+      // when
+      const response = await videoService.findRelatableVideos(
+        requestVideo.id,
+        member,
+      );
+
+      // then
+      expect(response.length).toBe(videos.length + relatedVideos.length);
+    });
+  });
+
   describe('updateVideo', () => {
     const member = memberFixture;
 
