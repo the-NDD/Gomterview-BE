@@ -1324,6 +1324,40 @@ describe('VideoService 통합 테스트', () => {
       );
       expect(data[0]).toBeInstanceOf(RelatableVideoResponse);
     });
+
+    it('회원 정보가 없으면 ManipulatedTokenNotFiltered예외를 던진다.', async () => {
+      // given
+
+      // when
+
+      // then
+      await expect(
+        videoService.findRelatableVideos(video.id, null),
+      ).rejects.toThrow(ManipulatedTokenNotFiltered);
+    });
+
+    it('id가 존재하지 않으면 VideoNotFoundException을 던진다.', async () => {
+      // given
+
+      // when
+
+      // then
+      await expect(
+        videoService.findRelatableVideos(10000, memberFixture),
+      ).rejects.toThrow(VideoNotFoundException);
+    });
+
+    it('회원의 영상이 아니면 VideoAccessForbidden예외를 던진다.', async () => {
+      // given
+      const otherMember = await memberRepository.save(otherMemberFixture);
+
+      // when
+
+      // then
+      await expect(
+        videoService.findRelatableVideos(video.id, otherMember),
+      ).rejects.toThrow(VideoAccessForbiddenException);
+    });
   });
 
   describe('updateIndex', () => {
