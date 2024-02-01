@@ -13,6 +13,13 @@ export const questionFixture = new Question(
   null,
 );
 
+export const questionListFixture = [
+  new Question(1, 'tester', workbookFixtureWithId, null, new Date(), null),
+  new Question(2, 'tester', workbookFixtureWithId, null, new Date(), null),
+  new Question(3, 'tester', workbookFixtureWithId, null, new Date(), null),
+  new Question(4, 'tester', workbookFixtureWithId, null, new Date(), null),
+];
+
 export const createQuestionRequestFixture = new CreateQuestionRequest(
   workbookFixtureWithId.id,
   'tester',

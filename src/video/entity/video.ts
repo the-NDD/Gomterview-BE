@@ -46,6 +46,7 @@ export class Video extends DefaultEntity {
   myPageIndex: number;
 
   constructor(
+    id: number,
     memberId: number,
     questionId: number,
     name: string,
@@ -54,7 +55,7 @@ export class Video extends DefaultEntity {
     videoLength: string,
     visibility: string,
   ) {
-    super(undefined, new Date());
+    super(id, new Date());
     this.memberId = memberId;
     this.questionId = questionId;
     this.name = name;
@@ -67,6 +68,7 @@ export class Video extends DefaultEntity {
 
   static from(member: Member, createVideoRequest: CreateVideoRequest): Video {
     return new Video(
+      null,
       member.id,
       createVideoRequest.questionId,
       `${member.nickname}_${createVideoRequest.videoName}`,
@@ -99,9 +101,10 @@ export class Video extends DefaultEntity {
   }
 
   public equals(video: Video) {
+    const comparator = this;
     return (
       Object.keys(video).filter(
-        (videoKey) => video[videoKey] !== this[videoKey],
+        (videoKey) => video[videoKey] !== comparator[videoKey],
       ).length === 0
     );
   }

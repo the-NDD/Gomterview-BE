@@ -6,6 +6,7 @@ import { PreSignedInfo } from '../interface/video.interface';
 
 export const videoListExample = [
   new Video(
+    5,
     1,
     1,
     'test1.webm',
@@ -15,6 +16,7 @@ export const videoListExample = [
     PRIVATE,
   ),
   new Video(
+    6,
     1,
     1,
     'test2.webm',
@@ -24,6 +26,7 @@ export const videoListExample = [
     PRIVATE,
   ),
   new Video(
+    7,
     1,
     1,
     'test3.webm',
@@ -33,6 +36,7 @@ export const videoListExample = [
     PRIVATE,
   ),
   new Video(
+    8,
     1,
     1,
     'test4.webm',
@@ -45,6 +49,7 @@ export const videoListExample = [
 
 export const videoListFixture = [
   new Video(
+    9,
     1,
     1,
     '루이뷔통통튀기네',
@@ -54,6 +59,7 @@ export const videoListFixture = [
     PUBLIC,
   ),
   new Video(
+    10,
     1,
     4,
     '루이뷔통통튀기네',
@@ -67,6 +73,7 @@ export const videoListFixture = [
 export const videoFixture = new Video(
   1,
   1,
+  1,
   '루이뷔통통튀기네',
   'https://test.com',
   'https://thumbnail-test.com',
@@ -75,6 +82,7 @@ export const videoFixture = new Video(
 );
 
 export const privateVideoFixture = new Video(
+  2,
   1,
   1,
   '루이뷔통통튀기네',
@@ -85,6 +93,7 @@ export const privateVideoFixture = new Video(
 );
 
 export const videoOfOtherFixture = new Video(
+  3,
   999,
   1,
   '루이뷔통통튀기네',
@@ -95,6 +104,7 @@ export const videoOfOtherFixture = new Video(
 );
 
 export const videoOfWithdrawnMemberFixture = new Video(
+  4,
   null,
   1,
   '루이뷔통통튀기네',

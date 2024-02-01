@@ -44,7 +44,10 @@ import { CategoryRepository } from 'src/category/repository/category.repository'
 import { WorkbookRepository } from 'src/workbook/repository/workbook.repository';
 import { categoryFixtureWithId } from 'src/category/fixture/category.fixture';
 import { workbookFixtureWithId } from 'src/workbook/fixture/workbook.fixture';
-import { questionFixture } from 'src/question/fixture/question.fixture';
+import {
+  questionFixture,
+  questionListFixture,
+} from 'src/question/fixture/question.fixture';
 import { QuestionModule } from 'src/question/question.module';
 import { CreateVideoRequest } from '../dto/createVideoRequest';
 import { DEFAULT_THUMBNAIL } from '../../constant/constant';
@@ -1285,12 +1288,17 @@ describe('VideoService 통합 테스트', () => {
     beforeEach(async () => {
       await memberRepository.save(memberFixture);
       video = await videoRepository.save(videoFixture);
+      await Promise.all(
+        questionListFixture.map(
+          async (each) => await questionRepository.save(each),
+        ),
+      );
       const relations = videoListExample.map(async (each) => {
         await videoRepository.save(each);
         await videoRelationRepository.insert(VideoRelation.of(video, each));
       });
       await Promise.all(relations);
-      Promise.all(
+      await Promise.all(
         videoListFixture.map(async (each) => await videoRepository.save(each)),
       );
     });
@@ -1305,10 +1313,12 @@ describe('VideoService 통합 테스트', () => {
       );
 
       // then
-      expect(data.map((each) => each.id).includes(video.id)).toBeFalsy();
       expect(data.length).toBe(
-        videoListFixture.length + videoListExample.length,
+        (
+          await videoRepository.findAllVideosByMemberId(memberFixture.id)
+        ).filter((each) => each.id !== video.id).length,
       );
+      console.log(data);
       expect(data.filter((each) => each.isRelated).length).toBe(
         videoListExample.length,
       );

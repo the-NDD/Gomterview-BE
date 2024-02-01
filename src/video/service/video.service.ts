@@ -196,9 +196,18 @@ export class VideoService {
     const otherVideos = await this.findMyVideoOtherThan(video, member.id);
     const videosChild =
       await this.videoRelationRepository.findChildrenByParentId(videoId);
+    console.log(otherVideos);
+    console.log(videosChild);
     return otherVideos.map((video) =>
-      RelatableVideoResponse.from(video, videosChild.includes(video)),
+      RelatableVideoResponse.from(
+        video,
+        this.containsChild(videosChild, video),
+      ),
     );
+  }
+
+  private containsChild(videosChild: Video[], video: Video) {
+    return videosChild.map((each) => each.url).includes(video.url);
   }
 
   async updateVideo(
@@ -336,7 +345,7 @@ export class VideoService {
   private async findMyVideoOtherThan(video: Video, memberId: number) {
     return (
       await this.videoRepository.findAllVideosByMemberId(memberId)
-    ).filter((each) => !each.equals(video));
+    ).filter((each) => each.id !== video.id);
   }
 
   private async deleteByChildId(
