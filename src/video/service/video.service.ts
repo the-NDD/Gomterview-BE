@@ -21,7 +21,6 @@ import { isEmpty, notEquals } from 'class-validator';
 import { VideoDetailResponse } from '../dto/videoDetailResponse';
 import * as crypto from 'crypto';
 import 'dotenv/config';
-import { VideoHashResponse } from '../dto/videoHashResponse';
 import { MemberRepository } from 'src/member/repository/member.repository';
 import {
   deleteFromRedis,
@@ -174,7 +173,7 @@ export class VideoService {
   async findAllRelatedVideoById(videoId: number, member: Member) {
     const video = await this.videoRepository.findById(videoId);
     if (!video) throw new VideoNotFoundException();
-    let children =
+    const children =
       await this.videoRelationRepository.findChildrenByParentId(videoId);
 
     return children
