@@ -38,6 +38,9 @@ export class VideoDetailResponse {
   )
   readonly createdAt: number;
 
+  @ApiProperty(createPropertyOption('PUBLIC', '영상 공개여부', String))
+  readonly visibility: string;
+
   constructor(
     id: number,
     memberId: number,
@@ -46,6 +49,7 @@ export class VideoDetailResponse {
     videoName: string,
     hash: string,
     createdAt: number,
+    visibility: string,
   ) {
     this.id = id;
     this.memberId = memberId;
@@ -54,6 +58,7 @@ export class VideoDetailResponse {
     this.videoName = videoName;
     this.hash = hash;
     this.createdAt = createdAt;
+    this.visibility = visibility;
   }
 
   static from(video: Video, member: Member, hash: string | null) {
@@ -65,6 +70,7 @@ export class VideoDetailResponse {
       video.name,
       hash,
       video.createdAt.getTime(),
+      video.visibility,
     );
   }
 }
