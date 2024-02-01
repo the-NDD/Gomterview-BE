@@ -97,4 +97,12 @@ export class Video extends DefaultEntity {
     this.visibility = updateVideoRequest.visibility;
     this.name = updateVideoRequest.videoName;
   }
+
+  public equals(video: Video) {
+    return (
+      Object.keys(video).filter(
+        (videoKey) => video[videoKey] !== this[videoKey],
+      ).length === 0
+    );
+  }
 }

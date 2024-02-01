@@ -190,15 +190,12 @@ export class VideoService {
 
   async findRelatableVideos(videoId: number, member: Member) {
     validateManipulatedToken(member);
-    this.validateVideoOwnership(
-      await this.videoRepository.findById(videoId),
-      member.id,
-    );
+    const video = await this.videoRepository.findById(videoId);
+    this.validateVideoOwnership(video, member.id);
 
-    const otherVideos = await this.findMyVideoOtherThan(videoId, member.id);
+    const otherVideos = await this.findMyVideoOtherThan(video, member.id);
     const videosChild =
       await this.videoRelationRepository.findChildrenByParentId(videoId);
-
     return otherVideos.map((video) =>
       RelatableVideoResponse.from(video, videosChild.includes(video)),
     );
@@ -336,10 +333,10 @@ export class VideoService {
     );
   }
 
-  private async findMyVideoOtherThan(videoId: number, memberId: number) {
+  private async findMyVideoOtherThan(video: Video, memberId: number) {
     return (
       await this.videoRepository.findAllVideosByMemberId(memberId)
-    ).filter((each) => each.id !== videoId);
+    ).filter((each) => !each.equals(video));
   }
 
   private async deleteByChildId(
