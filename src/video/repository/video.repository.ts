@@ -2,6 +2,8 @@ import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Video } from '../entity/video';
+import { UpdateVideoRequest } from '../dto/updateVideoRequest';
+import { PUBLIC } from '../constant/videoVisibility';
 
 @Injectable()
 export class VideoRepository {
@@ -17,13 +19,37 @@ export class VideoRepository {
   async findAllVideosByMemberId(memberId: number) {
     return this.videoRepository
       .createQueryBuilder('video')
+      .leftJoinAndSelect('video.member', 'member')
+      .where('video.memberId = member.id')
       .where('video.memberId = :memberId', { memberId })
       .orderBy('video.myPageIndex', 'ASC')
       .getMany();
   }
 
+  async findAllByIds(ids: Number[]) {
+    return await this.videoRepository
+      .createQueryBuilder('video')
+      .where('video.id IN (:...ids)', { ids })
+      .getMany();
+  }
+
+  async findAllPublicVideos() {
+    return await this.videoRepository
+      .createQueryBuilder('video')
+      .leftJoinAndSelect('video.member', 'member')
+      .where('video.memberId = member.id')
+      .where('video.visibility =:visibility', { visibility: PUBLIC })
+      .orderBy('video.createdAt')
+      .getMany();
+  }
+
   async findById(id: number) {
-    return await this.videoRepository.findOneBy({ id: Number(id) });
+    return await this.videoRepository
+      .createQueryBuilder('video')
+      .leftJoinAndSelect('video.member', 'member')
+      .where('video.memberId = member.id')
+      .andWhere('video.id = :id', { id })
+      .getOne();
   }
 
   async findByUrl(url: string) {
@@ -45,6 +71,18 @@ export class VideoRepository {
       .update(Video)
       .set({ name })
       .where('id = :id', { id: Number(videoId) })
+      .execute();
+  }
+
+  async updateVideo(updateRequest: UpdateVideoRequest, videoId: number) {
+    return await this.videoRepository
+      .createQueryBuilder()
+      .update(Video)
+      .set({
+        name: updateRequest.videoName,
+        visibility: updateRequest.visibility,
+      })
+      .where('id= :id', { id: Number(videoId) })
       .execute();
   }
 

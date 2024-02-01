@@ -1,3 +1,4 @@
+import { PRIVATE, PUBLIC } from '../constant/videoVisibility';
 import { CreateVideoRequest } from '../dto/createVideoRequest';
 import { UpdateVideoIndexRequest } from '../dto/updateVideoIndexRequest';
 import { Video } from '../entity/video';
@@ -5,102 +6,112 @@ import { PreSignedInfo } from '../interface/video.interface';
 
 export const videoListExample = [
   new Video(
+    5,
     1,
     1,
     'test1.webm',
     'https://test-video1.com',
     'https://test-thumbnail1.com',
     '02:42',
-    false,
+    PRIVATE,
   ),
   new Video(
+    6,
     1,
     1,
     'test2.webm',
     'https://test-video2.com',
     'https://test-thumbnail2.com',
     '02:42',
-    false,
+    PRIVATE,
   ),
   new Video(
+    7,
     1,
     1,
     'test3.webm',
     'https://test-video3.com',
     'https://test-thumbnail3.com',
     '02:42',
-    false,
+    PRIVATE,
   ),
   new Video(
+    8,
     1,
     1,
     'test4.webm',
     'https://test-video4.com',
     'https://test-thumbnail4.com',
     '02:42',
-    false,
+    PUBLIC,
   ),
 ].slice(0, 4);
 
 export const videoListFixture = [
   new Video(
+    9,
     1,
     1,
     '루이뷔통통튀기네',
     'https://test.com',
     'https://thumbnail-test.com',
     '03:29',
-    true,
+    PUBLIC,
   ),
   new Video(
+    10,
     1,
     4,
     '루이뷔통통튀기네',
     'https://foo.com',
     'https://bar-test.com',
     '02:12',
-    false,
+    PUBLIC,
   ),
 ];
 
 export const videoFixture = new Video(
   1,
   1,
+  1,
   '루이뷔통통튀기네',
   'https://test.com',
   'https://thumbnail-test.com',
   '03:29',
-  true,
+  PUBLIC,
 );
 
 export const privateVideoFixture = new Video(
+  2,
   1,
   1,
   '루이뷔통통튀기네',
   'https://priavte-test.com',
   'https://thumbnail-test.com',
   '03:29',
-  false,
+  PRIVATE,
 );
 
 export const videoOfOtherFixture = new Video(
+  3,
   999,
   1,
   '루이뷔통통튀기네',
   'https://test.com',
   'https://thumbnail-test.com',
   '03:29',
-  false,
+  PRIVATE,
 );
 
 export const videoOfWithdrawnMemberFixture = new Video(
+  4,
   null,
   1,
   '루이뷔통통튀기네',
   'https://test.com',
   'https://thumbnail-test.com',
   '03:29',
-  true,
+  PUBLIC,
 );
 
 export const createVideoRequestFixture = new CreateVideoRequest(
@@ -123,6 +134,8 @@ export const thumbnailPreSignedInfoFixture = {
 
 export const updateVideoRequestFixture = {
   videoName: 'example.mp4',
+  visibility: 'PUBLIC',
+  relatedVideoIds: [],
 };
 
 const arr = [2, 1, 4, 3];

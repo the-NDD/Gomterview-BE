@@ -5,10 +5,13 @@ import { Member } from 'src/member/entity/member';
 import { Question } from 'src/question/entity/question';
 import { CreateVideoRequest } from '../dto/createVideoRequest';
 import { DEFAULT_THUMBNAIL } from 'src/constant/constant';
+import { LINK_ONLY, PRIVATE, PUBLIC } from '../constant/videoVisibility';
+import { UpdateVideoRequest } from '../dto/updateVideoRequest';
 
 @Entity({ name: 'Video' })
 @Index('idx_video_url', ['url'])
 @Index('idx_video_myPageIndex', ['myPageIndex'])
+@Index('idx_visibility', ['visibility'])
 export class Video extends DefaultEntity {
   @Column({ nullable: true })
   memberId: number;
@@ -36,41 +39,73 @@ export class Video extends DefaultEntity {
   @Column()
   videoLength: string;
 
-  @Column({ default: false })
-  isPublic: boolean;
+  @Column({ default: 'PUBLIC' })
+  visibility: string;
 
   @Column({ default: 0 })
   myPageIndex: number;
 
   constructor(
+    id: number,
     memberId: number,
     questionId: number,
     name: string,
     url: string,
     thumbnail: string,
     videoLength: string,
-    isPublic: boolean,
+    visibility: string,
   ) {
-    super(undefined, new Date());
+    super(id, new Date());
     this.memberId = memberId;
     this.questionId = questionId;
     this.name = name;
     this.url = url;
     this.thumbnail = thumbnail;
     this.videoLength = videoLength;
-    this.isPublic = isPublic;
+    this.visibility = visibility;
     this.myPageIndex = 0;
   }
 
   static from(member: Member, createVideoRequest: CreateVideoRequest): Video {
     return new Video(
+      null,
       member.id,
       createVideoRequest.questionId,
       `${member.nickname}_${createVideoRequest.videoName}`,
       createVideoRequest.url,
       createVideoRequest.thumbnail || DEFAULT_THUMBNAIL,
       createVideoRequest.videoLength,
-      false,
+      LINK_ONLY,
+    );
+  }
+
+  public isOwnedBy(member?: Member) {
+    return !!member && this.memberId === member.getId();
+  }
+
+  public isPublic() {
+    return this.visibility === PUBLIC;
+  }
+
+  public isPrivate() {
+    return this.visibility === PRIVATE;
+  }
+
+  public isLinkOnly() {
+    return this.visibility === LINK_ONLY;
+  }
+
+  public updateVideoInfo(updateVideoRequest: UpdateVideoRequest) {
+    this.visibility = updateVideoRequest.visibility;
+    this.name = updateVideoRequest.videoName;
+  }
+
+  public equals(video: Video) {
+    const comparator = this;
+    return (
+      Object.keys(video).filter(
+        (videoKey) => video[videoKey] !== comparator[videoKey],
+      ).length === 0
     );
   }
 }

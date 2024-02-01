@@ -18,6 +18,7 @@ import { Workbook } from '../workbook/entity/workbook';
 import { Question } from '../question/entity/question';
 import { Answer } from '../answer/entity/answer';
 import { Video } from '../video/entity/video';
+import { VideoRelation } from 'src/video/entity/videoRelation';
 
 export const createIntegrationTestModule = async (modules: unknown[]) => {
   const ormModule = await createTypeOrmModuleForTest();
@@ -53,7 +54,15 @@ export const ormModuleForTest = (): DataSourceOptions => {
   return {
     type: 'sqlite', // 또는 다른 테스트용 데이터베이스 설정
     database: ':memory:',
-    entities: [Member, Category, Workbook, Question, Answer, Video],
+    entities: [
+      Member,
+      Category,
+      Workbook,
+      Question,
+      Answer,
+      Video,
+      VideoRelation,
+    ],
     synchronize: true,
     logging: ['error'],
   };

@@ -35,6 +35,9 @@ import {
 } from '../exception/video.exception';
 import { ManipulatedTokenNotFiltered } from 'src/token/exception/token.exception';
 import { UpdateVideoIndexRequest } from '../dto/updateVideoIndexRequest';
+import { TokenSoftGuard } from 'src/token/guard/token.soft.guard';
+import { RelatableVideoResponse } from '../dto/RelatableVideoResponse';
+import { MemberVideoResponse } from '../dto/MemberVideoResponse';
 
 @Controller('/api/video')
 @ApiTags('video')
@@ -138,8 +141,71 @@ export class VideoController {
     return await this.videoService.getVideoDetailByHash(hash);
   }
 
-  @Get(':videoId')
+  @Get('/relate/:videoId')
   @UseGuards(TokenHardGuard)
+  @ApiCookieAuth()
+  @ApiOperation({
+    summary: '연관영상으로 등록할 수 있는 모든 영상을 조회한다.',
+  })
+  @ApiResponse(
+    createApiResponseOption(
+      200,
+      '연관영상으로 등록할 수 있는 모든 영상 조회 완료',
+      [RelatableVideoResponse],
+    ),
+  )
+  @ApiResponse(VideoAccessForbiddenException.response())
+  @ApiResponse(VideoNotFoundException.response())
+  @ApiResponse(ManipulatedTokenNotFiltered.response())
+  @ApiResponse(createApiResponseOption(500, 'V08, SERVER', null))
+  async getRelatableVideos(
+    @Param('videoId') videoId: number,
+    @Req() req: Request,
+  ) {
+    return await this.videoService.findRelatableVideos(
+      videoId,
+      req.user as Member,
+    );
+  }
+
+  @Get('/related/:videoId')
+  @UseGuards(TokenSoftGuard)
+  @ApiCookieAuth()
+  @ApiOperation({
+    summary: '관계된 비디오 정보 조회',
+  })
+  @ApiResponse(
+    createApiResponseOption(200, '관계된 비디오 조회 완료', [
+      SingleVideoResponse,
+    ]),
+  )
+  @ApiResponse(VideoNotFoundException.response())
+  async findRelatedVideoById(
+    @Param('videoId') videoId: number,
+    @Req() req: Request,
+  ) {
+    return await this.videoService.findAllRelatedVideoById(
+      videoId,
+      req.user as Member,
+    );
+  }
+
+  @Get('/public')
+  @ApiOperation({
+    summary: '공개된 영상 조회',
+  })
+  @ApiResponse(
+    createApiResponseOption(200, 'PUBLIC 영상 조회 완료', [
+      MemberVideoResponse,
+    ]),
+  )
+  async findPublicVideos() {
+    console.log('여기왔니?');
+    return await this.videoService.findPublicVideos();
+  }
+
+  @Get(':videoId')
+  @UseGuards(TokenSoftGuard)
   @ApiCookieAuth()
   @ApiOperation({
     summary: '비디오 상세 정보를 반환',
@@ -179,48 +245,48 @@ export class VideoController {
     );
   }
 
-  @Patch(':videoId')
-  @UseGuards(TokenHardGuard)
-  @ApiCookieAuth()
-  @ApiOperation({
-    summary: '비디오 공개/비공개 상태를 전환',
-  })
-  @ApiResponse(
-    createApiResponseOption(200, '비디오 상태 전환 완료', VideoHashResponse),
-  )
-  @ApiResponse(VideoAccessForbiddenException.response())
-  @ApiResponse(VideoNotFoundException.response())
-  @ApiResponse(createApiResponseOption(500, 'V05, V06, V07, SERVER', null))
-  async toggleVideoStatus(
-    @Param('videoId') videoId: number,
-    @Req() req: Request,
-  ) {
-    return await this.videoService.toggleVideoStatus(
-      videoId,
-      req.user as Member,
-    );
-  }
+  // @Patch(':videoId')
+  // @UseGuards(TokenHardGuard)
+  // @ApiCookieAuth()
+  // @ApiOperation({
+  //   summary: '비디오 공개/비공개 상태를 전환',
+  // })
+  // @ApiResponse(
+  //   createApiResponseOption(200, '비디오 상태 전환 완료', VideoHashResponse),
+  // )
+  // @ApiResponse(VideoAccessForbiddenException.response())
+  // @ApiResponse(VideoNotFoundException.response())
+  // @ApiResponse(createApiResponseOption(500, 'V05, V06, V07, SERVER', null))
+  // async toggleVideoStatus(
+  //   @Param('videoId') videoId: number,
+  //   @Req() req: Request,
+  // ) {
+  //   return await this.videoService.toggleVideoStatus(
+  //     videoId,
+  //     req.user as Member,
+  //   );
+  // }
 
-  @Patch('/name/:videoId')
+  @Patch('/:videoId')
   @UseGuards(TokenHardGuard)
   @ApiCookieAuth()
   @ApiBody({ type: UpdateVideoRequest })
   @ApiOperation({
-    summary: '비디오 이름 변경',
+    summary: '비디오 정보 수정(이름/공개여부/관계 영상 수정)',
   })
-  @ApiResponse(createApiResponseOption(200, '비디오 이름 변경 완료', null))
+  @ApiResponse(createApiResponseOption(200, '비디오 수정 완료', null))
   @ApiResponse(VideoAccessForbiddenException.response())
   @ApiResponse(VideoNotFoundException.response())
   @ApiResponse(ManipulatedTokenNotFiltered.response())
-  async updateVideoName(
+  async updateVideoInfo(
     @Param('videoId') videoId: number,
     @Req() req: Request,
     @Body() updateVideoRequest: UpdateVideoRequest,
   ) {
-    await this.videoService.updateVideoName(
-      videoId,
+    await this.videoService.updateVideo(
+      updateVideoRequest,
       req.user as Member,
-      updateVideoRequest.videoName,
+      videoId,
     );
   }
 
