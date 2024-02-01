@@ -1279,6 +1279,43 @@ describe('VideoService 통합 테스트', () => {
     });
   });
 
+  describe('findRelatableVideos', () => {
+    let video;
+
+    beforeEach(async () => {
+      await memberRepository.save(memberFixture);
+      video = await videoRepository.save(videoFixture);
+      const relations = videoListExample.map(async (each) => {
+        await videoRepository.save(each);
+        await videoRelationRepository.insert(VideoRelation.of(video, each));
+      });
+      await Promise.all(relations);
+      Promise.all(
+        videoListFixture.map(async (each) => await videoRepository.save(each)),
+      );
+    });
+
+    it('연관가능한 영상들을 조회하면, isRelated가 true인 영상이 listExample만큼, false인 영상이 listFixture만큼 나온다', async () => {
+      // given
+
+      // when
+      const data = await videoService.findRelatableVideos(
+        video.id,
+        memberFixture,
+      );
+
+      // then
+      expect(data.map((each) => each.id).includes(video.id)).toBeFalsy();
+      expect(data.length).toBe(
+        videoListFixture.length + videoListExample.length,
+      );
+      expect(data.filter((each) => each.isRelated).length).toBe(
+        videoListExample.length,
+      );
+      expect(data[0]).toBeInstanceOf(RelatableVideoResponse);
+    });
+  });
+
   describe('updateIndex', () => {
     const member = memberFixture;
 
