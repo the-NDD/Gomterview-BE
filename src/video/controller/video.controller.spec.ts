@@ -47,7 +47,10 @@ import { AuthService } from 'src/auth/service/auth.service';
 import { AuthModule } from 'src/auth/auth.module';
 import * as request from 'supertest';
 import { QuestionRepository } from 'src/question/repository/question.repository';
-import { questionFixture } from 'src/question/fixture/question.fixture';
+import {
+  questionFixture,
+  questionListFixture,
+} from 'src/question/fixture/question.fixture';
 import { workbookFixtureWithId } from 'src/workbook/fixture/workbook.fixture';
 import { WorkbookRepository } from 'src/workbook/repository/workbook.repository';
 import 'dotenv/config';
@@ -1107,6 +1110,70 @@ describe('VideoController 통합 테스트', () => {
             videoListExample.filter((each) => each.isPublic())[0].name,
           );
         });
+    });
+  });
+
+  describe('findRelatableVideos', () => {
+    let video;
+
+    beforeEach(async () => {
+      await memberRepository.save(memberFixture);
+      video = await videoRepository.save(videoFixture);
+      await Promise.all(
+        questionListFixture.map(
+          async (each) => await questionRepository.save(each),
+        ),
+      );
+      const relations = videoListExample.map(async (each) => {
+        await videoRepository.save(each);
+        await videoRelationRepository.insert(VideoRelation.of(video, each));
+      });
+      await Promise.all(relations);
+      await Promise.all(
+        videoListFixture.map(async (each) => await videoRepository.save(each)),
+      );
+    });
+
+    it('연관가능한 영상들을 조회하면, 200응답이 나온다', async () => {
+      // given
+
+      // when & then
+      const agent = request.agent(app.getHttpServer());
+      await agent
+        .get(`/api/video/relate/${video.id}`)
+        .set('Cookie', [`accessToken=${token}`])
+        .expect(200);
+    });
+
+    it('회원 정보가 없으면 401을 던진다.', async () => {
+      // given
+
+      // when & then
+      const agent = request.agent(app.getHttpServer());
+      await agent.get(`/api/video/relate/${video.id}`).expect(401);
+    });
+
+    it('id가 존재하지 않으면 404를 던진다.', async () => {
+      // given
+
+      // when & then
+      const agent = request.agent(app.getHttpServer());
+      await agent
+        .get(`/api/video/relate/${10000}`)
+        .set('Cookie', [`accessToken=${token}`])
+        .expect(404);
+    });
+
+    it('회원의 영상이 아니면 403을 던진다.', async () => {
+      // given
+      const otherToken = await authService.login(oauthRequestFixture);
+
+      // when & then
+      const agent = request.agent(app.getHttpServer());
+      await agent
+        .get(`/api/video/relate/${video.id}`)
+        .set('Cookie', [`accessToken=${otherToken}`])
+        .expect(403);
     });
   });
 
