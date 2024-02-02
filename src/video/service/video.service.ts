@@ -196,8 +196,6 @@ export class VideoService {
     const otherVideos = await this.findMyVideoOtherThan(video, member.id);
     const videosChild =
       await this.videoRelationRepository.findChildrenByParentId(videoId);
-    console.log(otherVideos);
-    console.log(videosChild);
     return otherVideos.map((video) =>
       RelatableVideoResponse.from(
         video,
@@ -219,10 +217,35 @@ export class VideoService {
     const video = await this.videoRepository.findById(videoId);
     this.validateVideoOwnership(video, member.id);
     video.updateVideoInfo(updateVideoRequest);
+    const videos = (
+      await this.videoRepository.findAllByIds(
+        updateVideoRequest.relatedVideoIds,
+      )
+    ).filter((each) => !each.equals(video));
+    const unrelatingVideos = (
+      await this.videoRelationRepository.findAllByParentId(video.id)
+    ).filter((each) => !updateVideoRequest.relatedVideoIds.includes(each.id));
 
-    // 비디오 엔티티 변경사항 저장
-    await this.updateRelatedVideos(updateVideoRequest.relatedVideoIds, video);
-    await this.videoRepository.save(video);
+    if (updateVideoRequest.relatedVideoIds.length === 0) {
+      await this.videoRelationRepository.deleteAll(unrelatingVideos);
+      await this.videoRepository.updateVideoInfo(video);
+      return;
+    }
+
+    await this.videoRelationRepository.deleteAll(unrelatingVideos);
+    const relatingVideos = await this.videoRepository.findAllByIds(
+      updateVideoRequest.relatedVideoIds,
+    );
+
+    if (relatingVideos.length !== updateVideoRequest.relatedVideoIds.length) {
+      throw new VideoNotFoundException();
+    }
+
+    await this.videoRelationRepository.save(
+      relatingVideos.map((each) => VideoRelation.of(video, each)),
+    );
+
+    await this.videoRepository.updateVideoInfo(video);
     await this.updateVideoHashInRedis(video);
   }
 

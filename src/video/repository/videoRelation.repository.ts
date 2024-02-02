@@ -10,6 +10,10 @@ export class VideoRelationRepository {
     private repository: Repository<VideoRelation>,
   ) {}
 
+  async save(videoRelation: VideoRelation[]) {
+    await this.repository.save(videoRelation);
+  }
+
   async insert(videoRelation: VideoRelation | VideoRelation[]) {
     await this.repository.insert(videoRelation);
   }

@@ -22,8 +22,6 @@ import { PreSignedUrlResponse } from '../dto/preSignedUrlResponse';
 import {
   IDriveException,
   InvalidHashException,
-  Md5HashException,
-  RedisDeleteException,
   RedisRetrieveException,
   VideoAccessForbiddenException,
   VideoLackException,
@@ -58,6 +56,7 @@ import { VideoRelationRepository } from '../repository/videoRelation.repository'
 import { VideoRelation } from '../entity/videoRelation';
 import { MemberVideoResponse } from '../dto/MemberVideoResponse';
 import { RelatableVideoResponse } from '../dto/RelatableVideoResponse';
+import { UpdateVideoRequest } from '../dto/updateVideoRequest';
 
 describe('VideoService 단위 테스트', () => {
   let videoService: VideoService;
@@ -72,6 +71,7 @@ describe('VideoService 단위 테스트', () => {
     remove: jest.fn(),
     updateIndex: jest.fn(),
     findAllByIds: jest.fn(),
+    updateVideoInfo: jest.fn(),
   };
 
   const mockMemberRepository = {
@@ -87,6 +87,7 @@ describe('VideoService 단위 테스트', () => {
     deleteAll: jest.fn(),
     insert: jest.fn(),
     findChildrenByParentId: jest.fn(),
+    save: jest.fn(),
   };
 
   // jest.mock('typeorm-transactional', () => ({
@@ -632,6 +633,8 @@ describe('VideoService 단위 테스트', () => {
       mockVideoRelationRepository.findAllByParentId.mockResolvedValue([]);
       mockVideoRelationRepository.deleteAll.mockResolvedValue(undefined);
       mockVideoRelationRepository.insert.mockResolvedValue(undefined);
+      mockVideoRelationRepository.save.mockResolvedValue(undefined);
+      mockVideoRepository.updateVideoInfo.mockResolvedValue(undefined);
 
       // then
       expect(
@@ -1245,6 +1248,101 @@ describe('VideoService 통합 테스트', () => {
       expect(
         videoService.updateVideo(updateVideoRequestFixture, member, video.id),
       ).resolves.toBeUndefined();
+    });
+
+    it('수정시 배열을 빈 배열로 주면, 모든 VideoRelation이 삭제된다.', async () => {
+      // given
+      const member = memberFixture;
+      const video = await videoRepository.save(videoFixture);
+      const updateVideoRequest = UpdateVideoRequest.of(
+        video.name,
+        'PUBLIC',
+        [],
+      );
+
+      // when & then
+      expect(
+        videoService.updateVideo(updateVideoRequest, member, video.id),
+      ).resolves.toBeUndefined();
+      expect(
+        (await videoService.findAllRelatedVideoById(video.id, member)).length,
+      ).toBe(0);
+    });
+
+    it('수정시 배열에 존재하는 id들은 후에 연관영상 조회시 나타난다.', async () => {
+      // given
+      const member = memberFixture;
+      const video = await videoRepository.save(videoFixture);
+      const relatedVideos = await Promise.all(
+        videoListExample.map(async (each) => {
+          const saved = await videoRepository.save(each);
+          await videoRelationRepository.save([VideoRelation.of(video, saved)]);
+          return saved;
+        }),
+      );
+      const updateVideoRequest = UpdateVideoRequest.of(video.name, 'PUBLIC', [
+        relatedVideos.pop().id,
+        relatedVideos.pop().id,
+      ]);
+
+      // when & then
+      await expect(
+        videoService.updateVideo(updateVideoRequest, member, video.id),
+      ).resolves.toBeUndefined();
+      expect(
+        (await videoService.findAllRelatedVideoById(video.id, member)).length,
+      ).toBe(2);
+    });
+
+    it('영상의 공유상태를 바꾸면 정상적으로 수정된다', async () => {
+      // given
+      const member = memberFixture;
+      const video = await videoRepository.save(videoFixture);
+      const relatedVideos = await Promise.all(
+        videoListExample.map(async (each) => {
+          const saved = await videoRepository.save(each);
+          await videoRelationRepository.save([VideoRelation.of(video, saved)]);
+          return saved;
+        }),
+      );
+      const updateVideoRequest = UpdateVideoRequest.of(video.name, 'PRIVATE', [
+        relatedVideos.pop().id,
+        relatedVideos.pop().id,
+      ]);
+
+      // when & then
+      await expect(
+        videoService.updateVideo(updateVideoRequest, member, video.id),
+      ).resolves.toBeUndefined();
+      expect(
+        (await videoRepository.findById(video.id)).isPrivate(),
+      ).toBeTruthy();
+    });
+
+    it('영상의 공유상태를 바꾸면 정상적으로 수정된다', async () => {
+      // given
+      const member = memberFixture;
+      const video = await videoRepository.save(videoFixture);
+      const relatedVideos = await Promise.all(
+        videoListExample.map(async (each) => {
+          const saved = await videoRepository.save(each);
+          await videoRelationRepository.save([VideoRelation.of(video, saved)]);
+          return saved;
+        }),
+      );
+      const updateVideoRequest = UpdateVideoRequest.of(
+        video.name,
+        'LINK_ONLY',
+        [relatedVideos.pop().id, relatedVideos.pop().id],
+      );
+
+      // when & then
+      await expect(
+        videoService.updateVideo(updateVideoRequest, member, video.id),
+      ).resolves.toBeUndefined();
+      expect(
+        (await videoRepository.findById(video.id)).isLinkOnly(),
+      ).toBeTruthy();
     });
 
     it('비디오 이름 변경 시 member가 없으면 ManipulatedTokenNotFiltered를 반환한다.', async () => {

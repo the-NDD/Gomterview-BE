@@ -65,13 +65,11 @@ export class VideoRepository {
       .execute();
   }
 
-  async updateVideoName(videoId: number, name: string) {
-    return await this.videoRepository
-      .createQueryBuilder()
-      .update(Video)
-      .set({ name })
-      .where('id = :id', { id: Number(videoId) })
-      .execute();
+  async updateVideoInfo(video: Video) {
+    return await this.videoRepository.update(video.id, {
+      name: video.name,
+      visibility: video.visibility,
+    });
   }
 
   async updateVideo(updateRequest: UpdateVideoRequest, videoId: number) {
