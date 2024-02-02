@@ -195,8 +195,6 @@ export class VideoService {
     const otherVideos = await this.findMyVideoOtherThan(video, member.id);
     const videosChild =
       await this.videoRelationRepository.findChildrenByParentId(videoId);
-    console.log(otherVideos);
-    console.log(videosChild);
     return otherVideos.map((video) =>
       RelatableVideoResponse.from(
         video,
@@ -218,11 +216,42 @@ export class VideoService {
     const video = await this.videoRepository.findById(videoId);
     this.validateVideoOwnership(video, member.id);
     video.updateVideoInfo(updateVideoRequest);
+    const unrelatingVideos = await this.findUnrelatedVideosById(
+      video.id,
+      updateVideoRequest,
+    );
 
-    // 비디오 엔티티 변경사항 저장
-    await this.updateRelatedVideos(updateVideoRequest.relatedVideoIds, video);
-    await this.videoRepository.save(video);
+    if (updateVideoRequest.relatedVideoIds.length === 0) {
+      await this.videoRelationRepository.deleteAll(unrelatingVideos);
+      await this.videoRepository.updateVideoInfo(video);
+      return;
+    }
+
+    await this.videoRelationRepository.deleteAll(unrelatingVideos);
+
+    const relatingVideos = await this.videoRepository.findAllByIds(
+      updateVideoRequest.relatedVideoIds,
+    );
+
+    if (relatingVideos.length !== updateVideoRequest.relatedVideoIds.length) {
+      throw new VideoNotFoundException();
+    }
+
+    await this.videoRelationRepository.save(
+      relatingVideos.map((each) => VideoRelation.of(video, each)),
+    );
+
+    await this.videoRepository.updateVideoInfo(video);
     await this.updateVideoHashInRedis(video);
+  }
+
+  private async findUnrelatedVideosById(
+    id: number,
+    updateVideoRequest: UpdateVideoRequest,
+  ) {
+    return (await this.videoRelationRepository.findAllByParentId(id)).filter(
+      (each) => !updateVideoRequest.relatedVideoIds.includes(each.id),
+    );
   }
 
   async updateIndex(
@@ -243,14 +272,6 @@ export class VideoService {
     await this.deleteVideoAndThumbnailInIDrive(video.url, video.thumbnail);
     await this.videoRepository.remove(video);
   }
-
-  // private async createVideoTitle(member: Member, questionId: number) {
-  //   const question = await this.questionRepository.findById(questionId);
-
-  //   return `${member.nickname}_${
-  //     question ? question.content : '삭제된 질문입니다'
-  //   }_${uuidv4().split('-').pop()}`;
-  // }
 
   private async getPreSignedUrlResponse(
     key: string,
@@ -314,31 +335,6 @@ export class VideoService {
     const videoIds = videos.map((video) => video.id).sort();
     const sortedIds = [...ids].sort();
     return this.compareIds(videoIds, sortedIds);
-  }
-
-  private async updateRelatedVideos(relatedVideoIds: number[], video: Video) {
-    const relations = await this.videoRelationRepository.findAllByParentId(
-      video.id,
-    );
-    await this.deleteByChildId(relations, relatedVideoIds);
-    await this.addNewRelations(relations, relatedVideoIds, video);
-  }
-
-  private async addNewRelations(
-    relations: VideoRelation[],
-    relatedVideoIds: number[],
-    video: Video,
-  ) {
-    const relationsIds = relations.map((each) => each.id);
-    const newIds = relatedVideoIds.filter((id) => !relationsIds.includes(id));
-    const foundVideos = await this.videoRepository.findAllByIds(newIds);
-
-    if (foundVideos.length !== newIds.length)
-      throw new VideoNotFoundException();
-
-    await this.videoRelationRepository.insert(
-      foundVideos.map((child) => VideoRelation.of(video, child)),
-    );
   }
 
   private async findMyVideoOtherThan(video: Video, memberId: number) {

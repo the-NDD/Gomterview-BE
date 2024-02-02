@@ -19,4 +19,18 @@ export class UpdateVideoRequest {
   )
   @IsArray()
   relatedVideoIds: number[];
+
+  constructor(
+    videoName: string,
+    visibility: string,
+    relatedVideoIds: number[],
+  ) {
+    this.videoName = videoName;
+    this.visibility = visibility;
+    this.relatedVideoIds = relatedVideoIds;
+  }
+
+  static of(videoName: string, visibility: string, relatedVideoIds: number[]) {
+    return new UpdateVideoRequest(videoName, visibility, relatedVideoIds);
+  }
 }
