@@ -3,6 +3,7 @@ import { VideoController } from './video.controller';
 import { VideoService } from '../service/video.service';
 import {
   memberFixture,
+  memberFixturesOAuthRequest,
   mockReqWithMemberFixture,
   oauthRequestFixture,
   otherMemberFixture,
@@ -26,7 +27,10 @@ import {
   createVideoRequestFixture,
   privateVideoFixture,
   thumbnailPreSignedInfoFixture,
+  updateVideoIndexRequestFixture,
+  updateVideoRequestFixture,
   videoFixture,
+  videoListExample,
   videoListFixture,
   videoOfOtherFixture,
   videoOfWithdrawnMemberFixture,
@@ -43,7 +47,10 @@ import { AuthService } from 'src/auth/service/auth.service';
 import { AuthModule } from 'src/auth/auth.module';
 import * as request from 'supertest';
 import { QuestionRepository } from 'src/question/repository/question.repository';
-import { questionFixture } from 'src/question/fixture/question.fixture';
+import {
+  questionFixture,
+  questionListFixture,
+} from 'src/question/fixture/question.fixture';
 import { workbookFixtureWithId } from 'src/workbook/fixture/workbook.fixture';
 import { WorkbookRepository } from 'src/workbook/repository/workbook.repository';
 import 'dotenv/config';
@@ -54,6 +61,13 @@ import { CategoryRepository } from 'src/category/repository/category.repository'
 import { categoryFixtureWithId } from 'src/category/fixture/category.fixture';
 import { clearRedis, saveToRedis } from 'src/util/redis.util';
 import redisMock from 'ioredis-mock';
+import { UpdateVideoIndexRequest } from '../dto/updateVideoIndexRequest';
+import { BAD_REQUEST, FORBIDDEN, UNAUTHORIZED } from 'src/constant/constant';
+import { Video } from '../entity/video';
+import * as idriveUtil from 'src/util/idrive.util';
+import { VideoRelationRepository } from '../repository/videoRelation.repository';
+import { VideoRelation } from '../entity/videoRelation';
+import { MemberVideoResponse } from '../dto/MemberVideoResponse';
 
 describe('VideoController 단위 테스트', () => {
   let controller: VideoController;
@@ -64,8 +78,9 @@ describe('VideoController 단위 테스트', () => {
     getAllVideosByMemberId: jest.fn(),
     getVideoDetail: jest.fn(),
     getVideoDetailByHash: jest.fn(),
-    toggleVideoStatus: jest.fn(),
+    updateVideo: jest.fn(),
     deleteVideo: jest.fn(),
+    updateIndex: jest.fn(),
   };
 
   beforeAll(async () => {
@@ -135,7 +150,7 @@ describe('VideoController 단위 테스트', () => {
       expect(result.thumbnail).toBe(thumbnailPreSignedInfoFixture);
     });
 
-    it('Pre-Signed URL 생성 도중 에러가 발생하면 IDriveException을 반환해야한다.', async () => {
+    it('Pre-Signed URL 생성 도중 에러가 발생하면 IDriveException을 반환한다.', async () => {
       //given
 
       // when
@@ -224,7 +239,7 @@ describe('VideoController 단위 테스트', () => {
       // when
       const mockVideoDetailWithHash = VideoDetailResponse.from(
         video,
-        nickname,
+        memberFixture,
         hash,
       );
       mockVideoService.getVideoDetailByHash.mockResolvedValue(
@@ -339,7 +354,6 @@ describe('VideoController 단위 테스트', () => {
 
   describe('getVideoDetail', () => {
     const mockReq = mockReqWithMemberFixture;
-    const nickname = memberFixture.nickname;
     const hash = 'fakeHash';
     const video = videoFixture;
 
@@ -349,7 +363,7 @@ describe('VideoController 단위 테스트', () => {
       // when
       const mockVideoDetailWithHash = VideoDetailResponse.from(
         video,
-        nickname,
+        memberFixture,
         hash,
       );
       mockVideoService.getVideoDetail.mockResolvedValue(
@@ -369,7 +383,7 @@ describe('VideoController 단위 테스트', () => {
       // when
       const mockVideoDetailWithHash = VideoDetailResponse.from(
         video,
-        nickname,
+        memberFixture,
         null,
       );
       mockVideoService.getVideoDetail.mockResolvedValue(
@@ -440,126 +454,201 @@ describe('VideoController 단위 테스트', () => {
     });
   });
 
-  describe('toggleVideoStatus', () => {
+  // describe('toggleVideoStatus', () => {
+  //   const member = mockReqWithMemberFixture;
+
+  //   it('비디오 상태 토글 성공 시 VideoHashResponse 객체 형태로 응답된다.', async () => {
+  //     // given
+  //     const hash = 'fakeHash';
+  //     const mockVideoHashResponse = new VideoHashResponse(hash);
+
+  //     // when
+  //     mockVideoService.toggleVideoStatus.mockResolvedValue(
+  //       mockVideoHashResponse,
+  //     );
+
+  //     // then
+  //     const result = await controller.toggleVideoStatus(1, member);
+
+  //     expect(result).toBeInstanceOf(VideoHashResponse);
+  //     expect(result).toBe(mockVideoHashResponse);
+  //   });
+
+  //   it('비디오 상태 토글 성공 시 비디오의 상태가 private라면 VideoHashResponse의 hash는 null로 설정되어 반환한다.', async () => {
+  //     // given
+  //     const mockVideoHashResponse = new VideoHashResponse(null);
+
+  //     // when
+  //     mockVideoService.toggleVideoStatus.mockResolvedValue(
+  //       mockVideoHashResponse,
+  //     );
+
+  //     // then
+  //     const result = await controller.toggleVideoStatus(1, member);
+
+  //     expect(result).toBeInstanceOf(VideoHashResponse);
+  //     expect(result).toBe(mockVideoHashResponse);
+  //     expect(result.hash).toBeNull();
+  //   });
+
+  //   it('비디오 상태 토글 시 회원 객체가 없으면 ManipulatedTokenNotFilteredException을 반환한다.', async () => {
+  //     // given
+  //     const nullMember = { user: null } as unknown as Request;
+
+  //     // when
+  //     mockVideoService.toggleVideoStatus.mockRejectedValue(
+  //       new ManipulatedTokenNotFiltered(),
+  //     );
+
+  //     // then
+  //     expect(controller.toggleVideoStatus(1, nullMember)).rejects.toThrow(
+  //       ManipulatedTokenNotFiltered,
+  //     );
+  //   });
+
+  //   it('비디오 상태 토글 시 해당 비디오가 삭제되었다면 VideoNotFoundException를 반환한다.', async () => {
+  //     // given
+
+  //     // when
+  //     mockVideoService.toggleVideoStatus.mockRejectedValue(
+  //       new VideoNotFoundException(),
+  //     );
+
+  //     // then
+  //     expect(controller.toggleVideoStatus(1, member)).rejects.toThrow(
+  //       VideoNotFoundException,
+  //     );
+  //   });
+
+  //   it('비디오 상태 토글 시 다른 회원의 비디오를 토글하려 한다면 VideoAccessForbiddenException를 반환한다.', async () => {
+  //     // given
+
+  //     // when
+  //     mockVideoService.toggleVideoStatus.mockRejectedValue(
+  //       new VideoAccessForbiddenException(),
+  //     );
+
+  //     // then
+  //     expect(controller.toggleVideoStatus(1, member)).rejects.toThrow(
+  //       VideoAccessForbiddenException,
+  //     );
+  //   });
+
+  //   it('비디오 상태 토글 시 url 해싱에 실패한다면 Md5HashException를 반환한다.', async () => {
+  //     // given
+
+  //     // when
+  //     mockVideoService.toggleVideoStatus.mockRejectedValue(
+  //       new Md5HashException(),
+  //     );
+
+  //     // then
+  //     expect(controller.toggleVideoStatus(1, member)).rejects.toThrow(
+  //       Md5HashException,
+  //     );
+  //   });
+
+  //   it('비디오 상태 토글 시 Redis에 데이터 저장 중 에러가 발생한다면 RedisSaveException을 반환한다.', async () => {
+  //     // given
+
+  //     // when
+  //     mockVideoService.toggleVideoStatus.mockRejectedValue(
+  //       new RedisSaveException(),
+  //     );
+
+  //     // then
+  //     expect(controller.toggleVideoStatus(1, member)).rejects.toThrow(
+  //       RedisSaveException,
+  //     );
+  //   });
+
+  //   it('비디오 상태 토글 시 Redis에서 데이터 삭제 도중 에러가 발생한다면 RedisDeleteException을 반환한다.', async () => {
+  //     // given
+
+  //     // when
+  //     mockVideoService.toggleVideoStatus.mockRejectedValue(
+  //       new RedisDeleteException(),
+  //     );
+
+  //     // then
+  //     expect(controller.toggleVideoStatus(1, member)).rejects.toThrow(
+  //       RedisDeleteException,
+  //     );
+  //   });
+  // });
+
+  describe('updateVideo', () => {
     const member = mockReqWithMemberFixture;
 
-    it('비디오 상태 토글 성공 시 VideoHashResponse 객체 형태로 응답된다.', async () => {
+    it('비디오 이름 변경 성공 시 undefined를 반환한다.', async () => {
       // given
-      const hash = 'fakeHash';
-      const mockVideoHashResponse = new VideoHashResponse(hash);
 
       // when
-      mockVideoService.toggleVideoStatus.mockResolvedValue(
-        mockVideoHashResponse,
-      );
+      mockVideoService.updateVideo.mockResolvedValue(undefined);
 
       // then
-      const result = await controller.toggleVideoStatus(1, member);
-
-      expect(result).toBeInstanceOf(VideoHashResponse);
-      expect(result).toBe(mockVideoHashResponse);
+      expect(
+        controller.updateVideoInfo(1, member, updateVideoRequestFixture),
+      ).resolves.toBeUndefined();
     });
 
-    it('비디오 상태 토글 성공 시 비디오의 상태가 private라면 VideoHashResponse의 hash는 null로 설정되어 반환한다.', async () => {
+    it('비디오 이름 변경 시 회원 객체가 없으면 ManipulatedTokenNotFilteredException을 반환한다.', async () => {
       // given
-      const mockVideoHashResponse = new VideoHashResponse(null);
+      const member = { user: null } as unknown as Request;
 
       // when
-      mockVideoService.toggleVideoStatus.mockResolvedValue(
-        mockVideoHashResponse,
-      );
-
-      // then
-      const result = await controller.toggleVideoStatus(1, member);
-
-      expect(result).toBeInstanceOf(VideoHashResponse);
-      expect(result).toBe(mockVideoHashResponse);
-      expect(result.hash).toBeNull();
-    });
-
-    it('비디오 상태 토글 시 회원 객체가 없으면 ManipulatedTokenNotFilteredException을 반환한다.', async () => {
-      // given
-      const nullMember = { user: null } as unknown as Request;
-
-      // when
-      mockVideoService.toggleVideoStatus.mockRejectedValue(
+      mockVideoService.updateVideo.mockRejectedValue(
         new ManipulatedTokenNotFiltered(),
       );
 
       // then
-      expect(controller.toggleVideoStatus(1, nullMember)).rejects.toThrow(
-        ManipulatedTokenNotFiltered,
-      );
+      expect(
+        controller.updateVideoInfo(1, member, updateVideoRequestFixture),
+      ).rejects.toThrow(ManipulatedTokenNotFiltered);
     });
 
-    it('비디오 상태 토글 시 해당 비디오가 삭제되었다면 VideoNotFoundException를 반환한다.', async () => {
+    it('비디오 이름 변경 시 해당 비디오가 삭제되었다면 VideoNotFoundException를 반환한다.', async () => {
       // given
 
       // when
-      mockVideoService.toggleVideoStatus.mockRejectedValue(
+      mockVideoService.updateVideo.mockRejectedValue(
         new VideoNotFoundException(),
       );
 
       // then
-      expect(controller.toggleVideoStatus(1, member)).rejects.toThrow(
-        VideoNotFoundException,
-      );
+      expect(
+        controller.updateVideoInfo(1, member, updateVideoRequestFixture),
+      ).rejects.toThrow(VideoNotFoundException);
     });
 
-    it('비디오 상태 토글 시 다른 회원의 비디오를 토글하려 한다면 VideoAccessForbiddenException를 반환한다.', async () => {
+    it('비디오 이름 변경 시 다른 회원의 비디오의 이름을 변경하려 한다면 VideoAccessForbiddenException를 반환한다.', async () => {
       // given
 
       // when
-      mockVideoService.toggleVideoStatus.mockRejectedValue(
+      mockVideoService.updateVideo.mockRejectedValue(
         new VideoAccessForbiddenException(),
       );
 
       // then
-      expect(controller.toggleVideoStatus(1, member)).rejects.toThrow(
-        VideoAccessForbiddenException,
-      );
+      expect(
+        controller.updateVideoInfo(1, member, updateVideoRequestFixture),
+      ).rejects.toThrow(VideoAccessForbiddenException);
     });
+  });
 
-    it('비디오 상태 토글 시 url 해싱에 실패한다면 Md5HashException를 반환한다.', async () => {
-      // given
+  describe('updateIndex', () => {
+    const member = mockReqWithMemberFixture;
 
-      // when
-      mockVideoService.toggleVideoStatus.mockRejectedValue(
-        new Md5HashException(),
-      );
+    it('영상 인덱스 수정 성공시 undefined를 반환한다', async () => {
+      //given
 
-      // then
-      expect(controller.toggleVideoStatus(1, member)).rejects.toThrow(
-        Md5HashException,
-      );
-    });
+      //when
+      mockVideoService.updateIndex.mockResolvedValue(undefined);
 
-    it('비디오 상태 토글 시 Redis에 데이터 저장 중 에러가 발생한다면 RedisSaveException을 반환한다.', async () => {
-      // given
-
-      // when
-      mockVideoService.toggleVideoStatus.mockRejectedValue(
-        new RedisSaveException(),
-      );
-
-      // then
-      expect(controller.toggleVideoStatus(1, member)).rejects.toThrow(
-        RedisSaveException,
-      );
-    });
-
-    it('비디오 상태 토글 시 Redis에서 데이터 삭제 도중 에러가 발생한다면 RedisDeleteException을 반환한다.', async () => {
-      // given
-
-      // when
-      mockVideoService.toggleVideoStatus.mockRejectedValue(
-        new RedisDeleteException(),
-      );
-
-      // then
-      expect(controller.toggleVideoStatus(1, member)).rejects.toThrow(
-        RedisDeleteException,
-      );
+      //then
+      await expect(
+        controller.updateIndex(member, updateVideoIndexRequestFixture),
+      ).resolves.toBeUndefined();
     });
   });
 
@@ -635,6 +724,7 @@ describe('VideoController 통합 테스트', () => {
   let questionRepository: QuestionRepository;
   let workbookRepository: WorkbookRepository;
   let videoRepository: VideoRepository;
+  let videoRelationRepository: VideoRelationRepository;
   let token: string;
 
   beforeAll(async () => {
@@ -656,10 +746,13 @@ describe('VideoController 통합 테스트', () => {
     workbookRepository =
       moduleFixture.get<WorkbookRepository>(WorkbookRepository);
     videoRepository = moduleFixture.get<VideoRepository>(VideoRepository);
+    videoRelationRepository = moduleFixture.get<VideoRelationRepository>(
+      VideoRelationRepository,
+    );
   });
 
   beforeEach(async () => {
-    token = await authService.login(oauthRequestFixture);
+    token = await authService.login(memberFixturesOAuthRequest);
     await categoryRepository.save(categoryFixtureWithId);
     await workbookRepository.save(workbookFixtureWithId);
     await questionRepository.save(questionFixture);
@@ -776,11 +869,7 @@ describe('VideoController 통합 테스트', () => {
         .expect(200)
         .expect((res) =>
           expect(res.body).toMatchObject(
-            VideoDetailResponse.from(
-              videoFixture,
-              oauthRequestFixture.name,
-              hash,
-            ),
+            VideoDetailResponse.from(videoFixture, memberFixture, hash),
           ),
         );
     });
@@ -801,11 +890,7 @@ describe('VideoController 통합 테스트', () => {
         .expect(200)
         .expect((res) =>
           expect(res.body).toMatchObject(
-            VideoDetailResponse.from(
-              videoFixture,
-              oauthRequestFixture.name,
-              hash,
-            ),
+            VideoDetailResponse.from(videoFixture, memberFixture, hash),
           ),
         );
     });
@@ -885,7 +970,6 @@ describe('VideoController 통합 테스트', () => {
     it('쿠키를 가지고 비디오 조회를 요청하면 200 상태 코드와 비디오 정보가 반환된다.', async () => {
       // given
       const video = await videoRepository.save(videoFixture);
-      const hash = crypto.createHash('md5').update(video.url).digest('hex');
 
       // when & then
       const agent = request.agent(app.getHttpServer());
@@ -895,11 +979,7 @@ describe('VideoController 통합 테스트', () => {
         .expect(200)
         .expect((res) =>
           expect(res.body).toMatchObject(
-            VideoDetailResponse.from(
-              videoFixture,
-              oauthRequestFixture.name,
-              hash,
-            ),
+            VideoDetailResponse.from(videoFixture, memberFixture, null),
           ),
         );
     });
@@ -916,35 +996,27 @@ describe('VideoController 통합 테스트', () => {
         .expect(200)
         .expect((res) => {
           expect(res.body).toMatchObject(
-            VideoDetailResponse.from(
-              privateVideoFixture,
-              oauthRequestFixture.name,
-              null,
-            ),
+            VideoDetailResponse.from(privateVideoFixture, memberFixture, null),
           );
         });
     });
 
-    it('쿠키 없이 해시로 비디오 조회를 요청하면 401 상태 코드가 반환된다.', async () => {
+    it('쿠키 없이 id로 비디오 조회를 요청하면 PUBLIC인 비디오는 정상적으로 반환된다.', async () => {
       // given
       const video = await videoRepository.save(videoFixture);
 
       // when & then
       const agent = request.agent(app.getHttpServer());
-      await agent.get(`/api/video/${video.id}`).expect(401);
+      await agent.get(`/api/video/${video.id}`).expect(200);
     });
 
-    it('다른 사람의 비디오 조회를 요청하면 403 상태 코드가 반환된다.', async () => {
-      // give
-      await memberRepository.save(otherMemberFixture);
-      const video = await videoRepository.save(videoOfOtherFixture);
+    it('쿠키 없이 id로 비디오 조회를 요청하면 PRIVATE인 비디오는 403을 반환된다.', async () => {
+      // given
+      const video = await videoRepository.save(privateVideoFixture);
 
       // when & then
       const agent = request.agent(app.getHttpServer());
-      await agent
-        .get(`/api/video/${video.id}`)
-        .set('Cookie', [`accessToken=${token}`])
-        .expect(403);
+      await agent.get(`/api/video/${video.id}`).expect(403);
     });
 
     it('존재하지 않는 비디오 조회를 요청하면 404 상태 코드가 반환된다.', async () => {
@@ -960,44 +1032,244 @@ describe('VideoController 통합 테스트', () => {
     });
   });
 
-  describe('toggleVideoStatus', () => {
-    it('쿠키를 가지고 비디오 상태 토글을 요청하면 200 상태 코드와 해시값 null이 반환된다.', async () => {
-      // give
-      const video = await videoRepository.save(videoFixture);
+  describe('findRelatedVideoById', () => {
+    let member;
+    let video;
+
+    beforeEach(async () => {
+      member = await memberRepository.save(memberFixture);
+      video = await videoRepository.save(videoFixture);
+      const relations = videoListExample.map(async (each) => {
+        await videoRepository.save(each);
+        await videoRelationRepository.insert(VideoRelation.of(video, each));
+      });
+      await Promise.all(relations);
+    });
+
+    it('회원의 토큰을 가지고 연관영상을 조회하면 전체 영상이 반환된다.', async () => {
+      // when & then
+      const agent = request.agent(app.getHttpServer());
+      await agent
+        .get(`/api/video/related/${video.id}`)
+        .set('Cookie', [`accessToken=${token}`])
+        .expect(200)
+        .then((response) => {
+          expect(response.body.length).toBe(videoListExample.length);
+        });
+    });
+
+    it('토큰 없이 연관영상을 조회하면 PUBLIC 영상이 반환된다.', async () => {
+      // when & then
+      const agent = request.agent(app.getHttpServer());
+      await agent
+        .get(`/api/video/related/${video.id}`)
+        .expect(200)
+        .then((response) => {
+          expect(response.body.length).toBe(
+            videoListExample.filter((each) => each.isPublic()).length,
+          );
+        });
+    });
+
+    it('video id가 존재하지 않는 값이면 404에러를 반환한다..', async () => {
+      // when & then
+      const agent = request.agent(app.getHttpServer());
+      await agent.get(`/api/video/related/${65416}`).expect(404);
+    });
+  });
+
+  describe('findPublicVideos', () => {
+    let video;
+
+    beforeEach(async () => {
+      await memberRepository.save(memberFixture);
+      video = await videoRepository.save(videoFixture);
+      const relations = videoListExample.map(async (each) => {
+        await videoRepository.save(each);
+        await videoRelationRepository.insert(VideoRelation.of(video, each));
+      });
+      await Promise.all(relations);
+    });
+
+    it('조회시 PUBLIC인 영상만 조회된다.', async () => {
+      // given
 
       // when & then
       const agent = request.agent(app.getHttpServer());
       await agent
-        .patch(`/api/video/${video.id}`)
-        .set('Cookie', [`accessToken=${token}`])
+        .get(`/api/video/public`)
         .expect(200)
-        .expect((res) => expect(res.body.hash).toBeNull());
+        .then((res) => {
+          console.log(res);
+          const publicVideoResponses = res.body;
+          expect(publicVideoResponses).toBeInstanceOf(Array);
+          expect(publicVideoResponses.length).toBe(2);
+          expect(publicVideoResponses[0]).toBeInstanceOf(Object);
+          expect(publicVideoResponses[0].id).toBe(video.id);
+          expect(publicVideoResponses[1].videoName).toBe(
+            videoListExample.filter((each) => each.isPublic())[0].name,
+          );
+        });
+    });
+  });
+
+  describe('findRelatableVideos', () => {
+    let video;
+
+    beforeEach(async () => {
+      await memberRepository.save(memberFixture);
+      video = await videoRepository.save(videoFixture);
+      await Promise.all(
+        questionListFixture.map(
+          async (each) => await questionRepository.save(each),
+        ),
+      );
+      const relations = videoListExample.map(async (each) => {
+        await videoRepository.save(each);
+        await videoRelationRepository.insert(VideoRelation.of(video, each));
+      });
+      await Promise.all(relations);
+      await Promise.all(
+        videoListFixture.map(async (each) => await videoRepository.save(each)),
+      );
     });
 
-    it('쿠키를 가지고 private 비디오의 상태 토글을 요청하면 200 상태 코드와 url 해시값이 반환된다.', async () => {
-      // give
-      const video = await videoRepository.save(privateVideoFixture);
-      const hash = crypto.createHash('md5').update(video.url).digest('hex');
+    it('연관가능한 영상들을 조회하면, 200응답이 나온다', async () => {
+      // given
 
       // when & then
       const agent = request.agent(app.getHttpServer());
       await agent
-        .patch(`/api/video/${video.id}`)
+        .get(`/api/video/relate/${video.id}`)
         .set('Cookie', [`accessToken=${token}`])
-        .expect(200)
-        .expect((res) => expect(res.body.hash).toBe(hash));
+        .expect(200);
     });
 
-    it('쿠키 없이 비디오 상태 토글을 요청하면 401 상태 코드가 반환된다.', async () => {
+    it('회원 정보가 없으면 401을 던진다.', async () => {
+      // given
+
+      // when & then
+      const agent = request.agent(app.getHttpServer());
+      await agent.get(`/api/video/relate/${video.id}`).expect(401);
+    });
+
+    it('id가 존재하지 않으면 404를 던진다.', async () => {
+      // given
+
+      // when & then
+      const agent = request.agent(app.getHttpServer());
+      await agent
+        .get(`/api/video/relate/${10000}`)
+        .set('Cookie', [`accessToken=${token}`])
+        .expect(404);
+    });
+
+    it('회원의 영상이 아니면 403을 던진다.', async () => {
+      // given
+      const otherToken = await authService.login(oauthRequestFixture);
+
+      // when & then
+      const agent = request.agent(app.getHttpServer());
+      await agent
+        .get(`/api/video/relate/${video.id}`)
+        .set('Cookie', [`accessToken=${otherToken}`])
+        .expect(403);
+    });
+  });
+
+  // describe('toggleVideoStatus', () => {
+  //   it('쿠키를 가지고 비디오 상태 토글을 요청하면 200 상태 코드와 해시값 null이 반환된다.', async () => {
+  //     // give
+  //     const video = await videoRepository.save(videoFixture);
+
+  //     // when & then
+  //     const agent = request.agent(app.getHttpServer());
+  //     await agent
+  //       .patch(`/api/video/${video.id}`)
+  //       .set('Cookie', [`accessToken=${token}`])
+  //       .expect(200)
+  //       .expect((res) => expect(res.body.hash).toBeNull());
+  //   });
+
+  //   it('쿠키를 가지고 private 비디오의 상태 토글을 요청하면 200 상태 코드와 url 해시값이 반환된다.', async () => {
+  //     // give
+  //     const video = await videoRepository.save(privateVideoFixture);
+  //     const hash = crypto.createHash('md5').update(video.url).digest('hex');
+
+  //     // when & then
+  //     const agent = request.agent(app.getHttpServer());
+  //     await agent
+  //       .patch(`/api/video/${video.id}`)
+  //       .set('Cookie', [`accessToken=${token}`])
+  //       .expect(200)
+  //       .expect((res) => expect(res.body.hash).toBe(hash));
+  //   });
+
+  //   it('쿠키 없이 비디오 상태 토글을 요청하면 401 상태 코드가 반환된다.', async () => {
+  //     // given
+  //     const video = await videoRepository.save(videoFixture);
+
+  //     // when & then
+  //     const agent = request.agent(app.getHttpServer());
+  //     await agent.patch(`/api/video/${video.id}`).expect(401);
+  //   });
+
+  //   it('다른 사람의 비디오 상태 토글을 요청하면 403 상태 코드가 반환된다.', async () => {
+  //     // give
+  //     await memberRepository.save(otherMemberFixture);
+  //     const video = await videoRepository.save(videoOfOtherFixture);
+
+  //     // when & then
+  //     const agent = request.agent(app.getHttpServer());
+  //     await agent
+  //       .patch(`/api/video/${video.id}`)
+  //       .set('Cookie', [`accessToken=${token}`])
+  //       .expect(403);
+  //   });
+
+  //   it('존재하지 않는 비디오 상태 토글을 요청하면 404 상태 코드가 반환된다.', async () => {
+  //     // give
+  //     const video = await videoRepository.save(videoFixture);
+
+  //     // when & then
+  //     const agent = request.agent(app.getHttpServer());
+  //     await agent
+  //       .patch(`/api/video/${video.id + 1000}`)
+  //       .set('Cookie', [`accessToken=${token}`])
+  //       .expect(404);
+  //   });
+  // });
+
+  describe('updateVideoInfo', () => {
+    it('쿠키를 가지고 비디오 이름 변경을 요청하면 200 상태 코드와 undefined가 반환된다.', async () => {
       // given
       const video = await videoRepository.save(videoFixture);
 
       // when & then
       const agent = request.agent(app.getHttpServer());
-      await agent.patch(`/api/video/${video.id}`).expect(401);
+      await agent
+        .patch(`/api/video/${video.id}`)
+        .set('Cookie', [`accessToken=${token}`])
+        .send(updateVideoRequestFixture)
+        .expect(200)
+        .expect((res) => {
+          expect(res.body).toStrictEqual({});
+        });
     });
 
-    it('다른 사람의 비디오 상태 토글을 요청하면 403 상태 코드가 반환된다.', async () => {
+    it('쿠키 없이 비디오 이름 변경을 요청하면 401 상태코드가 반환된다.', async () => {
+      // given
+      const video = await videoRepository.save(videoFixture);
+
+      // when & then
+      const agent = request.agent(app.getHttpServer());
+      await agent
+        .patch(`/api/video/${video.id}`)
+        .send(updateVideoRequestFixture)
+        .expect(401);
+    });
+
+    it('다른 사람의 비디오 이름 변경을 요청하면 403 상태 코드가 반환된다.', async () => {
       // give
       await memberRepository.save(otherMemberFixture);
       const video = await videoRepository.save(videoOfOtherFixture);
@@ -1007,10 +1279,11 @@ describe('VideoController 통합 테스트', () => {
       await agent
         .patch(`/api/video/${video.id}`)
         .set('Cookie', [`accessToken=${token}`])
+        .send(updateVideoRequestFixture)
         .expect(403);
     });
 
-    it('존재하지 않는 비디오 상태 토글을 요청하면 404 상태 코드가 반환된다.', async () => {
+    it('존재하지 않는 비디오의 이름 변경을 요청하면 404 상태 코드가 반환된다.', async () => {
       // give
       const video = await videoRepository.save(videoFixture);
 
@@ -1019,13 +1292,94 @@ describe('VideoController 통합 테스트', () => {
       await agent
         .patch(`/api/video/${video.id + 1000}`)
         .set('Cookie', [`accessToken=${token}`])
+        .send(updateVideoRequestFixture)
         .expect(404);
+    });
+  });
+
+  describe('updateIndex', () => {
+    const saveDummy = async () =>
+      await Promise.all(
+        videoListExample.map(async (video) => {
+          return await videoRepository.save(video);
+        }),
+      );
+
+    const mapIds = (videos: Video[]) => videos.map((each) => Number(each.id));
+
+    it('쿠키를 가지고 비디오 인덱스 수정을 요청하면 200 상태코드가 반환된다', async () => {
+      // given
+      const videos = await saveDummy();
+      const ids = mapIds(videos);
+      ids.unshift(ids.pop());
+      ids.unshift(ids.pop());
+
+      // when & then
+      const agent = request.agent(app.getHttpServer());
+      await agent
+        .patch(`/api/video/index`)
+        .set('Cookie', [`accessToken=${token}`])
+        .send(UpdateVideoIndexRequest.of(ids))
+        .expect(200);
+      const changedIndex = await videoRepository.findAllVideosByMemberId(1);
+      expect(changedIndex.map((video) => video.id)).toEqual(ids);
+    });
+
+    it('쿠키가 없으면 401 상태코드를 반환한다.', async () => {
+      // given
+      await saveDummy();
+
+      // when & then
+      const agent = request.agent(app.getHttpServer());
+      await agent
+        .patch(`/api/video/index`)
+        .send(updateVideoIndexRequestFixture)
+        .expect(UNAUTHORIZED);
+    });
+
+    it('회원의 영상 길이와 입력받은 영상 id들의 개수가 다르면 400코드를 반환한다.', async () => {
+      // given
+      const videos = await saveDummy();
+      const ids = mapIds(videos);
+      ids.unshift(ids.pop());
+      ids.pop();
+
+      // when & then
+      const agent = request.agent(app.getHttpServer());
+      await agent
+        .patch(`/api/video/index`)
+        .set('Cookie', [`accessToken=${token}`])
+        .send(UpdateVideoIndexRequest.of(ids))
+        .expect(BAD_REQUEST);
+    });
+
+    it('회원의 영상이 아닌 다른 영상의 id가 들어오면 403코드를 반환한다.', async () => {
+      // given
+      await saveDummy();
+      const ids = updateVideoIndexRequestFixture.ids;
+      ids.pop();
+      ids.push(1234);
+
+      // when & then
+      const agent = request.agent(app.getHttpServer());
+      await agent
+        .patch(`/api/video/index`)
+        .set('Cookie', [`accessToken=${token}`])
+        .send(UpdateVideoIndexRequest.of(ids))
+        .expect(FORBIDDEN);
     });
   });
 
   describe('deleteVideo', () => {
     it('쿠키를 가지고 비디오의 삭제를 요청하면 204 상태 코드가 반환된다.', async () => {
       // give
+      // deleteObjectInIdrive 함수를 jest.fn()으로 모킹
+      const deleteObjectInIDriveSpy = jest.spyOn(
+        idriveUtil,
+        'deleteObjectInIDrive',
+      );
+      deleteObjectInIDriveSpy.mockResolvedValue(undefined);
+
       const video = await videoRepository.save(videoFixture);
 
       // when & then
@@ -1035,6 +1389,8 @@ describe('VideoController 통합 테스트', () => {
         .set('Cookie', [`accessToken=${token}`])
         .expect(204)
         .expect((res) => expect(res.body).toEqual({}));
+
+      deleteObjectInIDriveSpy.mockRestore();
     });
 
     it('쿠키 없이 비디오의 삭제를 요청하면 401 상태 코드가 반환된다.', async () => {

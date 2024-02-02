@@ -21,8 +21,14 @@ export class SingleVideoResponse {
   @ApiProperty(createPropertyOption('03:29', '비디오 길이', String))
   readonly videoLength: string;
 
-  @ApiProperty(createPropertyOption('false', '비디오 공개 여부', Boolean))
-  readonly isPublic: boolean;
+  @ApiProperty(
+    createPropertyOption(
+      'PUBLIC / PRIVATE / LINK_ONLY',
+      '비디오 공개 여부',
+      String,
+    ),
+  )
+  readonly visibility: string;
 
   @ApiProperty(
     createPropertyOption(1699858790176, '비디오 생성 일자(ms 단위)', Number),
@@ -34,14 +40,14 @@ export class SingleVideoResponse {
     thumbnail: string,
     videoName: string,
     videoLength: string,
-    isPublic: boolean,
+    visibility: string,
     createdAt: number,
   ) {
     this.id = id;
     this.thumbnail = thumbnail;
     this.videoName = videoName;
     this.videoLength = videoLength;
-    this.isPublic = isPublic;
+    this.visibility = visibility;
     this.createdAt = createdAt;
   }
 
@@ -51,7 +57,7 @@ export class SingleVideoResponse {
       video.thumbnail,
       video.name,
       video.videoLength,
-      video.isPublic,
+      video.visibility,
       video.createdAt.getTime(),
     );
   }

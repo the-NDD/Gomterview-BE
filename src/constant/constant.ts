@@ -18,6 +18,10 @@ export const companies = [
 ];
 export const DEFAULT_THUMBNAIL = process.env.DEFAULT_THUMBNAIL;
 
+export const OK = 200;
+export const CREATED = 201;
+export const NO_CONTENT = 204;
+
 export const BAD_REQUEST = 400;
 export const UNAUTHORIZED = 401;
 export const FORBIDDEN = 403;
@@ -31,3 +35,6 @@ export const REFRESH_TOKEN_EXPIRES_IN = process.env.REFRESH_TOKEN_EXPIRES_IN; //
 export const NO_CACHE_URL = ['/api/member', '/api/auth/reissue'];
 export const HOUR_IN_SECONDS = 60 * 60;
 export const WEEK_IN_SECONDS = 60 * 60 * 24 * 7;
+
+export const IDRIVE_VIDEO_ENDPOINT = `${process.env.IDRIVE_STORAGE_URL}/videos/`;
+export const IDRIVE_THUMBNAIL_ENDPOINT = `${process.env.IDRIVE_STORAGE_URL}/thumbnail/`;
