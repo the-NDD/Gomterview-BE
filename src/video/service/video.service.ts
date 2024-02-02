@@ -372,8 +372,8 @@ export class VideoService {
     videoUrl: string,
     thumbnailUrl: string,
   ) {
-    const videoKey = videoUrl.split(IDRIVE_VIDEO_ENDPOINT)[1];
-    const thumbnailKey = thumbnailUrl.split(IDRIVE_THUMBNAIL_ENDPOINT)[1];
+    const videoKey = videoUrl.replace(IDRIVE_VIDEO_ENDPOINT, '');
+    const thumbnailKey = thumbnailUrl.replace(IDRIVE_THUMBNAIL_ENDPOINT, '');
     try {
       await deleteObjectInIDrive(videoKey, true);
     } catch (error) {
