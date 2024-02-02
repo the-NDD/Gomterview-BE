@@ -13,7 +13,7 @@ export class MemberVideoResponse {
       String,
     ),
   )
-  videoThumbnail: string;
+  thumbnail: string;
 
   @ApiProperty(
     createPropertyOption('RESTful하다는 것은 무엇일까요?', '영상 이름', String),
@@ -48,7 +48,7 @@ export class MemberVideoResponse {
     userThumbnail: string,
   ) {
     this.id = id;
-    this.videoThumbnail = videoThumbnail;
+    this.thumbnail = videoThumbnail;
     this.videoName = videoName;
     this.videoLength = videoLength;
     this.createdAt = createdAt;
