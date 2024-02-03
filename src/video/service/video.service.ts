@@ -41,6 +41,7 @@ import { VideoRelation } from '../entity/videoRelation';
 import { MemberVideoResponse } from '../dto/MemberVideoResponse';
 import { RelatableVideoResponse } from '../dto/RelatableVideoResponse';
 import {
+  DEFAULT_THUMBNAIL,
   IDRIVE_THUMBNAIL_ENDPOINT,
   IDRIVE_VIDEO_ENDPOINT,
 } from 'src/constant/constant';
@@ -373,13 +374,14 @@ export class VideoService {
     thumbnailUrl: string,
   ) {
     const videoKey = videoUrl.replace(IDRIVE_VIDEO_ENDPOINT, '');
-    const thumbnailKey = thumbnailUrl.replace(IDRIVE_THUMBNAIL_ENDPOINT, '');
     try {
       await deleteObjectInIDrive(videoKey, true);
     } catch (error) {
       throw new DeleteObjectFailedException('비디오');
     }
 
+    const thumbnailKey = thumbnailUrl.replace(IDRIVE_THUMBNAIL_ENDPOINT, '');
+    if (thumbnailUrl === DEFAULT_THUMBNAIL) return; // 만약 삭제하려는 이미지가 DEFAULT_THUMBNAIL이라면 삭제하지 않기
     try {
       await deleteObjectInIDrive(thumbnailKey, false);
     } catch (error) {
