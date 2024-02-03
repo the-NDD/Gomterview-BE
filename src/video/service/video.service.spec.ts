@@ -450,7 +450,8 @@ describe('VideoService 단위 테스트', () => {
             'test',
             'http://localhost:8080',
             null,
-            '1000',
+            '01:00',
+            '예시 답변입니다.',
           ),
         ),
       );
@@ -1257,6 +1258,8 @@ describe('VideoService 통합 테스트', () => {
         video.name,
         'PUBLIC',
         [],
+        video.thumbnail,
+        video.videoAnswer,
       );
 
       // when & then
@@ -1279,10 +1282,13 @@ describe('VideoService 통합 테스트', () => {
           return saved;
         }),
       );
-      const updateVideoRequest = UpdateVideoRequest.of(video.name, 'PUBLIC', [
-        relatedVideos.pop().id,
-        relatedVideos.pop().id,
-      ]);
+      const updateVideoRequest = UpdateVideoRequest.of(
+        video.name,
+        'PUBLIC',
+        [relatedVideos.pop().id, relatedVideos.pop().id],
+        video.thumbnail,
+        video.videoAnswer,
+      );
 
       // when & then
       await expect(
@@ -1304,10 +1310,13 @@ describe('VideoService 통합 테스트', () => {
           return saved;
         }),
       );
-      const updateVideoRequest = UpdateVideoRequest.of(video.name, 'PRIVATE', [
-        relatedVideos.pop().id,
-        relatedVideos.pop().id,
-      ]);
+      const updateVideoRequest = UpdateVideoRequest.of(
+        video.name,
+        'PRIVATE',
+        [relatedVideos.pop().id, relatedVideos.pop().id],
+        video.thumbnail,
+        video.videoAnswer,
+      );
 
       // when & then
       await expect(
@@ -1333,6 +1342,8 @@ describe('VideoService 통합 테스트', () => {
         video.name,
         'LINK_ONLY',
         [relatedVideos.pop().id, relatedVideos.pop().id],
+        video.thumbnail,
+        video.videoAnswer,
       );
 
       // when & then
@@ -1377,6 +1388,8 @@ describe('VideoService 통합 테스트', () => {
         videoService.updateVideo(updateVideoRequestFixture, member, video.id),
       ).rejects.toThrow(VideoAccessForbiddenException);
     });
+
+    // TODO: 비디오 변경 시 썸네일이 ""으로 들어오면 Default 이미지로 변경한다.
   });
 
   describe('findRelatableVideos', () => {
