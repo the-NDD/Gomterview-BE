@@ -26,7 +26,7 @@ export class VideoRepository {
       .getMany();
   }
 
-  async findAllByIds(ids: Number[]) {
+  async findAllByIds(ids: number[]) {
     return await this.videoRepository
       .createQueryBuilder('video')
       .where('video.id IN (:...ids)', { ids })

@@ -450,7 +450,8 @@ describe('VideoService 단위 테스트', () => {
             'test',
             'http://localhost:8080',
             null,
-            '1000',
+            '01:00',
+            '예시 답변입니다.',
           ),
         ),
       );
@@ -561,7 +562,6 @@ describe('VideoService 단위 테스트', () => {
 
     it('Member 없이 요청을 할 경우 ManipulatedTokenNotFilteredException을 던진다.', async () => {
       // given
-      const member = memberFixture;
       const requestVideo = videoFixture;
       const videos = [...videoListExample, ...videoListFixture];
       const relatedVideos = videoListFixture;
@@ -1258,6 +1258,8 @@ describe('VideoService 통합 테스트', () => {
         video.name,
         'PUBLIC',
         [],
+        video.thumbnail,
+        video.videoAnswer,
       );
 
       // when & then
@@ -1280,10 +1282,13 @@ describe('VideoService 통합 테스트', () => {
           return saved;
         }),
       );
-      const updateVideoRequest = UpdateVideoRequest.of(video.name, 'PUBLIC', [
-        relatedVideos.pop().id,
-        relatedVideos.pop().id,
-      ]);
+      const updateVideoRequest = UpdateVideoRequest.of(
+        video.name,
+        'PUBLIC',
+        [relatedVideos.pop().id, relatedVideos.pop().id],
+        video.thumbnail,
+        video.videoAnswer,
+      );
 
       // when & then
       await expect(
@@ -1305,10 +1310,13 @@ describe('VideoService 통합 테스트', () => {
           return saved;
         }),
       );
-      const updateVideoRequest = UpdateVideoRequest.of(video.name, 'PRIVATE', [
-        relatedVideos.pop().id,
-        relatedVideos.pop().id,
-      ]);
+      const updateVideoRequest = UpdateVideoRequest.of(
+        video.name,
+        'PRIVATE',
+        [relatedVideos.pop().id, relatedVideos.pop().id],
+        video.thumbnail,
+        video.videoAnswer,
+      );
 
       // when & then
       await expect(
@@ -1334,6 +1342,8 @@ describe('VideoService 통합 테스트', () => {
         video.name,
         'LINK_ONLY',
         [relatedVideos.pop().id, relatedVideos.pop().id],
+        video.thumbnail,
+        video.videoAnswer,
       );
 
       // when & then
@@ -1359,7 +1369,7 @@ describe('VideoService 통합 테스트', () => {
     it('비디오 이름 변경 시 존재하지 않는 비디오의 이름을 변경하려 하면 VideoNotFoundException을 반환한다.', async () => {
       // given
       const member = memberFixture;
-      const video = await videoRepository.save(videoFixture);
+      await videoRepository.save(videoFixture);
 
       // when & then
       expect(
@@ -1378,6 +1388,8 @@ describe('VideoService 통합 테스트', () => {
         videoService.updateVideo(updateVideoRequestFixture, member, video.id),
       ).rejects.toThrow(VideoAccessForbiddenException);
     });
+
+    // TODO: 비디오 변경 시 썸네일이 ""으로 들어오면 Default 이미지로 변경한다.
   });
 
   describe('findRelatableVideos', () => {
@@ -1416,7 +1428,6 @@ describe('VideoService 통합 테스트', () => {
           await videoRepository.findAllVideosByMemberId(memberFixture.id)
         ).filter((each) => each.id !== video.id).length,
       );
-      console.log(data);
       expect(data.filter((each) => each.isRelated).length).toBe(
         videoListExample.length,
       );

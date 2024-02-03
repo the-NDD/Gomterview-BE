@@ -24,7 +24,6 @@ import {
 import { createApiResponseOption } from 'src/util/swagger.util';
 import { PreSignedUrlResponse } from '../dto/preSignedUrlResponse';
 import { VideoDetailResponse } from '../dto/videoDetailResponse';
-import { VideoHashResponse } from '../dto/videoHashResponse';
 import { SingleVideoResponse } from '../dto/singleVideoResponse';
 import { TokenHardGuard } from 'src/token/guard/token.hard.guard';
 import { UpdateVideoRequest } from '../dto/updateVideoRequest';
@@ -200,7 +199,6 @@ export class VideoController {
     ]),
   )
   async findPublicVideos() {
-    console.log('여기왔니?');
     return await this.videoService.findPublicVideos();
   }
 
@@ -272,7 +270,7 @@ export class VideoController {
   @ApiCookieAuth()
   @ApiBody({ type: UpdateVideoRequest })
   @ApiOperation({
-    summary: '비디오 정보 수정(이름/공개여부/관계 영상 수정)',
+    summary: '비디오 정보 수정(이름/공개여부/관계 영상/썸네일/답변 수정)',
   })
   @ApiResponse(createApiResponseOption(200, '비디오 수정 완료', null))
   @ApiResponse(VideoAccessForbiddenException.response())

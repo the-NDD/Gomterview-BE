@@ -26,16 +26,7 @@ import { Member } from '../../member/entity/member';
 import { CopyQuestionRequest } from '../dto/copyQuestionRequest';
 import { WorkbookIdResponse } from '../../workbook/dto/workbookIdResponse';
 import { TokenHardGuard } from 'src/token/guard/token.hard.guard';
-import {
-  BAD_REQUEST,
-  FORBIDDEN,
-  GONE,
-  INTERNAL_SERVER_ERROR,
-  NOT_FOUND,
-  NO_CONTENT,
-  OK,
-  UNAUTHORIZED,
-} from 'src/constant/constant';
+import { BAD_REQUEST, NOT_FOUND, NO_CONTENT, OK } from 'src/constant/constant';
 import { UpdateIndexInWorkbookRequest } from '../dto/updateIndexInWorkbookRequest';
 import {
   InvalidTokenException,

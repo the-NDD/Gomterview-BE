@@ -52,17 +52,26 @@ export class CreateVideoRequest {
   })
   videoLength: string;
 
+  @ApiProperty(
+    createPropertyOption('예시 답변입니다.', '답변 스크립트', String),
+  )
+  @IsString()
+  @IsNotEmpty()
+  videoAnswer: string;
+
   constructor(
     questionId: number,
     videoName: string,
     url: string,
     thumbnail: string,
     videoLength: string,
+    videoAnswer: string,
   ) {
     this.questionId = questionId;
     this.videoName = videoName;
     this.url = url;
     this.thumbnail = thumbnail;
     this.videoLength = videoLength;
+    this.videoAnswer = videoAnswer;
   }
 }
