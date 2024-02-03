@@ -4,7 +4,10 @@ import { DefaultEntity } from 'src/app.entity';
 import { Member } from 'src/member/entity/member';
 import { Question } from 'src/question/entity/question';
 import { CreateVideoRequest } from '../dto/createVideoRequest';
-import { DEFAULT_THUMBNAIL } from 'src/constant/constant';
+import {
+  DEFAULT_THUMBNAIL,
+  IDRIVE_THUMBNAIL_ENDPOINT,
+} from 'src/constant/constant';
 import { LINK_ONLY, PRIVATE, PUBLIC } from '../constant/videoVisibility';
 import { UpdateVideoRequest } from '../dto/updateVideoRequest';
 import { deleteObjectInIDrive } from 'src/util/idrive.util';
@@ -107,7 +110,10 @@ export class Video extends DefaultEntity {
     this.name = updateVideoRequest.videoName;
     if (updateVideoRequest.thumbnail === '') {
       this.thumbnail = DEFAULT_THUMBNAIL;
-      deleteObjectInIDrive(this.thumbnail, false);
+      deleteObjectInIDrive(
+        this.thumbnail.replace(IDRIVE_THUMBNAIL_ENDPOINT, ''),
+        false,
+      );
     }
     this.videoAnswer = updateVideoRequest.videoAnswer;
   }
