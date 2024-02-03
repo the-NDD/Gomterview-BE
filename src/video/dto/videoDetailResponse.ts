@@ -42,6 +42,11 @@ export class VideoDetailResponse {
   readonly visibility: string;
 
   @ApiProperty(
+    createPropertyOption('https://example.com', '비디오 썸네일', String),
+  )
+  thumbnail: string;
+
+  @ApiProperty(
     createPropertyOption('예시 답변입니다.', '답변 스크립트', String),
   )
   videoAnswer: string;
@@ -55,6 +60,7 @@ export class VideoDetailResponse {
     hash: string,
     createdAt: number,
     visibility: string,
+    thumbnail: string,
     videoAnswer: string,
   ) {
     this.id = id;
@@ -65,6 +71,7 @@ export class VideoDetailResponse {
     this.hash = hash;
     this.createdAt = createdAt;
     this.visibility = visibility;
+    this.thumbnail = thumbnail;
     this.videoAnswer = videoAnswer;
   }
 
@@ -78,6 +85,7 @@ export class VideoDetailResponse {
       hash,
       video.createdAt.getTime(),
       video.visibility,
+      video.thumbnail,
       video.videoAnswer,
     );
   }
