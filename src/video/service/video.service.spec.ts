@@ -561,7 +561,6 @@ describe('VideoService 단위 테스트', () => {
 
     it('Member 없이 요청을 할 경우 ManipulatedTokenNotFilteredException을 던진다.', async () => {
       // given
-      const member = memberFixture;
       const requestVideo = videoFixture;
       const videos = [...videoListExample, ...videoListFixture];
       const relatedVideos = videoListFixture;
@@ -1359,7 +1358,7 @@ describe('VideoService 통합 테스트', () => {
     it('비디오 이름 변경 시 존재하지 않는 비디오의 이름을 변경하려 하면 VideoNotFoundException을 반환한다.', async () => {
       // given
       const member = memberFixture;
-      const video = await videoRepository.save(videoFixture);
+      await videoRepository.save(videoFixture);
 
       // when & then
       expect(
@@ -1416,7 +1415,6 @@ describe('VideoService 통합 테스트', () => {
           await videoRepository.findAllVideosByMemberId(memberFixture.id)
         ).filter((each) => each.id !== video.id).length,
       );
-      console.log(data);
       expect(data.filter((each) => each.isRelated).length).toBe(
         videoListExample.length,
       );

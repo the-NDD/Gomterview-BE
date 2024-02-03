@@ -101,10 +101,9 @@ export class Video extends DefaultEntity {
   }
 
   public equals(video: Video) {
-    const comparator = this;
     return (
       Object.keys(video).filter(
-        (videoKey) => video[videoKey] !== comparator[videoKey],
+        (videoKey) => video[videoKey] !== this[videoKey],
       ).length === 0
     );
   }

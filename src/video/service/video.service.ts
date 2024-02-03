@@ -99,7 +99,6 @@ export class VideoService {
   //   await new Promise((resolve, reject) => {
   //     s3.putObject(params as PutObjectCommandInput, (err, data) => {
   //       if (err) reject(err);
-  //       console.log(data);
   //       resolve(key);
   //     });
   //   });

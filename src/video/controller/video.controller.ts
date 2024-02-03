@@ -24,7 +24,6 @@ import {
 import { createApiResponseOption } from 'src/util/swagger.util';
 import { PreSignedUrlResponse } from '../dto/preSignedUrlResponse';
 import { VideoDetailResponse } from '../dto/videoDetailResponse';
-import { VideoHashResponse } from '../dto/videoHashResponse';
 import { SingleVideoResponse } from '../dto/singleVideoResponse';
 import { TokenHardGuard } from 'src/token/guard/token.hard.guard';
 import { UpdateVideoRequest } from '../dto/updateVideoRequest';
@@ -200,7 +199,6 @@ export class VideoController {
     ]),
   )
   async findPublicVideos() {
-    console.log('여기왔니?');
     return await this.videoService.findPublicVideos();
   }
 
