@@ -29,7 +29,6 @@ import { QuestionRepository } from '../repository/question.repository';
 import { WorkbookRepository } from '../../workbook/repository/workbook.repository';
 import {
   otherWorkbookFixture,
-  workbookFixture,
   workbookFixtureWithId,
 } from '../../workbook/fixture/workbook.fixture';
 import { WorkbookModule } from '../../workbook/workbook.module';

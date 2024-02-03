@@ -14,6 +14,7 @@ export const videoListExample = [
     'https://test-thumbnail1.com',
     '02:42',
     PRIVATE,
+    '예시 답변1입니다.',
   ),
   new Video(
     6,
@@ -24,6 +25,7 @@ export const videoListExample = [
     'https://test-thumbnail2.com',
     '02:42',
     PRIVATE,
+    '예시 답변2입니다.',
   ),
   new Video(
     7,
@@ -34,6 +36,7 @@ export const videoListExample = [
     'https://test-thumbnail3.com',
     '02:42',
     PRIVATE,
+    '예시 답변3입니다.',
   ),
   new Video(
     8,
@@ -44,6 +47,7 @@ export const videoListExample = [
     'https://test-thumbnail4.com',
     '02:42',
     PUBLIC,
+    '예시 답변4입니다.',
   ),
 ].slice(0, 4);
 
@@ -57,6 +61,7 @@ export const videoListFixture = [
     'https://thumbnail-test.com',
     '03:29',
     PUBLIC,
+    '예시 답변1입니다.',
   ),
   new Video(
     10,
@@ -67,6 +72,7 @@ export const videoListFixture = [
     'https://bar-test.com',
     '02:12',
     PUBLIC,
+    '예시 답변2입니다.',
   ),
 ];
 
@@ -79,6 +85,7 @@ export const videoFixture = new Video(
   'https://thumbnail-test.com',
   '03:29',
   PUBLIC,
+  '예시 답변입니다.',
 );
 
 export const privateVideoFixture = new Video(
@@ -90,6 +97,7 @@ export const privateVideoFixture = new Video(
   'https://thumbnail-test.com',
   '03:29',
   PRIVATE,
+  '예시 답변입니다.',
 );
 
 export const videoOfOtherFixture = new Video(
@@ -101,6 +109,7 @@ export const videoOfOtherFixture = new Video(
   'https://thumbnail-test.com',
   '03:29',
   PRIVATE,
+  '예시 답변입니다.',
 );
 
 export const videoOfWithdrawnMemberFixture = new Video(
@@ -112,6 +121,7 @@ export const videoOfWithdrawnMemberFixture = new Video(
   'https://thumbnail-test.com',
   '03:29',
   PUBLIC,
+  '예시 답변입니다.',
 );
 
 export const createVideoRequestFixture = new CreateVideoRequest(
@@ -120,6 +130,7 @@ export const createVideoRequestFixture = new CreateVideoRequest(
   'https://u2e0.c18.e2-4.dev/videos/example.mp4',
   'https://bar.com',
   '03:29',
+  '예시 답변입니다.',
 );
 
 export const videoPreSignedInfoFixture = {
@@ -136,6 +147,8 @@ export const updateVideoRequestFixture = {
   videoName: 'example.mp4',
   visibility: 'PUBLIC',
   relatedVideoIds: [],
+  thumbnail: '',
+  videoAnswer: '예시 답변입니다.',
 };
 
 const arr = [2, 1, 4, 3];

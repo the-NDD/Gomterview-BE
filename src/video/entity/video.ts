@@ -7,6 +7,7 @@ import { CreateVideoRequest } from '../dto/createVideoRequest';
 import { DEFAULT_THUMBNAIL } from 'src/constant/constant';
 import { LINK_ONLY, PRIVATE, PUBLIC } from '../constant/videoVisibility';
 import { UpdateVideoRequest } from '../dto/updateVideoRequest';
+import { deleteObjectInIDrive } from 'src/util/idrive.util';
 
 @Entity({ name: 'Video' })
 @Index('idx_video_url', ['url'])
@@ -45,6 +46,9 @@ export class Video extends DefaultEntity {
   @Column({ default: 0 })
   myPageIndex: number;
 
+  @Column()
+  videoAnswer: string;
+
   constructor(
     id: number,
     memberId: number,
@@ -54,6 +58,7 @@ export class Video extends DefaultEntity {
     thumbnail: string,
     videoLength: string,
     visibility: string,
+    videoAnswer: string,
   ) {
     super(id, new Date());
     this.memberId = memberId;
@@ -64,6 +69,7 @@ export class Video extends DefaultEntity {
     this.videoLength = videoLength;
     this.visibility = visibility;
     this.myPageIndex = 0;
+    this.videoAnswer = videoAnswer;
   }
 
   static from(member: Member, createVideoRequest: CreateVideoRequest): Video {
@@ -75,7 +81,8 @@ export class Video extends DefaultEntity {
       createVideoRequest.url,
       createVideoRequest.thumbnail || DEFAULT_THUMBNAIL,
       createVideoRequest.videoLength,
-      LINK_ONLY,
+      PRIVATE,
+      createVideoRequest.videoAnswer,
     );
   }
 
@@ -98,13 +105,17 @@ export class Video extends DefaultEntity {
   public updateVideoInfo(updateVideoRequest: UpdateVideoRequest) {
     this.visibility = updateVideoRequest.visibility;
     this.name = updateVideoRequest.videoName;
+    if (updateVideoRequest.thumbnail === '') {
+      this.thumbnail = DEFAULT_THUMBNAIL;
+      deleteObjectInIDrive(this.thumbnail, false);
+    }
+    this.videoAnswer = updateVideoRequest.videoAnswer;
   }
 
   public equals(video: Video) {
-    const comparator = this;
     return (
       Object.keys(video).filter(
-        (videoKey) => video[videoKey] !== comparator[videoKey],
+        (videoKey) => video[videoKey] !== this[videoKey],
       ).length === 0
     );
   }

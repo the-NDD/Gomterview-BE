@@ -15,9 +15,7 @@ import {
   IDriveException,
   InvalidHashException,
   Md5HashException,
-  RedisDeleteException,
   RedisRetrieveException,
-  RedisSaveException,
   VideoAccessForbiddenException,
   VideoNotFoundException,
   VideoNotFoundWithHashException,
@@ -37,7 +35,6 @@ import {
   videoPreSignedInfoFixture,
 } from '../fixture/video.fixture';
 import { VideoDetailResponse } from '../dto/videoDetailResponse';
-import { VideoHashResponse } from '../dto/videoHashResponse';
 import { SingleVideoResponse } from '../dto/singleVideoResponse';
 import { MemberNotFoundException } from 'src/member/exception/member.exception';
 import { INestApplication } from '@nestjs/common';
@@ -67,7 +64,6 @@ import { Video } from '../entity/video';
 import * as idriveUtil from 'src/util/idrive.util';
 import { VideoRelationRepository } from '../repository/videoRelation.repository';
 import { VideoRelation } from '../entity/videoRelation';
-import { MemberVideoResponse } from '../dto/MemberVideoResponse';
 
 describe('VideoController 단위 테스트', () => {
   let controller: VideoController;
@@ -230,7 +226,6 @@ describe('VideoController 단위 테스트', () => {
 
   describe('getVideoDetailByHash', () => {
     const hash = 'fakeHash';
-    const nickname = 'fakeNickname';
 
     it('해시로 비디오 조회 성공 시 VideoDetailResponse 객체 형태로 응답된다.', async () => {
       // given
@@ -1033,11 +1028,10 @@ describe('VideoController 통합 테스트', () => {
   });
 
   describe('findRelatedVideoById', () => {
-    let member;
     let video;
 
     beforeEach(async () => {
-      member = await memberRepository.save(memberFixture);
+      await memberRepository.save(memberFixture);
       video = await videoRepository.save(videoFixture);
       const relations = videoListExample.map(async (each) => {
         await videoRepository.save(each);
@@ -1100,7 +1094,6 @@ describe('VideoController 통합 테스트', () => {
         .get(`/api/video/public`)
         .expect(200)
         .then((res) => {
-          console.log(res);
           const publicVideoResponses = res.body;
           expect(publicVideoResponses).toBeInstanceOf(Array);
           expect(publicVideoResponses.length).toBe(2);
