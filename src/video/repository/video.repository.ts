@@ -69,6 +69,8 @@ export class VideoRepository {
     return await this.videoRepository.update(video.id, {
       name: video.name,
       visibility: video.visibility,
+      thumbnail: video.thumbnail,
+      videoAnswer: video.videoAnswer,
     });
   }
 

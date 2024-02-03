@@ -214,12 +214,9 @@ export class VideoService {
   ) {
     validateManipulatedToken(member);
     const video = await this.videoRepository.findById(videoId);
-    console.log('1');
     this.validateVideoOwnership(video, member.id);
-    console.log('2');
-
     video.updateVideoInfo(updateVideoRequest);
-    console.log('3');
+
     const unrelatingVideos = await this.findUnrelatedVideosById(
       video.id,
       updateVideoRequest,
