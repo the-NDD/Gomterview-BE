@@ -49,7 +49,7 @@ export class Video extends DefaultEntity {
   @Column({ default: 0 })
   myPageIndex: number;
 
-  @Column()
+  @Column({ type: 'blob' })
   videoAnswer: string;
 
   constructor(
