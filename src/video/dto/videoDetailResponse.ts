@@ -86,7 +86,7 @@ export class VideoDetailResponse {
       video.createdAt.getTime(),
       video.visibility,
       video.thumbnail,
-      video.videoAnswer,
+      video.videoAnswer.toString(),
     );
   }
 }
