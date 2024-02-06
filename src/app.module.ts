@@ -21,9 +21,11 @@ import { WorkbookModule } from './workbook/workbook.module';
 import { MulterModule } from '@nestjs/platform-express';
 import { Workbook } from './workbook/entity/workbook';
 import { HealthModule } from './health/health.module';
+import { EventEmitterModule } from '@nestjs/event-emitter';
 
 @Module({
   imports: [
+    EventEmitterModule.forRoot(),
     TypeOrmModule.forRootAsync(MYSQL_OPTION),
     TypeOrmModule.forFeature([Category, Member, Question, Answer, Workbook]),
     MulterModule.register({
