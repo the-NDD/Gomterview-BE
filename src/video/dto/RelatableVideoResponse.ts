@@ -12,7 +12,7 @@ export class RelatableVideoResponse {
   visibility: string;
   @ApiProperty(createPropertyOption('츄 직캠', '영상 이름', String))
   videoName: string;
-  @ApiProperty(createPropertyOption(13213210, '생성일자', Number))
+  @ApiProperty(createPropertyOption('1998.09.05', '생성일자', Number))
   createdAt: string;
 
   constructor(
