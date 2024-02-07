@@ -64,7 +64,7 @@ export class MemberVideoResponse {
       video.thumbnail,
       video.name,
       video.videoLength,
-      parseDateToString(member.createdAt),
+      parseDateToString(video.createdAt),
       member.nickname,
       member.profileImg,
     );
