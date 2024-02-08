@@ -1,6 +1,7 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { Video } from '../entity/video';
 import { createPropertyOption } from 'src/util/swagger.util';
+import { parseDateToString } from 'src/util/util';
 
 export class RelatableVideoResponse {
   @ApiProperty(createPropertyOption(1, '비디오 ID', Number))
@@ -11,15 +12,15 @@ export class RelatableVideoResponse {
   visibility: string;
   @ApiProperty(createPropertyOption('츄 직캠', '영상 이름', String))
   videoName: string;
-  @ApiProperty(createPropertyOption(13213210, '생성일자', Number))
-  createdAt: number;
+  @ApiProperty(createPropertyOption('1998.09.05', '생성일자', Number))
+  createdAt: string;
 
   constructor(
     id: number,
     isRelated: boolean,
     visibility: string,
     videoName: string,
-    createdAt: number,
+    createdAt: string,
   ) {
     this.id = id;
     this.isRelated = isRelated;
@@ -34,7 +35,7 @@ export class RelatableVideoResponse {
       isRelated,
       video.visibility,
       video.name,
-      video.createdAt.getTime(),
+      parseDateToString(video.createdAt),
     );
   }
 }

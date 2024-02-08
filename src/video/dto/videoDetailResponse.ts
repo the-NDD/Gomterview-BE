@@ -2,6 +2,7 @@ import { Video } from '../entity/video';
 import { ApiProperty } from '@nestjs/swagger';
 import { Member } from 'src/member/entity/member';
 import { createPropertyOption } from 'src/util/swagger.util';
+import { parseDateToString } from 'src/util/util';
 
 export class VideoDetailResponse {
   @ApiProperty(createPropertyOption(1, '비디오의 ID', Number))
@@ -33,10 +34,8 @@ export class VideoDetailResponse {
   @ApiProperty({ nullable: true })
   readonly hash: string;
 
-  @ApiProperty(
-    createPropertyOption(1699858790176, '비디오 생성 일자(ms 단위)', Number),
-  )
-  readonly createdAt: number;
+  @ApiProperty(createPropertyOption('1998.09.05', '영상 생성 일자', Number))
+  readonly createdAt: string;
 
   @ApiProperty(createPropertyOption('PUBLIC', '영상 공개여부', String))
   readonly visibility: string;
@@ -58,7 +57,7 @@ export class VideoDetailResponse {
     url: string,
     videoName: string,
     hash: string,
-    createdAt: number,
+    createdAt: string,
     visibility: string,
     thumbnail: string,
     videoAnswer: string,
@@ -83,7 +82,7 @@ export class VideoDetailResponse {
       video.url,
       video.name,
       hash,
-      video.createdAt.getTime(),
+      parseDateToString(video.createdAt),
       video.visibility,
       video.thumbnail,
       video.videoAnswer.toString(),
