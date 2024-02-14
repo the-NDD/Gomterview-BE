@@ -45,10 +45,6 @@ import { EventEmitter2, EventEmitterModule } from '@nestjs/event-emitter';
 describe('WorkbookService 단위테스트', () => {
   let module: TestingModule;
   let service: WorkbookService;
-
-  const mockCategoryRepository = {
-    findByCategoryId: jest.fn(),
-  };
   const mockWorkbookRepository = {
     save: jest.fn(),
     findById: jest.fn(),
@@ -74,15 +70,8 @@ describe('WorkbookService 단위테스트', () => {
   beforeAll(async () => {
     module = await Test.createTestingModule({
       imports: [await createTypeOrmModuleForTest()],
-      providers: [
-        WorkbookService,
-        CategoryRepository,
-        WorkbookRepository,
-        EventEmitter2,
-      ],
+      providers: [WorkbookService, WorkbookRepository, EventEmitter2],
     })
-      .overrideProvider(CategoryRepository)
-      .useValue(mockCategoryRepository)
       .overrideProvider(WorkbookRepository)
       .useValue(mockWorkbookRepository)
       .overrideProvider(EventEmitter2)
@@ -102,9 +91,6 @@ describe('WorkbookService 단위테스트', () => {
       //given
 
       //when
-      mockCategoryRepository.findByCategoryId.mockResolvedValue(
-        categoryFixtureWithId,
-      );
       mockWorkbookRepository.insert.mockResolvedValue(workbookInsertResult);
 
       //then
@@ -136,9 +122,6 @@ describe('WorkbookService 단위테스트', () => {
       //given
 
       //when
-      mockCategoryRepository.findByCategoryId.mockResolvedValue(
-        categoryFixtureWithId,
-      );
       mockWorkbookRepository.insert.mockResolvedValue(workbookFixtureWithId);
 
       //then
@@ -182,7 +165,6 @@ describe('WorkbookService 단위테스트', () => {
       //given
 
       //when
-      mockCategoryRepository.findByCategoryId.mockResolvedValue(null);
       mockWorkbookRepository.findAllByCategoryId.mockResolvedValue([
         workbookFixture,
       ]);
@@ -280,9 +262,6 @@ describe('WorkbookService 단위테스트', () => {
       //given
 
       //when
-      mockCategoryRepository.findByCategoryId.mockResolvedValue(
-        categoryFixtureWithId,
-      );
       mockWorkbookRepository.findById.mockResolvedValue(workbookFixture);
       mockEmitter.emitAsync.mockResolvedValue(undefined);
       const workbookUpdateRequest = new UpdateWorkbookRequest(

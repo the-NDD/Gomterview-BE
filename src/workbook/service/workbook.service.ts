@@ -18,7 +18,6 @@ import { EventEmitter2 } from '@nestjs/event-emitter';
 export class WorkbookService {
   constructor(
     private readonly workbookRepository: WorkbookRepository,
-    private readonly categoryRepository: CategoryRepository,
     readonly emitter: EventEmitter2,
   ) {}
 
