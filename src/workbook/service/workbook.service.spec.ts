@@ -40,10 +40,12 @@ import {
 import { WorkbookTitleResponse } from '../dto/workbookTitleResponse';
 import { UpdateWorkbookRequest } from '../dto/updateWorkbookRequest';
 import { TokenModule } from '../../token/token.module';
+import { EventEmitter2, EventEmitterModule } from '@nestjs/event-emitter';
 
 describe('WorkbookService 단위테스트', () => {
   let module: TestingModule;
   let service: WorkbookService;
+
   const mockCategoryRepository = {
     findByCategoryId: jest.fn(),
   };
@@ -60,6 +62,10 @@ describe('WorkbookService 단위테스트', () => {
     insert: jest.fn(),
     findByIdWithoutJoin: jest.fn(),
   };
+  const mockEmitter = {
+    emit: jest.fn(),
+    emitAsync: jest.fn(),
+  };
 
   jest.mock('typeorm-transactional', () => ({
     Transactional: () => () => ({}),
@@ -68,12 +74,19 @@ describe('WorkbookService 단위테스트', () => {
   beforeAll(async () => {
     module = await Test.createTestingModule({
       imports: [await createTypeOrmModuleForTest()],
-      providers: [WorkbookService, CategoryRepository, WorkbookRepository],
+      providers: [
+        WorkbookService,
+        CategoryRepository,
+        WorkbookRepository,
+        EventEmitter2,
+      ],
     })
       .overrideProvider(CategoryRepository)
       .useValue(mockCategoryRepository)
       .overrideProvider(WorkbookRepository)
       .useValue(mockWorkbookRepository)
+      .overrideProvider(EventEmitter2)
+      .useValue(mockEmitter)
       .compile();
     service = module.get<WorkbookService>(WorkbookService);
   });
@@ -104,13 +117,19 @@ describe('WorkbookService 단위테스트', () => {
       //given
 
       //when
-      mockCategoryRepository.findByCategoryId.mockResolvedValue(null);
-      mockWorkbookRepository.insert.mockResolvedValue(workbookFixtureWithId);
+      mockWorkbookRepository.insert.mockResolvedValue({
+        identifiers: [{ id: 1 }],
+      });
+      mockEmitter.emitAsync.mockRejectedValue(new CategoryNotFoundException());
 
       //then
       await expect(
         service.createWorkbook(createWorkbookRequestFixture, memberFixture),
       ).rejects.toThrow(new CategoryNotFoundException());
+      expect(service.emitter.emitAsync).toHaveBeenCalledWith(
+        'category.validate',
+        100,
+      );
     });
 
     it('문제집을 추가할 때, Member가 비어있다면 Manipulated예외를 반환시킨다.', async () => {
