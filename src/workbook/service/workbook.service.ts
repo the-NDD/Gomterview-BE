@@ -17,9 +17,9 @@ import { EventEmitter2 } from '@nestjs/event-emitter';
 @Injectable()
 export class WorkbookService {
   constructor(
-    private workbookRepository: WorkbookRepository,
-    private categoryRepository: CategoryRepository,
-    private emitter: EventEmitter2,
+    private readonly workbookRepository: WorkbookRepository,
+    private readonly categoryRepository: CategoryRepository,
+    readonly emitter: EventEmitter2,
   ) {}
 
   @Transactional()
@@ -27,20 +27,12 @@ export class WorkbookService {
     createWorkbookRequest: CreateWorkbookRequest,
     member: Member,
   ) {
-    const category = await this.categoryRepository.findByCategoryId(
-      createWorkbookRequest.categoryId,
-    );
     validateManipulatedToken(member);
-    validateCategory(category);
+    await this.validateCategoryExistence(createWorkbookRequest.categoryId);
 
-    const workbook = Workbook.of(
-      createWorkbookRequest.title,
-      createWorkbookRequest.content,
-      category,
-      member,
-      createWorkbookRequest.isPublic,
-    );
+    const workbook = Workbook.from(createWorkbookRequest, member);
     const result = await this.workbookRepository.insert(workbook);
+    console.log(result);
     return result.identifiers[0].id as number;
   }
 
