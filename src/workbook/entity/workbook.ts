@@ -90,10 +90,10 @@ export class Workbook extends DefaultEntity {
     this.copyCount++;
   }
 
-  updateInfo(updateWorkbookRequest: UpdateWorkbookRequest, category: Category) {
+  updateInfo(updateWorkbookRequest: UpdateWorkbookRequest) {
     this.title = updateWorkbookRequest.title;
     this.content = updateWorkbookRequest.content;
-    this.categoryId = category.id;
+    this.categoryId = updateWorkbookRequest.categoryId;
     this.isPublic = updateWorkbookRequest.isPublic;
   }
 }

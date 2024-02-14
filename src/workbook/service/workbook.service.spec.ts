@@ -166,9 +166,7 @@ describe('WorkbookService 단위테스트', () => {
       //given
 
       //when
-      mockCategoryRepository.findByCategoryId.mockResolvedValue(
-        categoryFixtureWithId,
-      );
+      mockEmitter.emitAsync.mockResolvedValue(undefined);
       mockWorkbookRepository.findAllByCategoryId.mockResolvedValue([
         workbookFixture,
       ]);
@@ -188,6 +186,7 @@ describe('WorkbookService 단위테스트', () => {
       mockWorkbookRepository.findAllByCategoryId.mockResolvedValue([
         workbookFixture,
       ]);
+      mockEmitter.emitAsync.mockRejectedValue(new CategoryNotFoundException());
       //then
       await expect(service.findWorkbooks(1234)).rejects.toThrow(
         new CategoryNotFoundException(),
@@ -263,9 +262,7 @@ describe('WorkbookService 단위테스트', () => {
       //given
 
       //when
-      mockCategoryRepository.findByCategoryId.mockResolvedValue(
-        categoryFixtureWithId,
-      );
+      mockEmitter.emitAsync.mockResolvedValue(undefined);
       mockWorkbookRepository.findById.mockResolvedValue(workbookFixture);
 
       //then
@@ -287,6 +284,7 @@ describe('WorkbookService 단위테스트', () => {
         categoryFixtureWithId,
       );
       mockWorkbookRepository.findById.mockResolvedValue(workbookFixture);
+      mockEmitter.emitAsync.mockResolvedValue(undefined);
       const workbookUpdateRequest = new UpdateWorkbookRequest(
         workbookFixture.id,
         'newT',
