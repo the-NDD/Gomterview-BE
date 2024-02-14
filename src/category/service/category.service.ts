@@ -17,7 +17,9 @@ export class CategoryService {
     return categories.map(CategoryResponse.from);
   }
 
-  @OnEvent('category.validate')
+  @OnEvent('category.validate', {
+    suppressErrors: false,
+  })
   async validateExistence(categoryId: number) {
     const category = await this.categoryRepository.findByCategoryId(categoryId);
     if (isEmpty(category)) throw new CategoryNotFoundException();
