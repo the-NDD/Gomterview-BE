@@ -1,4 +1,4 @@
-import { PRIVATE, PUBLIC } from '../constant/videoVisibility';
+import { LINK_ONLY, PRIVATE, PUBLIC } from '../constant/videoVisibility';
 import { CreateVideoRequest } from '../dto/createVideoRequest';
 import { UpdateVideoIndexRequest } from '../dto/updateVideoIndexRequest';
 import { Video } from '../entity/video';
@@ -85,6 +85,18 @@ export const videoFixture = new Video(
   'https://thumbnail-test.com',
   '03:29',
   PUBLIC,
+  '예시 답변입니다.',
+);
+
+export const linkOnlyVideoFixture = new Video(
+  1,
+  1,
+  1,
+  '루이뷔통통튀기네',
+  'https://test.com',
+  'https://thumbnail-test.com',
+  '03:29',
+  LINK_ONLY,
   '예시 답변입니다.',
 );
 

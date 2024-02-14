@@ -112,6 +112,7 @@ export class VideoService {
     validateManipulatedToken(member);
 
     const newVideo = Video.from(member, createVideoRequest);
+    await this.updateVideoHashInRedis(newVideo);
     await this.videoRepository.save(newVideo);
   }
 
@@ -140,7 +141,7 @@ export class VideoService {
     if (!member) throw new VideoAccessForbiddenException();
     this.validateVideoOwnership(video, member.id);
 
-    const hash = video.isLinkOnly() ? this.getHashedUrl(video.url) : null;
+    const hash = await this.updateVideoHashInRedis(video);
     return VideoDetailResponse.from(video, video.member, hash);
   }
 
@@ -306,13 +307,14 @@ export class VideoService {
       // 현재가 private이 아니면 토글 후 private이 되기에 redis에서 해시값 삭제 후 null 반환
       try {
         await deleteFromRedis(hash);
-        return;
+        return null;
       } catch (e) {
         return;
       }
     }
 
     await saveToRedis(hash, video.url);
+    return hash;
   }
 
   private async validateMembersVideos(
