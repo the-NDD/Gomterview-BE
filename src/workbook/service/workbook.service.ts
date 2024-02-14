@@ -51,8 +51,7 @@ export class WorkbookService {
   }
 
   private async findAllByCategory(categoryId: number) {
-    const category = await this.categoryRepository.findByCategoryId(categoryId);
-    validateCategory(category);
+    await this.validateCategoryExistence(categoryId);
 
     const workbooks =
       await this.workbookRepository.findAllByCategoryId(categoryId);
@@ -87,20 +86,16 @@ export class WorkbookService {
     updateWorkbookRequest: UpdateWorkbookRequest,
     member: Member,
   ) {
-    const category = await this.categoryRepository.findByCategoryId(
-      updateWorkbookRequest.categoryId,
-    );
-    validateManipulatedToken(member);
-    validateCategory(category);
+    await this.validateCategoryExistence(updateWorkbookRequest.categoryId);
 
     const workbook = await this.workbookRepository.findById(
       updateWorkbookRequest.workbookId,
     );
-
+    validateManipulatedToken(member);
     validateWorkbook(workbook);
     validateWorkbookOwner(workbook, member);
 
-    workbook.updateInfo(updateWorkbookRequest, category);
+    workbook.updateInfo(updateWorkbookRequest);
     await this.workbookRepository.update(workbook);
     return WorkbookResponse.of(workbook);
   }
