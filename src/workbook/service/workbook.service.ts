@@ -12,12 +12,14 @@ import { validateWorkbook, validateWorkbookOwner } from '../util/workbook.util';
 import { WorkbookTitleResponse } from '../dto/workbookTitleResponse';
 import { UpdateWorkbookRequest } from '../dto/updateWorkbookRequest';
 import { Transactional } from 'typeorm-transactional';
+import { EventEmitter2 } from '@nestjs/event-emitter';
 
 @Injectable()
 export class WorkbookService {
   constructor(
     private workbookRepository: WorkbookRepository,
     private categoryRepository: CategoryRepository,
+    private emitter: EventEmitter2,
   ) {}
 
   @Transactional()
@@ -119,5 +121,9 @@ export class WorkbookService {
     validateWorkbook(workbook);
     validateWorkbookOwner(workbook, member);
     await this.workbookRepository.remove(workbook);
+  }
+
+  async validateCategoryExistence(categoryId: number) {
+    await this.emitter.emitAsync('category.validate', categoryId);
   }
 }
