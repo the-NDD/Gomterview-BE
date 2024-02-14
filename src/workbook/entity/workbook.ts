@@ -3,10 +3,11 @@ import { Column, Entity, Index, JoinColumn, ManyToOne } from 'typeorm';
 import { Member } from '../../member/entity/member';
 import { Category } from '../../category/entity/category';
 import { UpdateWorkbookRequest } from '../dto/updateWorkbookRequest';
+import { CreateWorkbookRequest } from '../dto/createWorkbookRequest';
 
 @Entity({ name: 'Workbook' })
 @Index('idx_isPublic', ['isPublic'])
-@Index('idx_isPublic_categoryId', ['isPublic', 'category'])
+@Index('idx_isPublic_categoryId', ['isPublic', 'categoryId'])
 export class Workbook extends DefaultEntity {
   @Column()
   title: string;
@@ -14,9 +15,8 @@ export class Workbook extends DefaultEntity {
   @Column({ type: 'blob', nullable: true })
   content: string;
 
-  @ManyToOne(() => Category)
-  @JoinColumn({ name: 'category' })
-  category: Category;
+  @Column({ name: 'category' })
+  categoryId: number;
 
   @Column()
   copyCount: number;
@@ -33,7 +33,7 @@ export class Workbook extends DefaultEntity {
     createdAt: Date,
     title: string,
     content: string,
-    category: Category,
+    categoryId: number,
     copyCount: number,
     member: Member,
     isPublic: boolean,
@@ -41,7 +41,7 @@ export class Workbook extends DefaultEntity {
     super(id, createdAt);
     this.title = title;
     this.content = content;
-    this.category = category;
+    this.categoryId = categoryId;
     this.copyCount = copyCount;
     this.member = member;
     this.isPublic = isPublic;
@@ -59,10 +59,26 @@ export class Workbook extends DefaultEntity {
       new Date(),
       title,
       content,
-      category,
+      category.id,
       0,
       member,
       isPublic,
+    );
+  }
+
+  static from(
+    createWorkbookRequest: CreateWorkbookRequest,
+    member: Member,
+  ): Workbook {
+    return new Workbook(
+      null,
+      new Date(),
+      createWorkbookRequest.title,
+      createWorkbookRequest.content,
+      createWorkbookRequest.categoryId,
+      0,
+      member,
+      createWorkbookRequest.isPublic,
     );
   }
 
@@ -77,7 +93,7 @@ export class Workbook extends DefaultEntity {
   updateInfo(updateWorkbookRequest: UpdateWorkbookRequest, category: Category) {
     this.title = updateWorkbookRequest.title;
     this.content = updateWorkbookRequest.content;
-    this.category = category;
+    this.categoryId = category.id;
     this.isPublic = updateWorkbookRequest.isPublic;
   }
 }

@@ -60,7 +60,7 @@ export class WorkbookResponse {
     const member = workbook.member;
     return new WorkbookResponse(
       workbook.id,
-      workbook.category.id,
+      workbook.categoryId,
       member.nickname,
       member.profileImg,
       workbook.copyCount,
