@@ -12,7 +12,12 @@ import { validateWorkbook, validateWorkbookOwner } from '../util/workbook.util';
 import { WorkbookTitleResponse } from '../dto/workbookTitleResponse';
 import { UpdateWorkbookRequest } from '../dto/updateWorkbookRequest';
 import { Transactional } from 'typeorm-transactional';
-import { EventEmitter2 } from '@nestjs/event-emitter';
+import { EventEmitter2, OnEvent } from '@nestjs/event-emitter';
+import { ValidateWorkbookEvent } from '../event/validate.workbook.event';
+import {
+  WorkbookForbiddenException,
+  WorkbookNotFoundException,
+} from '../exception/workbook.exception';
 
 @Injectable()
 export class WorkbookService {
@@ -106,6 +111,18 @@ export class WorkbookService {
     validateWorkbook(workbook);
     validateWorkbookOwner(workbook, member);
     await this.workbookRepository.remove(workbook);
+  }
+
+  @OnEvent(ValidateWorkbookEvent.MESSAGE, {
+    suppressErrors: false,
+  })
+  async validateWorkbookOwner(validateWorkbookEvent: ValidateWorkbookEvent) {
+    const member = validateWorkbookEvent.member;
+    const workbook = await this.workbookRepository.findById(
+      validateWorkbookEvent.workbookId,
+    );
+    if (isEmpty(workbook)) throw new WorkbookNotFoundException();
+    if (!workbook.isOwnedBy(member)) throw new WorkbookForbiddenException();
   }
 
   async validateCategoryExistence(categoryId: number) {
