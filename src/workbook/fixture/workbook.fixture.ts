@@ -28,7 +28,7 @@ export const workbookFixtureWithId = new Workbook(
   new Date(),
   '테스트 문제집',
   '테스트로 만드는 문제집입니다.',
-  categoryFixtureWithId,
+  categoryFixtureWithId.id,
   0,
   memberFixture,
   true,

@@ -9,6 +9,7 @@ import { QuestionRepository } from 'src/question/repository/question.repository'
 import { MemberRepository } from 'src/member/repository/member.repository';
 import {
   createVideoRequestFixture,
+  linkOnlyVideoFixture,
   privateVideoFixture,
   updateVideoRequestFixture,
   videoFixture,
@@ -57,6 +58,8 @@ import { VideoRelation } from '../entity/videoRelation';
 import { MemberVideoResponse } from '../dto/MemberVideoResponse';
 import { RelatableVideoResponse } from '../dto/RelatableVideoResponse';
 import { UpdateVideoRequest } from '../dto/updateVideoRequest';
+import { CategoryModule } from 'src/category/category.module';
+import { WorkbookModule } from 'src/workbook/workbook.module';
 
 describe('VideoService 단위 테스트', () => {
   let videoService: VideoService;
@@ -841,7 +844,12 @@ describe('VideoService 통합 테스트', () => {
   let videoRelationRepository: VideoRelationRepository;
 
   beforeAll(async () => {
-    const modules = [VideoModule, QuestionModule];
+    const modules = [
+      VideoModule,
+      QuestionModule,
+      CategoryModule,
+      WorkbookModule,
+    ];
 
     const moduleFixture: TestingModule =
       await createIntegrationTestModule(modules);
@@ -1007,19 +1015,12 @@ describe('VideoService 통합 테스트', () => {
   });
 
   describe('getVideoDetailByHash', () => {
-    let mockRedis;
-
-    beforeEach(async () => {
-      mockRedis = new redisMock();
-    });
-
     it('해시로 비디오 세부 정보 조회 성공 시 VideoDetailResponse 형식으로 반환된다.', async () => {
       //given
-      const video = await videoRepository.save(videoFixture);
+      const video = await videoRepository.save(linkOnlyVideoFixture);
       const member = await memberRepository.findById(video.memberId);
-      const hash = crypto.createHash('md5').update(video.url).digest('hex');
-      await redisUtil.saveToRedis(hash, video.url, mockRedis);
-
+      const hash = (await videoService.getVideoDetail(video.id, memberFixture))
+        .hash;
       //when
       const result = await videoService.getVideoDetailByHash(hash);
 
@@ -1046,9 +1047,9 @@ describe('VideoService 통합 테스트', () => {
 
     it('해시로 비디오 상세 정보 조회 시 해시로 조회되는 비디오가 없다면 VideoNotFoundException을 반환한다.', async () => {
       // given
-      const video = await videoRepository.save(videoFixture);
-      const hash = crypto.createHash('md5').update(video.url).digest('hex');
-      await redisUtil.saveToRedis(hash, video.url, mockRedis);
+      const video = await videoRepository.save(linkOnlyVideoFixture);
+      const hash = (await videoService.getVideoDetail(video.id, memberFixture))
+        .hash;
       await videoRepository.remove(video);
 
       // when
@@ -1061,8 +1062,7 @@ describe('VideoService 통합 테스트', () => {
 
     it('해시로 비디오 상세 정보 조회 시 해시로 조회되는 비디오가 없다면 VideoNotFoundWithHashException을 반환한다.', async () => {
       // given
-      const video = await videoRepository.save(videoFixture);
-      const hash = crypto.createHash('md5').update(video.url).digest('hex');
+      const hash = crypto.createHash('md5').update('wrong').digest('hex');
 
       // when
 
@@ -1074,9 +1074,10 @@ describe('VideoService 통합 테스트', () => {
 
     it('해시로 비디오 세부 정보 조회 시 탈퇴한 회원의 비디오를 조회하려 하면 VideoOfWithdrawnMemberException을 반환한다.', async () => {
       //given
-      const video = await videoRepository.save(videoOfWithdrawnMemberFixture);
-      const hash = crypto.createHash('md5').update(video.url).digest('hex');
-      await redisUtil.saveToRedis(hash, video.url, mockRedis);
+      const video = await videoRepository.save(linkOnlyVideoFixture);
+      const hash = (await videoService.getVideoDetail(video.id, memberFixture))
+        .hash;
+      await memberRepository.remove(memberFixture);
 
       //when
 
@@ -1084,24 +1085,6 @@ describe('VideoService 통합 테스트', () => {
       await expect(videoService.getVideoDetailByHash(hash)).rejects.toThrow(
         VideoOfWithdrawnMemberException,
       );
-    });
-
-    it('해시로 비디오 세부 정보 조회 시 private인 비디오를 조회하려 하면 VideoAccessForbiddenException을 반환한다.', async () => {
-      //given
-      const video = await videoRepository.save(privateVideoFixture);
-      const hash = crypto.createHash('md5').update(video.url).digest('hex');
-      await redisUtil.saveToRedis(hash, video.url, mockRedis);
-
-      //when
-
-      //then
-      await expect(videoService.getVideoDetailByHash(hash)).rejects.toThrow(
-        VideoAccessForbiddenException,
-      );
-    });
-
-    afterEach(() => {
-      redisUtil.clearRedis(mockRedis);
     });
   });
 

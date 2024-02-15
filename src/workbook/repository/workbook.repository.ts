@@ -31,7 +31,6 @@ export class WorkbookRepository {
   async findAll() {
     return this.repository
       .createQueryBuilder('Workbook')
-      .leftJoinAndSelect('Workbook.category', 'category')
       .leftJoinAndSelect('Workbook.member', 'member')
       .where('Workbook.isPublic = :state', { state: true })
       .orderBy('Workbook.copyCount', 'DESC')
@@ -42,9 +41,8 @@ export class WorkbookRepository {
     return this.repository
       .createQueryBuilder('Workbook')
       .leftJoinAndSelect('Workbook.member', 'member')
-      .leftJoinAndSelect('Workbook.category', 'category')
       .where('Workbook.isPublic = :state', { state: true })
-      .andWhere('category.id = :categoryId', { categoryId })
+      .andWhere('workbook.category = :categoryId', { categoryId })
       .orderBy('Workbook.copyCount', 'DESC')
       .getMany();
   }
@@ -72,7 +70,6 @@ export class WorkbookRepository {
     return await this.repository
       .createQueryBuilder('Workbook')
       .leftJoinAndSelect('Workbook.member', 'member')
-      .leftJoinAndSelect('Workbook.category', 'category')
       .where('Workbook.id = :id', { id })
       .getOne();
   }
