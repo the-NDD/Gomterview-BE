@@ -31,7 +31,6 @@ export class WorkbookService {
 
     const workbook = Workbook.from(createWorkbookRequest, member);
     const result = await this.workbookRepository.insert(workbook);
-    console.log(result);
     return result.identifiers[0].id as number;
   }
 
