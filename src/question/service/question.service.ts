@@ -19,12 +19,15 @@ import { NeedToFindByWorkbookIdException } from '../../workbook/exception/workbo
 import { Transactional } from 'typeorm-transactional';
 import { UpdateIndexInWorkbookRequest } from '../dto/updateIndexInWorkbookRequest';
 import { QuestionNotFoundException } from '../exception/question.exception';
+import { EventEmitter2 } from '@nestjs/event-emitter';
+import { ValidateWorkbookEvent } from 'src/workbook/event/validate.workbook.event';
 
 @Injectable()
 export class QuestionService {
   constructor(
     private questionRepository: QuestionRepository,
     private workbookRepository: WorkbookRepository,
+    private emitter: EventEmitter2,
   ) {}
 
   @Transactional()
@@ -130,5 +133,12 @@ export class QuestionService {
     }
 
     return Question.copyOf(question, workbook);
+  }
+
+  private async validateWorkbookOwnership(workbookId: number, member: Member) {
+    await this.emitter.emitAsync(
+      ValidateWorkbookEvent.MESSAGE,
+      ValidateWorkbookEvent.of(member, workbookId),
+    );
   }
 }
