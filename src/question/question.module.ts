@@ -12,12 +12,8 @@ import { WorkbookModule } from '../workbook/workbook.module';
 import { WorkbookRepository } from '../workbook/repository/workbook.repository';
 
 @Module({
-  imports: [
-    TypeOrmModule.forFeature([Question, Workbook, Member, Answer]),
-    TokenModule,
-    WorkbookModule,
-  ],
-  providers: [QuestionService, QuestionRepository, WorkbookRepository],
+  imports: [TypeOrmModule.forFeature([Question, Member, Answer]), TokenModule],
+  providers: [QuestionService, QuestionRepository],
   controllers: [QuestionController],
 })
 export class QuestionModule {}
