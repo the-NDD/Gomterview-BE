@@ -18,6 +18,7 @@ import {
   WorkbookForbiddenException,
   WorkbookNotFoundException,
 } from '../exception/workbook.exception';
+import { IncreaseCopyCountEvent } from '../event/increase.copyCount.event';
 
 @Injectable()
 export class WorkbookService {
@@ -123,6 +124,15 @@ export class WorkbookService {
     );
     if (isEmpty(workbook)) throw new WorkbookNotFoundException();
     if (!workbook.isOwnedBy(member)) throw new WorkbookForbiddenException();
+  }
+
+  @OnEvent(IncreaseCopyCountEvent.MESSAGE, { suppressErrors: false })
+  async increaseCopyCount(event: IncreaseCopyCountEvent) {
+    const workbook = await this.workbookRepository.findById(event.workbookId);
+
+    if (isEmpty(workbook)) throw new WorkbookNotFoundException();
+    workbook.increaseCopyCount();
+    await this.workbookRepository.update(workbook);
   }
 
   async validateCategoryExistence(categoryId: number) {

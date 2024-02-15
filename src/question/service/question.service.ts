@@ -21,6 +21,7 @@ import { UpdateIndexInWorkbookRequest } from '../dto/updateIndexInWorkbookReques
 import { QuestionNotFoundException } from '../exception/question.exception';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { ValidateWorkbookEvent } from 'src/workbook/event/validate.workbook.event';
+import { IncreaseCopyCountEvent } from 'src/workbook/event/increase.copyCount.event';
 
 @Injectable()
 export class QuestionService {
@@ -43,7 +44,7 @@ export class QuestionService {
     validateWorkbookOwner(workbook, member);
 
     const question = await this.questionRepository.insert(
-      Question.of(workbook, null, createQuestionRequest.content),
+      Question.of(workbook.id, null, createQuestionRequest.content),
     );
 
     return QuestionResponse.from(question);
@@ -64,12 +65,12 @@ export class QuestionService {
       copyQuestionRequest.questionIds,
     );
 
-    Array.from(new Set(questions.map((question) => question.workbook))).forEach(
-      async (workbook) => {
-        workbook.increaseCopyCount();
-        await this.workbookRepository.update(workbook);
-      },
-    );
+    Array.from(
+      new Set(questions.map((question) => question.workbookId)),
+    ).forEach(async (workbook) => {
+      // workbook.increaseCopyCount();
+      // await this.workbookRepository.update(workbook);
+    });
 
     await this.questionRepository.saveAll(
       questions.map((question) => this.createCopy(question, workbook)),
@@ -93,7 +94,7 @@ export class QuestionService {
     validateManipulatedToken(member);
     const question = await this.questionRepository.findById(questionId);
     validateQuestion(question);
-    await this.validateMembersWorkbookById(question.workbook.id, member);
+    await this.validateWorkbookOwnership(question.workbookId, member);
     await this.questionRepository.remove(question);
   }
 
@@ -103,24 +104,12 @@ export class QuestionService {
     member: Member,
   ) {
     validateManipulatedToken(member);
-    await this.validateMembersWorkbookById(
-      updateIndexRequest.workbookId,
-      member,
-    );
+    await this.validateWorkbookOwnership(updateIndexRequest.workbookId, member);
     const questions = (
       await this.questionRepository.findAllByIds(updateIndexRequest.ids)
-    ).filter((each) => each.workbook.id === updateIndexRequest.workbookId);
+    ).filter((each) => each.workbookId === updateIndexRequest.workbookId);
     this.validateQuestionsByIds(questions, updateIndexRequest.ids);
     await this.questionRepository.updateIndex(updateIndexRequest.ids);
-  }
-
-  private async validateMembersWorkbookById(
-    workbookId: number,
-    member: Member,
-  ) {
-    const workbook = await this.workbookRepository.findById(workbookId);
-    validateWorkbook(workbook);
-    validateWorkbookOwner(workbook, member);
   }
 
   private validateQuestionsByIds(questions: Question[], ids: number[]) {
@@ -129,10 +118,10 @@ export class QuestionService {
 
   private createCopy(question: Question, workbook: Workbook) {
     if (question.origin) {
-      return Question.copyOf(question.origin, workbook);
+      return Question.copyOf(question.origin, workbook.id);
     }
 
-    return Question.copyOf(question, workbook);
+    return Question.copyOf(question, workbook.id);
   }
 
   private async validateWorkbookOwnership(workbookId: number, member: Member) {
@@ -140,5 +129,10 @@ export class QuestionService {
       ValidateWorkbookEvent.MESSAGE,
       ValidateWorkbookEvent.of(member, workbookId),
     );
+  }
+
+  private async increaseWorkbookCopyCount(workbookId: number) {
+    const event = IncreaseCopyCountEvent.of(workbookId);
+    await this.emitter.emitAsync(IncreaseCopyCountEvent.MESSAGE, event);
   }
 }
