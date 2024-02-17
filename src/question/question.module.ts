@@ -7,9 +7,6 @@ import { QuestionController } from './controller/question.controller';
 import { QuestionRepository } from './repository/question.repository';
 import { Member } from '../member/entity/member';
 import { Answer } from '../answer/entity/answer';
-import { Workbook } from '../workbook/entity/workbook';
-import { WorkbookModule } from '../workbook/workbook.module';
-import { WorkbookRepository } from '../workbook/repository/workbook.repository';
 
 @Module({
   imports: [TypeOrmModule.forFeature([Question, Member, Answer]), TokenModule],

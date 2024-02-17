@@ -1,7 +1,6 @@
 import { DefaultEntity } from '../../app.entity';
 import { Column, Entity, Index, JoinColumn, ManyToOne } from 'typeorm';
 import { Answer } from '../../answer/entity/answer';
-import { Workbook } from '../../workbook/entity/workbook';
 
 @Entity({ name: 'Question' })
 @Index('idx_indexInWorkbook', ['indexInWorkbook'])

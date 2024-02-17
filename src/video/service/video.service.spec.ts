@@ -51,7 +51,6 @@ import { QuestionModule } from 'src/question/question.module';
 import { CreateVideoRequest } from '../dto/createVideoRequest';
 import { DEFAULT_THUMBNAIL } from '../../constant/constant';
 import * as idriveUtil from 'src/util/idrive.util';
-import redisMock from 'ioredis-mock';
 import { UpdateVideoIndexRequest } from '../dto/updateVideoIndexRequest';
 import { VideoRelationRepository } from '../repository/videoRelation.repository';
 import { VideoRelation } from '../entity/videoRelation';

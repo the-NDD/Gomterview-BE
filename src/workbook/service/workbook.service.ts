@@ -1,8 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { WorkbookRepository } from '../repository/workbook.repository';
 import { CreateWorkbookRequest } from '../dto/createWorkbookRequest';
-import { CategoryRepository } from '../../category/repository/category.repository';
-import { validateCategory } from '../../category/util/category.util';
 import { Workbook } from '../entity/workbook';
 import { Member } from '../../member/entity/member';
 import { validateManipulatedToken } from '../../util/token.util';

@@ -40,7 +40,7 @@ import {
 import { WorkbookTitleResponse } from '../dto/workbookTitleResponse';
 import { UpdateWorkbookRequest } from '../dto/updateWorkbookRequest';
 import { TokenModule } from '../../token/token.module';
-import { EventEmitter2, EventEmitterModule } from '@nestjs/event-emitter';
+import { EventEmitter2 } from '@nestjs/event-emitter';
 
 describe('WorkbookService 단위테스트', () => {
   let module: TestingModule;
