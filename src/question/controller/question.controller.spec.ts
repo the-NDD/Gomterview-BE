@@ -193,7 +193,7 @@ describe('QuestionController 통합테스트', () => {
     it('Member객체와 questionId를 입력했을 때 정상적으로 질문을 삭제한다.', async () => {
       //given
       const question = await questionRepository.save(
-        Question.of(workbookFixtureWithId, null, 'tester'),
+        Question.of(workbookFixtureWithId.id, null, 'tester'),
       );
 
       //when & then
@@ -208,7 +208,7 @@ describe('QuestionController 통합테스트', () => {
     it('토큰이 없으면 UnauthorizedException을 발생시킨다.', async () => {
       //given
       const question = await questionRepository.save(
-        Question.of(workbookFixtureWithId, null, 'tester'),
+        Question.of(workbookFixtureWithId.id, null, 'tester'),
       );
 
       //when & then
@@ -234,7 +234,7 @@ describe('QuestionController 통합테스트', () => {
       await memberRepository.save(otherMemberFixture);
       const workbook = await workbookRepository.save(otherWorkbookFixture);
       const question = await questionRepository.save(
-        Question.of(workbook, null, 'tester'),
+        Question.of(workbook.id, null, 'tester'),
       );
 
       //when & then
@@ -250,7 +250,7 @@ describe('QuestionController 통합테스트', () => {
     it('문제집을 복제하면 201코드를 반환한다.', async () => {
       //given
       const question = await questionRepository.save(
-        Question.of(workbookFixtureWithId, null, 'tester'),
+        Question.of(workbookFixtureWithId.id, null, 'tester'),
       );
 
       const token = await authService.login(memberFixturesOAuthRequest);
@@ -278,7 +278,7 @@ describe('QuestionController 통합테스트', () => {
     it('문제집을 복제 권한이 없으면 403 코드를 반환한다.', async () => {
       //given
       const question = await questionRepository.save(
-        Question.of(workbookFixtureWithId, null, 'tester'),
+        Question.of(workbookFixtureWithId.id, null, 'tester'),
       );
 
       await authService.login(oauthRequestFixture);
@@ -308,7 +308,7 @@ describe('QuestionController 통합테스트', () => {
     it('토큰이 없으면 401코드를 반환한다.', async () => {
       //given
       const question = await questionRepository.save(
-        Question.of(workbookFixtureWithId, null, 'tester'),
+        Question.of(workbookFixtureWithId.id, null, 'tester'),
       );
 
       await authService.login(oauthRequestFixture);
@@ -335,7 +335,7 @@ describe('QuestionController 통합테스트', () => {
     it('문제집이 없다면 404를 반환한다.', async () => {
       //given
       const question = await questionRepository.save(
-        Question.of(workbookFixtureWithId, null, 'tester'),
+        Question.of(workbookFixtureWithId.id, null, 'tester'),
       );
 
       const token = await authService.login(oauthRequestFixture);
@@ -471,7 +471,7 @@ describe('QuestionController 통합테스트', () => {
       ids.push(
         (
           await questionRepository.save(
-            Question.of(workbookFixtureWithId, null, `tester${index}`),
+            Question.of(workbookFixtureWithId.id, null, `tester${index}`),
           )
         ).id,
       );

@@ -1,8 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { WorkbookRepository } from '../repository/workbook.repository';
 import { CreateWorkbookRequest } from '../dto/createWorkbookRequest';
-import { CategoryRepository } from '../../category/repository/category.repository';
-import { validateCategory } from '../../category/util/category.util';
 import { Workbook } from '../entity/workbook';
 import { Member } from '../../member/entity/member';
 import { validateManipulatedToken } from '../../util/token.util';
@@ -12,7 +10,13 @@ import { validateWorkbook, validateWorkbookOwner } from '../util/workbook.util';
 import { WorkbookTitleResponse } from '../dto/workbookTitleResponse';
 import { UpdateWorkbookRequest } from '../dto/updateWorkbookRequest';
 import { Transactional } from 'typeorm-transactional';
-import { EventEmitter2 } from '@nestjs/event-emitter';
+import { EventEmitter2, OnEvent } from '@nestjs/event-emitter';
+import { ValidateWorkbookEvent } from '../event/validate.workbook.event';
+import {
+  WorkbookForbiddenException,
+  WorkbookNotFoundException,
+} from '../exception/workbook.exception';
+import { IncreaseCopyCountEvent } from '../event/increase.copyCount.event';
 
 @Injectable()
 export class WorkbookService {
@@ -31,7 +35,6 @@ export class WorkbookService {
 
     const workbook = Workbook.from(createWorkbookRequest, member);
     const result = await this.workbookRepository.insert(workbook);
-    console.log(result);
     return result.identifiers[0].id as number;
   }
 
@@ -107,6 +110,27 @@ export class WorkbookService {
     validateWorkbook(workbook);
     validateWorkbookOwner(workbook, member);
     await this.workbookRepository.remove(workbook);
+  }
+
+  @OnEvent(ValidateWorkbookEvent.MESSAGE, {
+    suppressErrors: false,
+  })
+  async validateWorkbookOwner(validateWorkbookEvent: ValidateWorkbookEvent) {
+    const member = validateWorkbookEvent.member;
+    const workbook = await this.workbookRepository.findById(
+      validateWorkbookEvent.workbookId,
+    );
+    if (isEmpty(workbook)) throw new WorkbookNotFoundException();
+    if (!workbook.isOwnedBy(member)) throw new WorkbookForbiddenException();
+  }
+
+  @OnEvent(IncreaseCopyCountEvent.MESSAGE, { suppressErrors: false })
+  async increaseCopyCount(event: IncreaseCopyCountEvent) {
+    const workbook = await this.workbookRepository.findById(event.workbookId);
+
+    if (isEmpty(workbook)) throw new WorkbookNotFoundException();
+    workbook.increaseCopyCount();
+    await this.workbookRepository.update(workbook);
   }
 
   async validateCategoryExistence(categoryId: number) {

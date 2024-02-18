@@ -29,10 +29,9 @@ export class QuestionRepository {
   async findByWorkbookId(workbookId: number) {
     return await this.repository
       .createQueryBuilder('Question')
-      .leftJoinAndSelect('Question.workbook', 'workbook')
       .leftJoinAndSelect('Question.origin', 'origin')
       .leftJoinAndSelect('Question.defaultAnswer', 'defaultAnswer')
-      .where('workbook.id = :workbookId', { workbookId })
+      .where('Question.workbook = :workbookId', { workbookId })
       .orderBy('Question.indexInWorkbook', 'ASC')
       .getMany();
   }
@@ -40,7 +39,6 @@ export class QuestionRepository {
   async findAllByIds(ids: number[]) {
     return await this.repository
       .createQueryBuilder('Question')
-      .leftJoinAndSelect('Question.workbook', 'workbook')
       .leftJoinAndSelect('Question.origin', 'origin')
       .leftJoinAndSelect('Question.defaultAnswer', 'defaultAnswer')
       .where('Question.id IN (:...ids)', { ids })

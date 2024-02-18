@@ -64,6 +64,7 @@ import { Video } from '../entity/video';
 import * as idriveUtil from 'src/util/idrive.util';
 import { VideoRelationRepository } from '../repository/videoRelation.repository';
 import { VideoRelation } from '../entity/videoRelation';
+import { WorkbookModule } from 'src/workbook/workbook.module';
 
 describe('VideoController 단위 테스트', () => {
   let controller: VideoController;
@@ -723,7 +724,7 @@ describe('VideoController 통합 테스트', () => {
   let token: string;
 
   beforeAll(async () => {
-    const modules = [VideoModule, AuthModule];
+    const modules = [VideoModule, AuthModule, WorkbookModule];
 
     const moduleFixture: TestingModule =
       await createIntegrationTestModule(modules);

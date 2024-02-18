@@ -50,7 +50,7 @@ export class AnswerService {
     validateQuestion(question);
 
     const workbook = await this.workbookRepository.findById(
-      question.workbook.id,
+      question.workbookId,
     );
     validateWorkbook(workbook);
     if (!workbook.isOwnedBy(member)) {
