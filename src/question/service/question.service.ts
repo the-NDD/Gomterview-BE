@@ -18,6 +18,7 @@ import { ValidateWorkbookEvent } from 'src/workbook/event/validate.workbook.even
 import { IncreaseCopyCountEvent } from 'src/workbook/event/increase.copyCount.event';
 import { ValidateQuestionExistenceEvent } from '../event/validate.question.existence.event';
 import { ValidateQuestionOriginEvent } from '../event/validate.question.origin.event';
+import { UpdateDefaultAnswerEvent } from '../event/update.default.answer.event';
 
 @Injectable()
 export class QuestionService {
@@ -123,6 +124,14 @@ export class QuestionService {
       event.questionId,
     );
     validateQuestion(question);
+  }
+
+  @OnEvent(UpdateDefaultAnswerEvent.MESSAGE, { suppressErrors: false })
+  async updateDefaultAnswer(event: UpdateDefaultAnswerEvent) {
+    const question = await this.questionRepository.findById(event.questionId);
+    validateQuestion(question);
+    question.setDefaultAnswer(event.defaultAnswer);
+    await this.questionRepository.update(question);
   }
 
   private validateQuestionsByIds(questions: Question[], ids: number[]) {
