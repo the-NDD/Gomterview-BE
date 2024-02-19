@@ -12,28 +12,14 @@ import { WorkbookIdResponse } from '../../workbook/dto/workbookIdResponse';
 import { NeedToFindByWorkbookIdException } from '../../workbook/exception/workbook.exception';
 import { Transactional } from 'typeorm-transactional';
 import { UpdateIndexInWorkbookRequest } from '../dto/updateIndexInWorkbookRequest';
-import {
-  QuestionDefaultAnswerExists,
-  QuestionNotFoundException,
-  QuestionOriginFound,
-} from '../exception/question.exception';
-import { EventEmitter2, OnEvent } from '@nestjs/event-emitter';
-import { ValidateWorkbookEvent } from 'src/workbook/event/validate.workbook.event';
-import { IncreaseCopyCountEvent } from 'src/workbook/event/increase.copyCount.event';
-import { ValidateQuestionExistenceEvent } from '../event/validate.question.existence.event';
-import { ValidateQuestionOriginEvent } from '../event/validate.question.origin.event';
-import { UpdateDefaultAnswerEvent } from '../event/update.default.answer.event';
-import { FindQuestionToValidateWorkbookOwnership } from '../event/find.question.to.validate.workbook.ownership.event';
-import { FindQuestionOriginEvent } from '../event/find.question.origin.event';
-import { UpdateAnswersOriginEvent } from 'src/answer/event/update.answer.origin.event';
-import { CheckQuestionToBeOriginEvent } from '../event/check.question.tobe.origin.event';
-import { ValidateDefaultAnswersExistenceEvent } from '../event/validate.default.answers.existence.event';
+import { QuestionNotFoundException } from '../exception/question.exception';
+import { QuestionEventHandler } from './question.event.handler';
 
 @Injectable()
 export class QuestionService {
   constructor(
     private questionRepository: QuestionRepository,
-    private emitter: EventEmitter2,
+    private eventHandler: QuestionEventHandler,
   ) {}
 
   @Transactional()
@@ -41,7 +27,7 @@ export class QuestionService {
     createQuestionRequest: CreateQuestionRequest,
     member: Member,
   ) {
-    await this.validateWorkbookOwnership(
+    await this.eventHandler.validateWorkbookOwnership(
       createQuestionRequest.workbookId,
       member,
     );
@@ -62,7 +48,7 @@ export class QuestionService {
     copyQuestionRequest: CopyQuestionRequest,
     member: Member,
   ) {
-    await this.validateWorkbookOwnership(
+    await this.eventHandler.validateWorkbookOwnership(
       copyQuestionRequest.workbookId,
       member,
     );
@@ -74,7 +60,7 @@ export class QuestionService {
     Array.from(
       new Set(questions.map((question) => question.workbookId)),
     ).forEach(async (workbookId) => {
-      await this.increaseWorkbookCopyCount(workbookId);
+      await this.eventHandler.increaseWorkbookCopyCount(workbookId);
     });
 
     await this.questionRepository.saveAll(
@@ -101,7 +87,10 @@ export class QuestionService {
     validateManipulatedToken(member);
     const question = await this.questionRepository.findById(questionId);
     validateQuestion(question);
-    await this.validateWorkbookOwnership(question.workbookId, member);
+    await this.eventHandler.validateWorkbookOwnership(
+      question.workbookId,
+      member,
+    );
     await this.questionRepository.remove(question);
   }
 
@@ -111,7 +100,10 @@ export class QuestionService {
     member: Member,
   ) {
     validateManipulatedToken(member);
-    await this.validateWorkbookOwnership(updateIndexRequest.workbookId, member);
+    await this.eventHandler.validateWorkbookOwnership(
+      updateIndexRequest.workbookId,
+      member,
+    );
 
     const questions = (
       await this.questionRepository.findAllByIds(updateIndexRequest.ids)
@@ -119,78 +111,6 @@ export class QuestionService {
 
     this.validateQuestionsByIds(questions, updateIndexRequest.ids);
     await this.questionRepository.updateIndex(updateIndexRequest.ids);
-  }
-
-  @OnEvent(ValidateQuestionExistenceEvent.MESSAGE, { suppressErrors: false })
-  async validateQuestionExistence(event: ValidateQuestionExistenceEvent) {
-    const question = await this.questionRepository.findById(event.questionId);
-    validateQuestion(question);
-  }
-
-  @OnEvent(ValidateQuestionOriginEvent.MESSAGE, { suppressErrors: false })
-  async validateQuestionOrigin(event: ValidateQuestionOriginEvent) {
-    const question = await this.questionRepository.findOriginById(
-      event.questionId,
-    );
-    validateQuestion(question);
-  }
-
-  @OnEvent(UpdateDefaultAnswerEvent.MESSAGE, { suppressErrors: false })
-  async updateDefaultAnswer(event: UpdateDefaultAnswerEvent) {
-    const question = await this.questionRepository.findById(event.questionId);
-    validateQuestion(question);
-    question.setDefaultAnswer(event.defaultAnswer);
-    await this.questionRepository.update(question);
-  }
-
-  @OnEvent(FindQuestionToValidateWorkbookOwnership.MESSAGE, {
-    suppressErrors: false,
-  })
-  async validateWorkbookOwnershipByWorkbookId(
-    event: FindQuestionToValidateWorkbookOwnership,
-  ) {
-    const question = await this.questionRepository.findById(event.questionId);
-    const workbookEvent = ValidateWorkbookEvent.of(
-      event.member,
-      question.workbookId,
-    );
-    await this.emitter.emitAsync(ValidateWorkbookEvent.MESSAGE, workbookEvent);
-  }
-
-  @OnEvent(FindQuestionOriginEvent.MESSAGE, { suppressErrors: false })
-  async findQuestionsOriginToUpdateAnswer(event: FindQuestionOriginEvent) {
-    const question = await this.questionRepository.findOriginById(
-      event.questionId,
-    );
-    const updateEvent = UpdateAnswersOriginEvent.of(
-      question.id,
-      event.answerId,
-    );
-    await this.emitter.emitAsync(UpdateAnswersOriginEvent.MESSAGE, updateEvent);
-  }
-
-  @OnEvent(CheckQuestionToBeOriginEvent.MESSAGE, { suppressErrors: false })
-  async checkQuestionToBeOrigin(event: CheckQuestionToBeOriginEvent) {
-    const question = await this.questionRepository.findOriginById(
-      event.questionId,
-    );
-    if (question.id !== event.questionId) {
-      throw new QuestionOriginFound(question.id);
-    }
-  }
-
-  @OnEvent(ValidateDefaultAnswersExistenceEvent.MESSAGE, {
-    suppressErrors: false,
-  })
-  async validateDefaultAnswersExistence(
-    event: ValidateDefaultAnswersExistenceEvent,
-  ) {
-    const question = await this.questionRepository.findQuestionWithOriginById(
-      event.questionId,
-    );
-    if (question.defaultAnswer) {
-      throw new QuestionDefaultAnswerExists(question.defaultAnswer.id);
-    }
   }
 
   private validateQuestionsByIds(questions: Question[], ids: number[]) {
@@ -203,17 +123,5 @@ export class QuestionService {
     }
 
     return Question.copyOf(question, workbookId);
-  }
-
-  private async validateWorkbookOwnership(workbookId: number, member: Member) {
-    await this.emitter.emitAsync(
-      ValidateWorkbookEvent.MESSAGE,
-      ValidateWorkbookEvent.of(member, workbookId),
-    );
-  }
-
-  private async increaseWorkbookCopyCount(workbookId: number) {
-    const event = IncreaseCopyCountEvent.of(workbookId);
-    await this.emitter.emitAsync(IncreaseCopyCountEvent.MESSAGE, event);
   }
 }
