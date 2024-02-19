@@ -8,7 +8,6 @@ import { Answer } from '../entity/answer';
 import { AnswerResponse } from '../dto/answerResponse';
 import { DefaultAnswerRequest } from '../dto/defaultAnswerRequest';
 import { validateAnswer } from '../util/answer.util';
-import { validateQuestion } from '../../question/util/question.util';
 import { AnswerForbiddenException } from '../exception/answer.exception';
 import { WorkbookRepository } from '../../workbook/repository/workbook.repository';
 import { QuestionForbiddenException } from '../../question/exception/question.exception';
@@ -32,8 +31,7 @@ export class AnswerService {
     const question = await this.questionRepository.findOriginById(
       createAnswerRequest.questionId,
     );
-
-    validateQuestion(question);
+    await this.validateQuestionOrigin(createAnswerRequest.questionId);
 
     const answer = await this.saveAnswerAndQuestion(
       createAnswerRequest,
@@ -51,7 +49,7 @@ export class AnswerService {
     const question = await this.questionRepository.findById(
       defaultAnswerRequest.questionId,
     );
-    validateQuestion(question);
+    await this.validateQuestionExistence(defaultAnswerRequest.questionId);
 
     const workbook = await this.workbookRepository.findById(
       question.workbookId,
@@ -64,9 +62,7 @@ export class AnswerService {
     const answer = await this.answerRepository.findById(
       defaultAnswerRequest.answerId,
     );
-
     validateAnswer(answer);
-
     question.setDefaultAnswer(answer);
     await this.questionRepository.update(question);
   }
@@ -89,7 +85,7 @@ export class AnswerService {
   async getAnswerList(id: number) {
     const question =
       await this.questionRepository.findQuestionWithOriginById(id);
-    validateQuestion(question);
+    await this.validateQuestionExistence(id);
     const questionId = question.origin ? question.origin.id : question.id;
 
     const answers = (

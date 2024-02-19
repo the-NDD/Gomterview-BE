@@ -43,6 +43,7 @@ import { categoryFixtureWithId } from '../../category/fixture/category.fixture';
 import { CategoryRepository } from '../../category/repository/category.repository';
 import { CategoryModule } from '../../category/category.module';
 import { QuestionResponse } from '../../question/dto/questionResponse';
+import { EventEmitter2, EventEmitterModule } from '@nestjs/event-emitter';
 
 describe('AnswerService 단위 테스트', () => {
   let service: AnswerService;
@@ -58,6 +59,10 @@ describe('AnswerService 단위 테스트', () => {
     update: jest.fn(),
   };
 
+  const mockEmitter = {
+    emitAsync: jest.fn(),
+  };
+
   const mockWorkbookRepository = {
     findById: jest.fn(),
   };
@@ -68,12 +73,16 @@ describe('AnswerService 단위 테스트', () => {
 
   beforeAll(async () => {
     const module: TestingModule = await Test.createTestingModule({
-      imports: [await createTypeOrmModuleForTest()],
+      imports: [
+        await createTypeOrmModuleForTest(),
+        EventEmitterModule.forRoot(),
+      ],
       providers: [
         AnswerService,
         AnswerRepository,
         QuestionRepository,
         WorkbookRepository,
+        EventEmitter2,
       ],
     })
       .overrideProvider(AnswerRepository)
@@ -82,6 +91,8 @@ describe('AnswerService 단위 테스트', () => {
       .useValue(mockQuestionRepository)
       .overrideProvider(WorkbookRepository)
       .useValue(mockWorkbookRepository)
+      .overrideProvider(EventEmitter2)
+      .useValue(mockEmitter)
       .compile();
 
     service = module.get<AnswerService>(AnswerService);
@@ -92,6 +103,10 @@ describe('AnswerService 단위 테스트', () => {
   });
 
   describe('답변 추가', () => {
+    beforeAll(() => {
+      mockEmitter.emitAsync.mockResolvedValue(undefined);
+    });
+
     it('질문에 답변을 추가한다.', async () => {
       //given
       mockQuestionRepository.findOriginById.mockResolvedValue(questionFixture);
@@ -115,6 +130,9 @@ describe('AnswerService 단위 테스트', () => {
       //when
       const answer = Answer.of('test', memberFixture, questionFixture);
       mockAnswerRepository.save.mockResolvedValue(answer);
+      mockEmitter.emitAsync.mockRejectedValueOnce(
+        new QuestionNotFoundException(),
+      );
 
       //then
       await expect(
@@ -124,6 +142,10 @@ describe('AnswerService 단위 테스트', () => {
   });
 
   describe('질문에 대표답변 등록', () => {
+    beforeAll(() => {
+      mockEmitter.emitAsync.mockResolvedValue(undefined);
+    });
+
     it('질문에 대한 대표답변을 등록하면 해당 Question에 바로 대표답변을 추가한다.', async () => {
       //given
 
@@ -146,6 +168,9 @@ describe('AnswerService 단위 테스트', () => {
       mockQuestionRepository.findById.mockResolvedValue(undefined);
       mockWorkbookRepository.findById.mockResolvedValue(workbookFixtureWithId);
       mockAnswerRepository.findById.mockResolvedValue(answerFixture);
+      mockEmitter.emitAsync.mockRejectedValueOnce(
+        new QuestionNotFoundException(),
+      );
 
       //then
       await expect(
