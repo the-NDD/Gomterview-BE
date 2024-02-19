@@ -7,10 +7,11 @@ import { QuestionController } from './controller/question.controller';
 import { QuestionRepository } from './repository/question.repository';
 import { Member } from '../member/entity/member';
 import { Answer } from '../answer/entity/answer';
+import { QuestionEventHandler } from './service/question.event.handler';
 
 @Module({
   imports: [TypeOrmModule.forFeature([Question, Member, Answer]), TokenModule],
-  providers: [QuestionService, QuestionRepository],
+  providers: [QuestionService, QuestionRepository, QuestionEventHandler],
   controllers: [QuestionController],
 })
 export class QuestionModule {}

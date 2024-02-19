@@ -44,6 +44,7 @@ import { WorkbookIdResponse } from '../../workbook/dto/workbookIdResponse';
 import { CopyQuestionRequest } from '../dto/copyQuestionRequest';
 import { UpdateIndexInWorkbookRequest } from '../dto/updateIndexInWorkbookRequest';
 import { EventEmitter2, EventEmitterModule } from '@nestjs/event-emitter';
+import { QuestionEventHandler } from './question.event.handler';
 
 describe('QuestionService', () => {
   let service: QuestionService;
@@ -73,7 +74,12 @@ describe('QuestionService', () => {
         await createTypeOrmModuleForTest(),
         EventEmitterModule.forRoot(),
       ],
-      providers: [QuestionService, QuestionRepository, EventEmitter2],
+      providers: [
+        QuestionService,
+        QuestionRepository,
+        EventEmitter2,
+        QuestionEventHandler,
+      ],
     })
       .overrideProvider(QuestionRepository)
       .useValue(mockQuestionRepository)
