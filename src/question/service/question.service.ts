@@ -17,6 +17,7 @@ import { EventEmitter2, OnEvent } from '@nestjs/event-emitter';
 import { ValidateWorkbookEvent } from 'src/workbook/event/validate.workbook.event';
 import { IncreaseCopyCountEvent } from 'src/workbook/event/increase.copyCount.event';
 import { ValidateQuestionExistenceEvent } from '../event/validate.question.existence.event';
+import { ValidateQuestionOriginEvent } from '../event/validate.question.origin.event';
 
 @Injectable()
 export class QuestionService {
@@ -113,6 +114,14 @@ export class QuestionService {
   @OnEvent(ValidateQuestionExistenceEvent.MESSAGE, { suppressErrors: false })
   async validateQuestionExistence(event: ValidateQuestionExistenceEvent) {
     const question = await this.questionRepository.findById(event.questionId);
+    validateQuestion(question);
+  }
+
+  @OnEvent(ValidateQuestionOriginEvent.MESSAGE, { suppressErrors: false })
+  async validateQuestionOrigin(event: ValidateQuestionOriginEvent) {
+    const question = await this.questionRepository.findOriginById(
+      event.questionId,
+    );
     validateQuestion(question);
   }
 
