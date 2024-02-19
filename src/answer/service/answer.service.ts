@@ -1,41 +1,33 @@
 import { Injectable } from '@nestjs/common';
 import { AnswerRepository } from '../repository/answer.repository';
-import { QuestionRepository } from '../../question/repository/question.repository';
 import { CreateAnswerRequest } from '../dto/createAnswerRequest';
 import { Member } from '../../member/entity/member';
-import { Question } from '../../question/entity/question';
 import { Answer } from '../entity/answer';
 import { AnswerResponse } from '../dto/answerResponse';
 import { DefaultAnswerRequest } from '../dto/defaultAnswerRequest';
 import { validateAnswer } from '../util/answer.util';
 import { AnswerForbiddenException } from '../exception/answer.exception';
 import { Transactional } from 'typeorm-transactional';
-import { EventEmitter2, OnEvent } from '@nestjs/event-emitter';
-import { ValidateQuestionExistenceEvent } from 'src/question/event/validate.question.existence.event';
-import { ValidateQuestionOriginEvent } from 'src/question/event/validate.question.origin.event';
-import { UpdateDefaultAnswerEvent } from 'src/question/event/update.default.answer.event';
-import { FindQuestionToValidateWorkbookOwnership } from 'src/question/event/find.question.to.validate.workbook.ownership.event';
-import { FindQuestionOriginEvent } from '../../question/event/find.question.origin.event';
-import { UpdateAnswersOriginEvent } from '../event/update.answer.origin.event';
-import { CheckQuestionToBeOriginEvent } from 'src/question/event/check.question.tobe.origin.event';
-import { ValidateDefaultAnswersExistenceEvent } from 'src/question/event/validate.default.answers.existence.event';
+import { AnswerEventHandler } from './answer.event.handler';
 
 @Injectable()
 export class AnswerService {
   constructor(
     private answerRepository: AnswerRepository,
-    private emitter: EventEmitter2,
+    private answerEventHandler: AnswerEventHandler,
   ) {}
 
   @Transactional()
   async addAnswer(createAnswerRequest: CreateAnswerRequest, member: Member) {
-    await this.validateQuestionOrigin(createAnswerRequest.questionId);
+    await this.answerEventHandler.validateQuestionOrigin(
+      createAnswerRequest.questionId,
+    );
     const answer = await this.saveAnswerAndQuestion(
       createAnswerRequest,
       createAnswerRequest.questionId,
       member,
     );
-    await this.updateAnswersQuestionId(
+    await this.answerEventHandler.updateAnswersQuestionId(
       createAnswerRequest.questionId,
       answer.id,
     );
@@ -47,8 +39,10 @@ export class AnswerService {
     defaultAnswerRequest: DefaultAnswerRequest,
     member: Member,
   ) {
-    await this.validateQuestionExistence(defaultAnswerRequest.questionId);
-    await this.validateOwnershipByQuestionsWorkbook(
+    await this.answerEventHandler.validateQuestionExistence(
+      defaultAnswerRequest.questionId,
+    );
+    await this.answerEventHandler.validateOwnershipByQuestionsWorkbook(
       defaultAnswerRequest.questionId,
       member,
     );
@@ -56,7 +50,10 @@ export class AnswerService {
       defaultAnswerRequest.answerId,
     );
     validateAnswer(answer);
-    await this.updateQuestion(defaultAnswerRequest.questionId, answer);
+    await this.answerEventHandler.updateQuestion(
+      defaultAnswerRequest.questionId,
+      answer,
+    );
   }
 
   @Transactional()
@@ -86,10 +83,10 @@ export class AnswerService {
     3. answer와 question.defaultAnswer을 join해서 question.id가 일치하는 컬럼을 가져온다. 
     4. 해당 answer를 제일 앞으로 가지는 배열을 반환한다.
     */
-    await this.validateQuestionExistence(questionId);
+    await this.answerEventHandler.validateQuestionExistence(questionId);
     let originId: number;
     try {
-      await this.checkQuestionToBeOrigin(questionId);
+      await this.answerEventHandler.checkQuestionToBeOrigin(questionId);
       originId = questionId;
     } catch (e) {
       originId = e.originId;
@@ -99,7 +96,7 @@ export class AnswerService {
       await this.answerRepository.findAllByQuestionId(originId)
     ).map((answer) => AnswerResponse.from(answer, answer.member));
     try {
-      await this.validateDefaultAnswersExistence(questionId);
+      await this.answerEventHandler.validateDefaultAnswersExistence(questionId);
     } catch (e) {
       const defaultAnswer = answers
         .filter((answer) => answer.answerId === e.answerId)
@@ -111,22 +108,6 @@ export class AnswerService {
     return answers;
   }
 
-  private createAnswerResponsesWithDefaultAnswer(
-    question: Question,
-    answers: AnswerResponse[],
-  ) {
-    const defaultAnswerResponse = AnswerResponse.from(
-      question.defaultAnswer,
-      question.defaultAnswer.member,
-    );
-
-    const resultList = answers.filter(
-      (response) => response.answerId != defaultAnswerResponse.answerId,
-    );
-    resultList.unshift(defaultAnswerResponse);
-    return resultList;
-  }
-
   private async saveAnswerAndQuestion(
     createAnswerRequest: CreateAnswerRequest,
     questionId: number,
@@ -134,59 +115,5 @@ export class AnswerService {
   ) {
     const answer = Answer.of(createAnswerRequest.content, member, questionId);
     return await this.answerRepository.save(answer);
-  }
-
-  @OnEvent(UpdateAnswersOriginEvent.MESSAGE, { suppressErrors: false })
-  async updateAnswersQuestion(event: UpdateAnswersOriginEvent) {
-    const answer = await this.answerRepository.findById(event.answerId);
-    answer.updateQuestionId(event.questionId);
-    await this.answerRepository.update(answer);
-  }
-
-  private async updateAnswersQuestionId(questionId: number, answerId: number) {
-    const event = FindQuestionOriginEvent.of(questionId, answerId);
-    await this.emitter.emitAsync(FindQuestionOriginEvent.MESSAGE, event);
-  }
-
-  private async validateQuestionExistence(questionId: number) {
-    const event = ValidateQuestionExistenceEvent.of(questionId);
-    await this.emitter.emitAsync(ValidateQuestionExistenceEvent.MESSAGE, event);
-  }
-
-  private async validateQuestionOrigin(questionId: number) {
-    const event = ValidateQuestionOriginEvent.of(questionId);
-    await this.emitter.emitAsync(ValidateQuestionOriginEvent.MESSAGE, event);
-  }
-
-  private async updateQuestion(questionId: number, answer: Answer) {
-    const event = UpdateDefaultAnswerEvent.of(questionId, answer);
-    await this.emitter.emitAsync(UpdateDefaultAnswerEvent.MESSAGE, event);
-  }
-
-  private async validateOwnershipByQuestionsWorkbook(
-    questionId: number,
-    member: Member,
-  ) {
-    const event = FindQuestionToValidateWorkbookOwnership.of(
-      questionId,
-      member,
-    );
-    await this.emitter.emitAsync(
-      FindQuestionToValidateWorkbookOwnership.MESSAGE,
-      event,
-    );
-  }
-
-  private async checkQuestionToBeOrigin(questionId: number) {
-    const event = CheckQuestionToBeOriginEvent.of(questionId);
-    await this.emitter.emitAsync(CheckQuestionToBeOriginEvent.MESSAGE, event);
-  }
-
-  private async validateDefaultAnswersExistence(questionId: number) {
-    const event = ValidateDefaultAnswersExistenceEvent.of(questionId);
-    await this.emitter.emitAsync(
-      ValidateDefaultAnswersExistenceEvent.MESSAGE,
-      event,
-    );
   }
 }
