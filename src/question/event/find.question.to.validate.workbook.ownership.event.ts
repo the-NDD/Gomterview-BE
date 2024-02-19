@@ -1,7 +1,7 @@
 import { Member } from 'src/member/entity/member';
 
 export class FindQuestionToValidateWorkbookOwnership {
-  static readonly MESSAGE = 'question.update.defaultAnswer';
+  static readonly MESSAGE = 'question.find.to.validate.workbook.ownership';
 
   readonly questionId: number;
   readonly member: Member;

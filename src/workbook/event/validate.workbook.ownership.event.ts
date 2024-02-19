@@ -1,7 +1,7 @@
 import { Member } from 'src/member/entity/member';
 
-export class ValidateWorkbookOwnershipEvent {
-  static readonly MESSAGE = 'question.update.defaultAnswer';
+export class ValidateWorkbookOwnershipForQuestionEvent {
+  static readonly MESSAGE = 'workbook.validate.ownership.to.question';
 
   readonly workbookId: number;
   readonly member: Member;
@@ -12,6 +12,6 @@ export class ValidateWorkbookOwnershipEvent {
   }
 
   static of(workbookId: number, member: Member) {
-    return new ValidateWorkbookOwnershipEvent(workbookId, member);
+    return new ValidateWorkbookOwnershipForQuestionEvent(workbookId, member);
   }
 }
