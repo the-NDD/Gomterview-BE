@@ -103,10 +103,6 @@ describe('AnswerService 단위 테스트', () => {
   });
 
   describe('답변 추가', () => {
-    beforeAll(() => {
-      mockEmitter.emitAsync.mockResolvedValue(undefined);
-    });
-
     it('질문에 답변을 추가한다.', async () => {
       //given
       mockQuestionRepository.findOriginById.mockResolvedValue(questionFixture);
@@ -114,6 +110,7 @@ describe('AnswerService 단위 테스트', () => {
       //when
       const answer = Answer.of('test', memberFixture, questionFixture.id);
       mockAnswerRepository.save.mockResolvedValue(answer);
+      mockEmitter.emitAsync.mockResolvedValue(undefined);
 
       //then
       await expect(
@@ -130,9 +127,7 @@ describe('AnswerService 단위 테스트', () => {
       //when
       const answer = Answer.of('test', memberFixture, questionFixture.id);
       mockAnswerRepository.save.mockResolvedValue(answer);
-      mockEmitter.emitAsync.mockRejectedValueOnce(
-        new QuestionNotFoundException(),
-      );
+      mockEmitter.emitAsync.mockRejectedValue(new QuestionNotFoundException());
 
       //then
       await expect(
@@ -199,6 +194,7 @@ describe('AnswerService 단위 테스트', () => {
         ),
       );
       mockAnswerRepository.findById.mockResolvedValue(answerFixture);
+      mockEmitter.emitAsync.mockRejectedValue(new QuestionForbiddenException());
 
       //then
       await expect(
@@ -311,7 +307,7 @@ describe('AnswerService 통합테스트', () => {
   });
 
   describe('대표답변 설정', () => {
-    it('Member와 알맞은 Questin이 온다면, 정상적으로 대표 답변을 설정해준다.', async () => {
+    it('Member와 알맞은 Question이 온다면, 정상적으로 대표 답변을 설정해준다.', async () => {
       //given
       const member = await memberRepository.save(memberFixture);
       await categoryRepository.save(categoryFixtureWithId);
