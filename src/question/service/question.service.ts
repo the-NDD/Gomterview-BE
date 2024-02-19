@@ -19,6 +19,7 @@ import { IncreaseCopyCountEvent } from 'src/workbook/event/increase.copyCount.ev
 import { ValidateQuestionExistenceEvent } from '../event/validate.question.existence.event';
 import { ValidateQuestionOriginEvent } from '../event/validate.question.origin.event';
 import { UpdateDefaultAnswerEvent } from '../event/update.default.answer.event';
+import { FindQuestionToValidateWorkbookOwnership } from '../event/find.question.to.validate.workbook.ownership.event';
 
 @Injectable()
 export class QuestionService {
@@ -132,6 +133,20 @@ export class QuestionService {
     validateQuestion(question);
     question.setDefaultAnswer(event.defaultAnswer);
     await this.questionRepository.update(question);
+  }
+
+  @OnEvent(FindQuestionToValidateWorkbookOwnership.MESSAGE, {
+    suppressErrors: false,
+  })
+  async validateWorkbookOwnershipByWorkbookId(
+    event: FindQuestionToValidateWorkbookOwnership,
+  ) {
+    const question = await this.questionRepository.findById(event.questionId);
+    const workbookEvent = ValidateWorkbookEvent.of(
+      event.member,
+      question.workbookId,
+    );
+    await this.emitter.emitAsync(ValidateWorkbookEvent.MESSAGE, workbookEvent);
   }
 
   private validateQuestionsByIds(questions: Question[], ids: number[]) {

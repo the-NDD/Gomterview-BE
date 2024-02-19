@@ -9,14 +9,12 @@ import { AnswerResponse } from '../dto/answerResponse';
 import { DefaultAnswerRequest } from '../dto/defaultAnswerRequest';
 import { validateAnswer } from '../util/answer.util';
 import { AnswerForbiddenException } from '../exception/answer.exception';
-import { WorkbookRepository } from '../../workbook/repository/workbook.repository';
-import { QuestionForbiddenException } from '../../question/exception/question.exception';
-import { validateWorkbook } from '../../workbook/util/workbook.util';
 import { Transactional } from 'typeorm-transactional';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { ValidateQuestionExistenceEvent } from 'src/question/event/validate.question.existence.event';
 import { ValidateQuestionOriginEvent } from 'src/question/event/validate.question.origin.event';
 import { UpdateDefaultAnswerEvent } from 'src/question/event/update.default.answer.event';
+import { FindQuestionToValidateWorkbookOwnership } from 'src/question/event/find.question.to.validate.workbook.ownership.event';
 
 @Injectable()
 export class AnswerService {
@@ -43,16 +41,10 @@ export class AnswerService {
     member: Member,
   ) {
     await this.validateQuestionExistence(defaultAnswerRequest.questionId);
-
-    // *TODO : 문제집도 이벤트로 수정
-    // const workbook = await this.workbookRepository.findById(
-    //   question.workbookId,
-    // );
-    // validateWorkbook(workbook);
-    // if (!workbook.isOwnedBy(member)) {
-    //   throw new QuestionForbiddenException();
-    // }
-
+    await this.validateOwnershipByQuestionsWorkbook(
+      defaultAnswerRequest.questionId,
+      member,
+    );
     const answer = await this.answerRepository.findById(
       defaultAnswerRequest.answerId,
     );
@@ -131,5 +123,19 @@ export class AnswerService {
   private async updateQuestion(questionId: number, answer: Answer) {
     const event = UpdateDefaultAnswerEvent.of(questionId, answer);
     this.emitter.emitAsync(UpdateDefaultAnswerEvent.MESSAGE, event);
+  }
+
+  private async validateOwnershipByQuestionsWorkbook(
+    questionId: number,
+    member: Member,
+  ) {
+    const event = FindQuestionToValidateWorkbookOwnership.of(
+      questionId,
+      member,
+    );
+    this.emitter.emitAsync(
+      FindQuestionToValidateWorkbookOwnership.MESSAGE,
+      event,
+    );
   }
 }
