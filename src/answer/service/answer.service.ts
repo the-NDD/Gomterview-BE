@@ -14,6 +14,8 @@ import { WorkbookRepository } from '../../workbook/repository/workbook.repositor
 import { QuestionForbiddenException } from '../../question/exception/question.exception';
 import { validateWorkbook } from '../../workbook/util/workbook.util';
 import { Transactional } from 'typeorm-transactional';
+import { EventEmitter2 } from '@nestjs/event-emitter';
+import { ValidateQuestionExistenceEvent } from 'src/question/event/validate.question.existence.event';
 
 @Injectable()
 export class AnswerService {
@@ -21,6 +23,7 @@ export class AnswerService {
     private answerRepository: AnswerRepository,
     private questionRepository: QuestionRepository,
     private workbookRepository: WorkbookRepository,
+    private emitter: EventEmitter2,
   ) {}
 
   @Transactional()
@@ -122,5 +125,10 @@ export class AnswerService {
   ) {
     const answer = Answer.of(createAnswerRequest.content, member, question);
     return await this.answerRepository.save(answer);
+  }
+
+  private async validateQuestionExistence(questionId: number) {
+    const event = ValidateQuestionExistenceEvent.of(questionId);
+    this.emitter.emitAsync(ValidateQuestionExistenceEvent.MESSAGE, event);
   }
 }
