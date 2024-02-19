@@ -10,7 +10,7 @@ import { DefaultAnswerRequest } from '../dto/defaultAnswerRequest';
 import { validateAnswer } from '../util/answer.util';
 import { AnswerForbiddenException } from '../exception/answer.exception';
 import { Transactional } from 'typeorm-transactional';
-import { EventEmitter2 } from '@nestjs/event-emitter';
+import { EventEmitter2, OnEvent } from '@nestjs/event-emitter';
 import { ValidateQuestionExistenceEvent } from 'src/question/event/validate.question.existence.event';
 import { ValidateQuestionOriginEvent } from 'src/question/event/validate.question.origin.event';
 import { UpdateDefaultAnswerEvent } from 'src/question/event/update.default.answer.event';
@@ -26,7 +26,7 @@ export class AnswerService {
   @Transactional()
   async addAnswer(createAnswerRequest: CreateAnswerRequest, member: Member) {
     await this.validateQuestionOrigin(createAnswerRequest.questionId);
-
+    // 문제점 : 질문의 원본에 답변을 저장해야한다.
     const answer = await this.saveAnswerAndQuestion(
       createAnswerRequest,
       createAnswerRequest.questionId,
@@ -69,18 +69,23 @@ export class AnswerService {
   @Transactional()
   async getAnswerList(id: number) {
     // 로직 전면 수정 필요
-    const question =
-      await this.questionRepository.findQuestionWithOriginById(id);
+    // 어떻게 수정할까?
+    /* TODO
+    1. question도메인에 검증 이벤트를 발생시킨다.
+    2. try-catch를 통해 커스텀 예외를 이벤트를 통해 받아와 처리한다?
+    */
+    // const question =
+    //   await this.questionRepository.findQuestionWithOriginById(id);
     await this.validateQuestionExistence(id);
-    const questionId = question.origin ? question.origin.id : question.id;
+    // const questionId = question.origin ? question.origin.id : question.id;
 
-    const answers = (
-      await this.answerRepository.findAllByQuestionId(questionId)
-    ).map((answer) => AnswerResponse.from(answer, answer.member));
+    const answers = (await this.answerRepository.findAllByQuestionId(id)).map(
+      (answer) => AnswerResponse.from(answer, answer.member),
+    );
 
-    if (question.defaultAnswer) {
-      return this.createAnswerResponsesWithDefaultAnswer(question, answers);
-    }
+    // if (question.defaultAnswer) {
+    //   return this.createAnswerResponsesWithDefaultAnswer(question, answers);
+    // }
 
     return answers;
   }
