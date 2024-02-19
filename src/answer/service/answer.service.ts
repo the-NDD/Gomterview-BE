@@ -21,21 +21,16 @@ import { ValidateQuestionOriginEvent } from 'src/question/event/validate.questio
 export class AnswerService {
   constructor(
     private answerRepository: AnswerRepository,
-    private questionRepository: QuestionRepository,
-    private workbookRepository: WorkbookRepository,
     private emitter: EventEmitter2,
   ) {}
 
   @Transactional()
   async addAnswer(createAnswerRequest: CreateAnswerRequest, member: Member) {
-    const question = await this.questionRepository.findOriginById(
-      createAnswerRequest.questionId,
-    );
     await this.validateQuestionOrigin(createAnswerRequest.questionId);
 
     const answer = await this.saveAnswerAndQuestion(
       createAnswerRequest,
-      question,
+      createAnswerRequest.questionId,
       member,
     );
     return AnswerResponse.from(answer, member);
@@ -46,25 +41,24 @@ export class AnswerService {
     defaultAnswerRequest: DefaultAnswerRequest,
     member: Member,
   ) {
-    const question = await this.questionRepository.findById(
-      defaultAnswerRequest.questionId,
-    );
     await this.validateQuestionExistence(defaultAnswerRequest.questionId);
 
-    const workbook = await this.workbookRepository.findById(
-      question.workbookId,
-    );
-    validateWorkbook(workbook);
-    if (!workbook.isOwnedBy(member)) {
-      throw new QuestionForbiddenException();
-    }
+    // *TODO : 문제집도 이벤트로 수정
+    // const workbook = await this.workbookRepository.findById(
+    //   question.workbookId,
+    // );
+    // validateWorkbook(workbook);
+    // if (!workbook.isOwnedBy(member)) {
+    //   throw new QuestionForbiddenException();
+    // }
 
     const answer = await this.answerRepository.findById(
       defaultAnswerRequest.answerId,
     );
     validateAnswer(answer);
-    question.setDefaultAnswer(answer);
-    await this.questionRepository.update(question);
+    // * TODO 질문의 업데이트 로직을 이벤트화
+    // question.setDefaultAnswer(answer);
+    // await this.questionRepository.update(question);
   }
 
   @Transactional()
@@ -83,6 +77,7 @@ export class AnswerService {
 
   @Transactional()
   async getAnswerList(id: number) {
+    // 로직 전면 수정 필요
     const question =
       await this.questionRepository.findQuestionWithOriginById(id);
     await this.validateQuestionExistence(id);
@@ -117,10 +112,10 @@ export class AnswerService {
 
   private async saveAnswerAndQuestion(
     createAnswerRequest: CreateAnswerRequest,
-    question: Question,
+    questionId: number,
     member: Member,
   ) {
-    const answer = Answer.of(createAnswerRequest.content, member, question);
+    const answer = Answer.of(createAnswerRequest.content, member, questionId);
     return await this.answerRepository.save(answer);
   }
 

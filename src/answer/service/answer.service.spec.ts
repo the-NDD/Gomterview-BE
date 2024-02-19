@@ -112,7 +112,7 @@ describe('AnswerService 단위 테스트', () => {
       mockQuestionRepository.findOriginById.mockResolvedValue(questionFixture);
 
       //when
-      const answer = Answer.of('test', memberFixture, questionFixture);
+      const answer = Answer.of('test', memberFixture, questionFixture.id);
       mockAnswerRepository.save.mockResolvedValue(answer);
 
       //then
@@ -128,7 +128,7 @@ describe('AnswerService 단위 테스트', () => {
       );
 
       //when
-      const answer = Answer.of('test', memberFixture, questionFixture);
+      const answer = Answer.of('test', memberFixture, questionFixture.id);
       mockAnswerRepository.save.mockResolvedValue(answer);
       mockEmitter.emitAsync.mockRejectedValueOnce(
         new QuestionNotFoundException(),
@@ -320,7 +320,7 @@ describe('AnswerService 통합테스트', () => {
         Question.of(workbook.id, null, 'test'),
       );
       const answer = await answerRepository.save(
-        Answer.of('test', member, question),
+        Answer.of('test', member, question.id),
       );
 
       //when
@@ -362,10 +362,10 @@ describe('AnswerService 통합테스트', () => {
       );
       for (let index = 1; index <= 10; index++) {
         await answerRepository.save(
-          Answer.of(`test${index}`, member, question),
+          Answer.of(`test${index}`, member, question.id),
         );
         await answerRepository.save(
-          Answer.of(`TEST${index}`, member1, question),
+          Answer.of(`TEST${index}`, member1, question.id),
         );
       }
 
@@ -386,11 +386,11 @@ describe('AnswerService 통합테스트', () => {
       );
       for (let index = 1; index <= 10; index++) {
         await answerRepository.save(
-          Answer.of(`test${index}`, member, question),
+          Answer.of(`test${index}`, member, question.id),
         );
       }
       const answer = await answerRepository.save(
-        Answer.of(`defaultAnswer`, member, question),
+        Answer.of(`defaultAnswer`, member, question.id),
       );
       question.setDefaultAnswer(answer);
       await questionRepository.save(question);
@@ -414,10 +414,12 @@ describe('AnswerService 통합테스트', () => {
         Question.of(workbook.id, origin, 'test'),
       );
       for (let index = 1; index <= 10; index++) {
-        await answerRepository.save(Answer.of(`test${index}`, member, origin));
+        await answerRepository.save(
+          Answer.of(`test${index}`, member, origin.id),
+        );
       }
       const answer = await answerRepository.save(
-        Answer.of(`defaultAnswer`, member, origin),
+        Answer.of(`defaultAnswer`, member, origin.id),
       );
       question.setDefaultAnswer(answer);
       await questionRepository.save(question);
@@ -440,7 +442,7 @@ describe('AnswerService 통합테스트', () => {
         Question.of(workbook.id, null, 'test'),
       );
       const answer = await answerRepository.save(
-        Answer.of(`defaultAnswer`, member, question),
+        Answer.of(`defaultAnswer`, member, question.id),
       );
       question.setDefaultAnswer(answer);
       await questionRepository.save(question);
@@ -473,7 +475,7 @@ describe('AnswerService 통합테스트', () => {
         Question.of(workbook.id, null, 'test'),
       );
       const answer = await answerRepository.save(
-        Answer.of(`defaultAnswer`, member, question),
+        Answer.of(`defaultAnswer`, member, question.id),
       );
       question.setDefaultAnswer(answer);
       await questionRepository.save(question);
@@ -504,7 +506,7 @@ describe('AnswerService 통합테스트', () => {
         Question.of(workbook.id, null, 'test'),
       );
       const answer = await answerRepository.save(
-        Answer.of(`defaultAnswer`, member, question),
+        Answer.of(`defaultAnswer`, member, question.id),
       );
       question.setDefaultAnswer(answer);
       await questionRepository.save(question);
