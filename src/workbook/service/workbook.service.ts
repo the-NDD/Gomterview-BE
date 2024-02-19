@@ -17,7 +17,7 @@ import {
   WorkbookNotFoundException,
 } from '../exception/workbook.exception';
 import { IncreaseCopyCountEvent } from '../event/increase.copyCount.event';
-import { ValidateWorkbookOwnershipEvent } from '../event/validate.workbook.ownership.event';
+import { ValidateWorkbookOwnershipForQuestionEvent } from '../event/validate.workbook.ownership.event';
 import { QuestionForbiddenException } from 'src/question/exception/question.exception';
 
 @Injectable()
@@ -126,11 +126,11 @@ export class WorkbookService {
     if (!workbook.isOwnedBy(member)) throw new WorkbookForbiddenException();
   }
 
-  @OnEvent(ValidateWorkbookOwnershipEvent.MESSAGE, {
+  @OnEvent(ValidateWorkbookOwnershipForQuestionEvent.MESSAGE, {
     suppressErrors: false,
   })
   async validateWorkbookOwnershipForQuestion(
-    event: ValidateWorkbookOwnershipEvent,
+    event: ValidateWorkbookOwnershipForQuestionEvent,
   ) {
     const member = event.member;
     const workbook = await this.workbookRepository.findById(event.workbookId);

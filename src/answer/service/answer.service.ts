@@ -129,22 +129,22 @@ export class AnswerService {
 
   private async updateAnswersQuestionId(questionId: number, answerId: number) {
     const event = FindQuestionOriginEvent.of(questionId, answerId);
-    this.emitter.emitAsync(FindQuestionOriginEvent.MESSAGE, event);
+    await this.emitter.emitAsync(FindQuestionOriginEvent.MESSAGE, event);
   }
 
   private async validateQuestionExistence(questionId: number) {
     const event = ValidateQuestionExistenceEvent.of(questionId);
-    this.emitter.emitAsync(ValidateQuestionExistenceEvent.MESSAGE, event);
+    await this.emitter.emitAsync(ValidateQuestionExistenceEvent.MESSAGE, event);
   }
 
   private async validateQuestionOrigin(questionId: number) {
     const event = ValidateQuestionOriginEvent.of(questionId);
-    this.emitter.emitAsync(ValidateQuestionOriginEvent.MESSAGE, event);
+    await this.emitter.emitAsync(ValidateQuestionOriginEvent.MESSAGE, event);
   }
 
   private async updateQuestion(questionId: number, answer: Answer) {
     const event = UpdateDefaultAnswerEvent.of(questionId, answer);
-    this.emitter.emitAsync(UpdateDefaultAnswerEvent.MESSAGE, event);
+    await this.emitter.emitAsync(UpdateDefaultAnswerEvent.MESSAGE, event);
   }
 
   private async validateOwnershipByQuestionsWorkbook(
@@ -155,7 +155,7 @@ export class AnswerService {
       questionId,
       member,
     );
-    this.emitter.emitAsync(
+    await this.emitter.emitAsync(
       FindQuestionToValidateWorkbookOwnership.MESSAGE,
       event,
     );

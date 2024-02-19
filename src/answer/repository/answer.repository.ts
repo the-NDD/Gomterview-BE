@@ -39,6 +39,17 @@ export class AnswerRepository {
       .getMany();
   }
 
+  async findAllByQuestionOriginId(questionId: number) {
+    return this.repository
+      .createQueryBuilder('answer')
+      .leftJoinAndSelect('answer.member', 'member')
+      .leftJoinAndSelect('answer.question', 'question')
+      .where('answer.question = question.origin.id')
+      .where('answer.question = :questionId', { questionId })
+      .orderBy('answer.createdAt', 'DESC')
+      .getMany();
+  }
+
   async update(answer: Answer) {
     await this.repository.update(answer.id, answer);
   }
