@@ -44,6 +44,7 @@ import { CategoryRepository } from '../../category/repository/category.repositor
 import { CategoryModule } from '../../category/category.module';
 import { QuestionResponse } from '../../question/dto/questionResponse';
 import { EventEmitter2, EventEmitterModule } from '@nestjs/event-emitter';
+import { AnswerEventHandler } from './answer.event.handler';
 
 describe('AnswerService 단위 테스트', () => {
   let service: AnswerService;
@@ -51,20 +52,9 @@ describe('AnswerService 단위 테스트', () => {
     save: jest.fn(),
     findById: jest.fn(),
   };
-  const mockQuestionRepository = {
-    findById: jest.fn(),
-    findWithOriginById: jest.fn(),
-    save: jest.fn(),
-    findOriginById: jest.fn(),
-    update: jest.fn(),
-  };
 
   const mockEmitter = {
     emitAsync: jest.fn(),
-  };
-
-  const mockWorkbookRepository = {
-    findById: jest.fn(),
   };
 
   jest.mock('typeorm-transactional', () => ({
@@ -80,17 +70,12 @@ describe('AnswerService 단위 테스트', () => {
       providers: [
         AnswerService,
         AnswerRepository,
-        QuestionRepository,
-        WorkbookRepository,
+        AnswerEventHandler,
         EventEmitter2,
       ],
     })
       .overrideProvider(AnswerRepository)
       .useValue(mockAnswerRepository)
-      .overrideProvider(QuestionRepository)
-      .useValue(mockQuestionRepository)
-      .overrideProvider(WorkbookRepository)
-      .useValue(mockWorkbookRepository)
       .overrideProvider(EventEmitter2)
       .useValue(mockEmitter)
       .compile();
@@ -105,7 +90,6 @@ describe('AnswerService 단위 테스트', () => {
   describe('답변 추가', () => {
     it('질문에 답변을 추가한다.', async () => {
       //given
-      mockQuestionRepository.findOriginById.mockResolvedValue(questionFixture);
 
       //when
       const answer = Answer.of('test', memberFixture, questionFixture.id);
@@ -120,9 +104,6 @@ describe('AnswerService 단위 테스트', () => {
 
     it('질문에 답변을 추가할 때 id로 질문을 확인할 수 없을 때 QuestionNotFoundException을 반환한다.', async () => {
       //given
-      mockQuestionRepository.findOriginById.mockRejectedValue(
-        new QuestionNotFoundException(),
-      );
 
       //when
       const answer = Answer.of('test', memberFixture, questionFixture.id);
@@ -145,9 +126,6 @@ describe('AnswerService 단위 테스트', () => {
       //given
 
       //when
-      mockQuestionRepository.findById.mockResolvedValue(questionFixture);
-      mockQuestionRepository.update.mockResolvedValue(questionFixture);
-      mockWorkbookRepository.findById.mockResolvedValue(workbookFixtureWithId);
       mockAnswerRepository.findById.mockResolvedValue(answerFixture);
 
       //then
@@ -160,8 +138,6 @@ describe('AnswerService 단위 테스트', () => {
       //given
 
       //when
-      mockQuestionRepository.findById.mockResolvedValue(undefined);
-      mockWorkbookRepository.findById.mockResolvedValue(workbookFixtureWithId);
       mockAnswerRepository.findById.mockResolvedValue(answerFixture);
       mockEmitter.emitAsync.mockRejectedValueOnce(
         new QuestionNotFoundException(),
@@ -177,22 +153,6 @@ describe('AnswerService 단위 테스트', () => {
       //given
 
       //when
-      mockQuestionRepository.findById.mockResolvedValue(questionFixture);
-      mockWorkbookRepository.findById.mockResolvedValue(
-        Workbook.of(
-          'FE 테스트',
-          '테스트용 FE 문제집입니다.',
-          categoryFixtureWithId,
-          new Member(
-            100,
-            'janghee@janghee.com',
-            'janghee',
-            'https://jangsarchive.tistory.com',
-            new Date(),
-          ),
-          true,
-        ),
-      );
       mockAnswerRepository.findById.mockResolvedValue(answerFixture);
       mockEmitter.emitAsync.mockRejectedValue(new QuestionForbiddenException());
 
