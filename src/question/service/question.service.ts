@@ -13,9 +13,10 @@ import { NeedToFindByWorkbookIdException } from '../../workbook/exception/workbo
 import { Transactional } from 'typeorm-transactional';
 import { UpdateIndexInWorkbookRequest } from '../dto/updateIndexInWorkbookRequest';
 import { QuestionNotFoundException } from '../exception/question.exception';
-import { EventEmitter2 } from '@nestjs/event-emitter';
+import { EventEmitter2, OnEvent } from '@nestjs/event-emitter';
 import { ValidateWorkbookEvent } from 'src/workbook/event/validate.workbook.event';
 import { IncreaseCopyCountEvent } from 'src/workbook/event/increase.copyCount.event';
+import { ValidateQuestionExistenceEvent } from '../event/validate.question.existence.event';
 
 @Injectable()
 export class QuestionService {
@@ -107,6 +108,12 @@ export class QuestionService {
 
     this.validateQuestionsByIds(questions, updateIndexRequest.ids);
     await this.questionRepository.updateIndex(updateIndexRequest.ids);
+  }
+
+  @OnEvent(ValidateQuestionExistenceEvent.MESSAGE, { suppressErrors: false })
+  async validateQuestionExistence(event: ValidateQuestionExistenceEvent) {
+    const question = await this.questionRepository.findById(event.questionId);
+    validateQuestion(question);
   }
 
   private validateQuestionsByIds(questions: Question[], ids: number[]) {
