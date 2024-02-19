@@ -15,6 +15,8 @@ import { ValidateQuestionExistenceEvent } from 'src/question/event/validate.ques
 import { ValidateQuestionOriginEvent } from 'src/question/event/validate.question.origin.event';
 import { UpdateDefaultAnswerEvent } from 'src/question/event/update.default.answer.event';
 import { FindQuestionToValidateWorkbookOwnership } from 'src/question/event/find.question.to.validate.workbook.ownership.event';
+import { FindQuestionOriginEvent } from '../../question/event/find.question.origin.event';
+import { UpdateAnswersOriginEvent } from '../event/update.answer.origin.event';
 
 @Injectable()
 export class AnswerService {
@@ -26,11 +28,14 @@ export class AnswerService {
   @Transactional()
   async addAnswer(createAnswerRequest: CreateAnswerRequest, member: Member) {
     await this.validateQuestionOrigin(createAnswerRequest.questionId);
-    // 문제점 : 질문의 원본에 답변을 저장해야한다.
     const answer = await this.saveAnswerAndQuestion(
       createAnswerRequest,
       createAnswerRequest.questionId,
       member,
+    );
+    await this.updateAnswersQuestionId(
+      createAnswerRequest.questionId,
+      answer.id,
     );
     return AnswerResponse.from(answer, member);
   }
@@ -113,6 +118,18 @@ export class AnswerService {
   ) {
     const answer = Answer.of(createAnswerRequest.content, member, questionId);
     return await this.answerRepository.save(answer);
+  }
+
+  @OnEvent(UpdateAnswersOriginEvent.MESSAGE, { suppressErrors: false })
+  async updateAnswersQuestion(event: UpdateAnswersOriginEvent) {
+    const answer = await this.answerRepository.findById(event.answerId);
+    answer.updateQuestionId(event.questionId);
+    await this.answerRepository.update(answer);
+  }
+
+  private async updateAnswersQuestionId(questionId: number, answerId: number) {
+    const event = FindQuestionOriginEvent.of(questionId, answerId);
+    this.emitter.emitAsync(FindQuestionOriginEvent.MESSAGE, event);
   }
 
   private async validateQuestionExistence(questionId: number) {
