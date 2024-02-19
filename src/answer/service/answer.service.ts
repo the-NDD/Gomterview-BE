@@ -16,6 +16,7 @@ import { validateWorkbook } from '../../workbook/util/workbook.util';
 import { Transactional } from 'typeorm-transactional';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { ValidateQuestionExistenceEvent } from 'src/question/event/validate.question.existence.event';
+import { ValidateQuestionOriginEvent } from 'src/question/event/validate.question.origin.event';
 
 @Injectable()
 export class AnswerService {
@@ -130,5 +131,10 @@ export class AnswerService {
   private async validateQuestionExistence(questionId: number) {
     const event = ValidateQuestionExistenceEvent.of(questionId);
     this.emitter.emitAsync(ValidateQuestionExistenceEvent.MESSAGE, event);
+  }
+
+  private async validateQuestionOrigin(questionId: number) {
+    const event = ValidateQuestionOriginEvent.of(questionId);
+    this.emitter.emitAsync(ValidateQuestionOriginEvent.MESSAGE, event);
   }
 }
