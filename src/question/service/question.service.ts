@@ -20,6 +20,8 @@ import { ValidateQuestionExistenceEvent } from '../event/validate.question.exist
 import { ValidateQuestionOriginEvent } from '../event/validate.question.origin.event';
 import { UpdateDefaultAnswerEvent } from '../event/update.default.answer.event';
 import { FindQuestionToValidateWorkbookOwnership } from '../event/find.question.to.validate.workbook.ownership.event';
+import { FindQuestionOriginEvent } from '../event/find.question.origin.event';
+import { UpdateAnswersOriginEvent } from 'src/answer/event/update.answer.origin.event';
 
 @Injectable()
 export class QuestionService {
@@ -147,6 +149,18 @@ export class QuestionService {
       question.workbookId,
     );
     await this.emitter.emitAsync(ValidateWorkbookEvent.MESSAGE, workbookEvent);
+  }
+
+  @OnEvent(FindQuestionOriginEvent.MESSAGE, { suppressErrors: false })
+  async findQuestionsOriginToUpdateAnswer(event: FindQuestionOriginEvent) {
+    const question = await this.questionRepository.findOriginById(
+      event.questionId,
+    );
+    const updateEvent = UpdateAnswersOriginEvent.of(
+      question.id,
+      event.answerId,
+    );
+    await this.emitter.emitAsync(UpdateAnswersOriginEvent.MESSAGE, updateEvent);
   }
 
   private validateQuestionsByIds(questions: Question[], ids: number[]) {

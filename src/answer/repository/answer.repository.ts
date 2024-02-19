@@ -39,6 +39,10 @@ export class AnswerRepository {
       .getMany();
   }
 
+  async update(answer: Answer) {
+    await this.repository.update(answer.id, answer);
+  }
+
   async remove(answer: Answer) {
     await this.repository.remove(answer);
   }
