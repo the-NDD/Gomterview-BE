@@ -1,7 +1,6 @@
 import { Column, Entity, JoinColumn, ManyToOne } from 'typeorm';
 import { DefaultEntity } from '../../app.entity';
 import { Member } from '../../member/entity/member';
-import { Question } from '../../question/entity/question';
 
 @Entity({ name: 'Answer' })
 export class Answer extends DefaultEntity {
@@ -12,25 +11,24 @@ export class Answer extends DefaultEntity {
   @JoinColumn()
   member: Member;
 
-  @ManyToOne(() => Question, { onDelete: 'CASCADE' })
-  @JoinColumn()
-  question: Question;
+  @Column({ name: 'question' })
+  questionId: number;
 
   constructor(
     id: number,
     createdAt: Date,
     content: string,
     member: Member,
-    question: Question,
+    questionId: number,
   ) {
     super(id, createdAt);
     this.content = content;
     this.member = member;
-    this.question = question;
+    this.questionId = questionId;
   }
 
-  static of(content: string, member: Member, question: Question) {
-    return new Answer(null, new Date(), content, member, question);
+  static of(content: string, member: Member, questionId: number) {
+    return new Answer(null, new Date(), content, member, questionId);
   }
 
   isOwnedBy(member: Member) {

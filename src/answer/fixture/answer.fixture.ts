@@ -7,7 +7,7 @@ import { DefaultAnswerRequest } from '../dto/defaultAnswerRequest';
 export const answerFixture = Answer.of(
   'testContent',
   memberFixture,
-  questionFixture,
+  questionFixture.id,
 );
 
 export const createAnswerRequestFixture = new CreateAnswerRequest(

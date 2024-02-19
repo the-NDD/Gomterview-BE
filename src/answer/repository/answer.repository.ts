@@ -26,7 +26,7 @@ export class AnswerRepository {
     return await this.repository.findOneBy({
       content: content,
       member: { id: memberId },
-      question: { id: questionId },
+      questionId: questionId,
     });
   }
 
@@ -34,8 +34,7 @@ export class AnswerRepository {
     return this.repository
       .createQueryBuilder('answer')
       .leftJoinAndSelect('answer.member', 'member')
-      .leftJoinAndSelect('answer.question', 'question')
-      .where('question.id = :questionId', { questionId })
+      .where('answer.question = :questionId', { questionId })
       .orderBy('answer.createdAt', 'DESC')
       .getMany();
   }
