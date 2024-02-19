@@ -12,7 +12,11 @@ import { WorkbookIdResponse } from '../../workbook/dto/workbookIdResponse';
 import { NeedToFindByWorkbookIdException } from '../../workbook/exception/workbook.exception';
 import { Transactional } from 'typeorm-transactional';
 import { UpdateIndexInWorkbookRequest } from '../dto/updateIndexInWorkbookRequest';
-import { QuestionNotFoundException } from '../exception/question.exception';
+import {
+  QuestionDefaultAnswerExists,
+  QuestionNotFoundException,
+  QuestionOriginFound,
+} from '../exception/question.exception';
 import { EventEmitter2, OnEvent } from '@nestjs/event-emitter';
 import { ValidateWorkbookEvent } from 'src/workbook/event/validate.workbook.event';
 import { IncreaseCopyCountEvent } from 'src/workbook/event/increase.copyCount.event';
@@ -22,6 +26,8 @@ import { UpdateDefaultAnswerEvent } from '../event/update.default.answer.event';
 import { FindQuestionToValidateWorkbookOwnership } from '../event/find.question.to.validate.workbook.ownership.event';
 import { FindQuestionOriginEvent } from '../event/find.question.origin.event';
 import { UpdateAnswersOriginEvent } from 'src/answer/event/update.answer.origin.event';
+import { CheckQuestionToBeOriginEvent } from '../event/check.question.tobe.origin.event';
+import { ValidateDefaultAnswersExistenceEvent } from '../event/validate.default.answers.existence.event';
 
 @Injectable()
 export class QuestionService {
@@ -161,6 +167,30 @@ export class QuestionService {
       event.answerId,
     );
     await this.emitter.emitAsync(UpdateAnswersOriginEvent.MESSAGE, updateEvent);
+  }
+
+  @OnEvent(CheckQuestionToBeOriginEvent.MESSAGE, { suppressErrors: false })
+  async checkQuestionToBeOrigin(event: CheckQuestionToBeOriginEvent) {
+    const question = await this.questionRepository.findOriginById(
+      event.questionId,
+    );
+    if (question.id !== event.questionId) {
+      throw new QuestionOriginFound(question.id);
+    }
+  }
+
+  @OnEvent(ValidateDefaultAnswersExistenceEvent.MESSAGE, {
+    suppressErrors: false,
+  })
+  async validateDefaultAnswersExistence(
+    event: ValidateDefaultAnswersExistenceEvent,
+  ) {
+    const question = await this.questionRepository.findQuestionWithOriginById(
+      event.questionId,
+    );
+    if (question.defaultAnswer) {
+      throw new QuestionDefaultAnswerExists(question.defaultAnswer.id);
+    }
   }
 
   private validateQuestionsByIds(questions: Question[], ids: number[]) {

@@ -17,6 +17,8 @@ import { UpdateDefaultAnswerEvent } from 'src/question/event/update.default.answ
 import { FindQuestionToValidateWorkbookOwnership } from 'src/question/event/find.question.to.validate.workbook.ownership.event';
 import { FindQuestionOriginEvent } from '../../question/event/find.question.origin.event';
 import { UpdateAnswersOriginEvent } from '../event/update.answer.origin.event';
+import { CheckQuestionToBeOriginEvent } from 'src/question/event/check.question.tobe.origin.event';
+import { ValidateDefaultAnswersExistenceEvent } from 'src/question/event/validate.default.answers.existence.event';
 
 @Injectable()
 export class AnswerService {
@@ -72,10 +74,8 @@ export class AnswerService {
   }
 
   @Transactional()
-  async getAnswerList(id: number) {
-    // 로직 전면 수정 필요
-    // 어떻게 수정할까?
-    /* TODO
+  async getAnswerList(questionId: number) {
+    /* 
     1. question도메인에 검증 이벤트를 발생시킨다.
     2. 질문의 origin이 있는지 검증한다.
       2-1. 있을 경우(예외 x)
@@ -86,12 +86,28 @@ export class AnswerService {
     3. answer와 question.defaultAnswer을 join해서 question.id가 일치하는 컬럼을 가져온다. 
     4. 해당 answer를 제일 앞으로 가지는 배열을 반환한다.
     */
-    await this.validateQuestionExistence(id);
+    await this.validateQuestionExistence(questionId);
+    let originId: number;
+    try {
+      await this.checkQuestionToBeOrigin(questionId);
+      originId = questionId;
+    } catch (e) {
+      originId = e.originId;
+    }
 
-    const answers = (await this.answerRepository.findAllByQuestionId(id)).map(
-      (answer) => AnswerResponse.from(answer, answer.member),
-    );
-
+    const answers = (
+      await this.answerRepository.findAllByQuestionId(originId)
+    ).map((answer) => AnswerResponse.from(answer, answer.member));
+    try {
+      await this.validateDefaultAnswersExistence(questionId);
+    } catch (e) {
+      const defaultAnswer = answers
+        .filter((answer) => answer.answerId === e.answerId)
+        .pop();
+      const result = answers.filter((answer) => answer.answerId !== e.answerId);
+      result.unshift(defaultAnswer);
+      return result;
+    }
     return answers;
   }
 
@@ -157,6 +173,19 @@ export class AnswerService {
     );
     await this.emitter.emitAsync(
       FindQuestionToValidateWorkbookOwnership.MESSAGE,
+      event,
+    );
+  }
+
+  private async checkQuestionToBeOrigin(questionId: number) {
+    const event = CheckQuestionToBeOriginEvent.of(questionId);
+    await this.emitter.emitAsync(CheckQuestionToBeOriginEvent.MESSAGE, event);
+  }
+
+  private async validateDefaultAnswersExistence(questionId: number) {
+    const event = ValidateDefaultAnswersExistenceEvent.of(questionId);
+    await this.emitter.emitAsync(
+      ValidateDefaultAnswersExistenceEvent.MESSAGE,
       event,
     );
   }
