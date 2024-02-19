@@ -16,6 +16,7 @@ import { Transactional } from 'typeorm-transactional';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { ValidateQuestionExistenceEvent } from 'src/question/event/validate.question.existence.event';
 import { ValidateQuestionOriginEvent } from 'src/question/event/validate.question.origin.event';
+import { UpdateDefaultAnswerEvent } from 'src/question/event/update.default.answer.event';
 
 @Injectable()
 export class AnswerService {
@@ -56,9 +57,7 @@ export class AnswerService {
       defaultAnswerRequest.answerId,
     );
     validateAnswer(answer);
-    // * TODO 질문의 업데이트 로직을 이벤트화
-    // question.setDefaultAnswer(answer);
-    // await this.questionRepository.update(question);
+    await this.updateQuestion(defaultAnswerRequest.questionId, answer);
   }
 
   @Transactional()
@@ -127,5 +126,10 @@ export class AnswerService {
   private async validateQuestionOrigin(questionId: number) {
     const event = ValidateQuestionOriginEvent.of(questionId);
     this.emitter.emitAsync(ValidateQuestionOriginEvent.MESSAGE, event);
+  }
+
+  private async updateQuestion(questionId: number, answer: Answer) {
+    const event = UpdateDefaultAnswerEvent.of(questionId, answer);
+    this.emitter.emitAsync(UpdateDefaultAnswerEvent.MESSAGE, event);
   }
 }
