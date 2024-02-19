@@ -41,6 +41,7 @@ import { WorkbookTitleResponse } from '../dto/workbookTitleResponse';
 import { UpdateWorkbookRequest } from '../dto/updateWorkbookRequest';
 import { TokenModule } from '../../token/token.module';
 import { EventEmitter2 } from '@nestjs/event-emitter';
+import { WorkbookEventHandler } from './workbook.event.handler';
 
 describe('WorkbookService 단위테스트', () => {
   let module: TestingModule;
@@ -70,7 +71,12 @@ describe('WorkbookService 단위테스트', () => {
   beforeAll(async () => {
     module = await Test.createTestingModule({
       imports: [await createTypeOrmModuleForTest()],
-      providers: [WorkbookService, WorkbookRepository, EventEmitter2],
+      providers: [
+        WorkbookService,
+        WorkbookRepository,
+        EventEmitter2,
+        WorkbookEventHandler,
+      ],
     })
       .overrideProvider(WorkbookRepository)
       .useValue(mockWorkbookRepository)
@@ -112,10 +118,6 @@ describe('WorkbookService 단위테스트', () => {
       await expect(
         service.createWorkbook(createWorkbookRequestFixture, memberFixture),
       ).rejects.toThrow(new CategoryNotFoundException());
-      expect(service.emitter.emitAsync).toHaveBeenCalledWith(
-        'category.validate',
-        100,
-      );
     });
 
     it('문제집을 추가할 때, Member가 비어있다면 Manipulated예외를 반환시킨다.', async () => {

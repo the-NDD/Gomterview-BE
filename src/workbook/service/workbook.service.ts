@@ -10,21 +10,13 @@ import { validateWorkbook, validateWorkbookOwner } from '../util/workbook.util';
 import { WorkbookTitleResponse } from '../dto/workbookTitleResponse';
 import { UpdateWorkbookRequest } from '../dto/updateWorkbookRequest';
 import { Transactional } from 'typeorm-transactional';
-import { EventEmitter2, OnEvent } from '@nestjs/event-emitter';
-import { ValidateWorkbookEvent } from '../event/validate.workbook.event';
-import {
-  WorkbookForbiddenException,
-  WorkbookNotFoundException,
-} from '../exception/workbook.exception';
-import { IncreaseCopyCountEvent } from '../event/increase.copyCount.event';
-import { ValidateWorkbookOwnershipForQuestionEvent } from '../event/validate.workbook.ownership.event';
-import { QuestionForbiddenException } from 'src/question/exception/question.exception';
+import { WorkbookEventHandler } from './workbook.event.handler';
 
 @Injectable()
 export class WorkbookService {
   constructor(
     private readonly workbookRepository: WorkbookRepository,
-    readonly emitter: EventEmitter2,
+    private eventHandler: WorkbookEventHandler,
   ) {}
 
   @Transactional()
@@ -33,7 +25,9 @@ export class WorkbookService {
     member: Member,
   ) {
     validateManipulatedToken(member);
-    await this.validateCategoryExistence(createWorkbookRequest.categoryId);
+    await this.eventHandler.validateCategoryExistence(
+      createWorkbookRequest.categoryId,
+    );
 
     const workbook = Workbook.from(createWorkbookRequest, member);
     const result = await this.workbookRepository.insert(workbook);
@@ -55,7 +49,7 @@ export class WorkbookService {
   }
 
   private async findAllByCategory(categoryId: number) {
-    await this.validateCategoryExistence(categoryId);
+    await this.eventHandler.validateCategoryExistence(categoryId);
 
     const workbooks =
       await this.workbookRepository.findAllByCategoryId(categoryId);
@@ -90,7 +84,9 @@ export class WorkbookService {
     updateWorkbookRequest: UpdateWorkbookRequest,
     member: Member,
   ) {
-    await this.validateCategoryExistence(updateWorkbookRequest.categoryId);
+    await this.eventHandler.validateCategoryExistence(
+      updateWorkbookRequest.categoryId,
+    );
 
     const workbook = await this.workbookRepository.findById(
       updateWorkbookRequest.workbookId,
@@ -112,42 +108,5 @@ export class WorkbookService {
     validateWorkbook(workbook);
     validateWorkbookOwner(workbook, member);
     await this.workbookRepository.remove(workbook);
-  }
-
-  @OnEvent(ValidateWorkbookEvent.MESSAGE, {
-    suppressErrors: false,
-  })
-  async validateWorkbookOwner(validateWorkbookEvent: ValidateWorkbookEvent) {
-    const member = validateWorkbookEvent.member;
-    const workbook = await this.workbookRepository.findById(
-      validateWorkbookEvent.workbookId,
-    );
-    if (isEmpty(workbook)) throw new WorkbookNotFoundException();
-    if (!workbook.isOwnedBy(member)) throw new WorkbookForbiddenException();
-  }
-
-  @OnEvent(ValidateWorkbookOwnershipForQuestionEvent.MESSAGE, {
-    suppressErrors: false,
-  })
-  async validateWorkbookOwnershipForQuestion(
-    event: ValidateWorkbookOwnershipForQuestionEvent,
-  ) {
-    const member = event.member;
-    const workbook = await this.workbookRepository.findById(event.workbookId);
-    if (isEmpty(workbook)) throw new WorkbookNotFoundException();
-    if (!workbook.isOwnedBy(member)) throw new QuestionForbiddenException();
-  }
-
-  @OnEvent(IncreaseCopyCountEvent.MESSAGE, { suppressErrors: false })
-  async increaseCopyCount(event: IncreaseCopyCountEvent) {
-    const workbook = await this.workbookRepository.findById(event.workbookId);
-
-    if (isEmpty(workbook)) throw new WorkbookNotFoundException();
-    workbook.increaseCopyCount();
-    await this.workbookRepository.update(workbook);
-  }
-
-  async validateCategoryExistence(categoryId: number) {
-    await this.emitter.emitAsync('category.validate', categoryId);
   }
 }
