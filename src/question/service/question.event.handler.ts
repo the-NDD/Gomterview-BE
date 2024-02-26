@@ -17,6 +17,7 @@ import {
 import { ValidateDefaultAnswersExistenceEvent } from '../event/validate.default.answers.existence.event';
 import { Member } from 'src/member/entity/member';
 import { IncreaseCopyCountEvent } from 'src/workbook/event/increase.copyCount.event';
+import { ClearDefaultAnswerEvent } from 'src/answer/event/clear.default.answer.event';
 
 @Injectable()
 export class QuestionEventHandler {
@@ -95,6 +96,14 @@ export class QuestionEventHandler {
     if (question.defaultAnswerId) {
       throw new QuestionDefaultAnswerExists(question.defaultAnswerId);
     }
+  }
+
+  @OnEvent(ClearDefaultAnswerEvent.MESSAGE, { suppressErrors: false })
+  async clearDefaultAnswer(event: ClearDefaultAnswerEvent) {
+    const questions = await this.questionRepository.findAllByDefaultAnswerId(
+      event.answerId,
+    );
+    await this.questionRepository.clearDefaultAnswer(questions);
   }
 
   async validateWorkbookOwnership(workbookId: number, member: Member) {

@@ -70,4 +70,9 @@ export class Question extends DefaultEntity {
     this.defaultAnswerId = answer.id;
     this.defaultAnswerContent = answer.content;
   }
+
+  clearDefaultAnswer() {
+    this.defaultAnswerId = null;
+    this.defaultAnswerContent = null;
+  }
 }

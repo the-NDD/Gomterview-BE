@@ -64,6 +64,7 @@ export class AnswerService {
 
     if (answer.isOwnedBy(member)) {
       await this.answerRepository.remove(answer);
+      await this.answerEventHandler.clearDefaultAnswer(answer.id);
       return;
     }
 

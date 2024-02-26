@@ -55,6 +55,10 @@ export class QuestionRepository {
       .getOne();
   }
 
+  async findAllByDefaultAnswerId(answerId: number) {
+    return await this.repository.findBy({ defaultAnswerId: answerId });
+  }
+
   async findOriginById(id: number): Promise<Question | null> {
     const question = await this.findQuestionWithOriginById(id);
     return this.fetchOrigin(question);
@@ -62,6 +66,18 @@ export class QuestionRepository {
 
   async update(question: Question) {
     await this.repository.update({ id: question.id }, question);
+  }
+
+  async clearDefaultAnswer(questions: Question[]) {
+    await this.repository
+      .createQueryBuilder()
+      .update(Question)
+      .set({
+        defaultAnswerId: null,
+        defaultAnswerContent: null,
+      })
+      .whereInIds(questions.map((each) => each.id))
+      .execute();
   }
 
   async remove(question: Question) {
