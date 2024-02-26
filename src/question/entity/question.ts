@@ -15,13 +15,11 @@ export class Question extends DefaultEntity {
   @JoinColumn({ name: 'origin' })
   readonly origin: Question;
 
-  @ManyToOne(() => Answer, {
-    nullable: true,
-    onDelete: 'SET NULL',
-    eager: true,
-  })
-  @JoinColumn({ name: 'defaultAnswer' })
-  defaultAnswer: Answer;
+  @Column({ name: 'defaultAnswer', nullable: true })
+  defaultAnswerId: number;
+
+  @Column({ name: 'answerContent', nullable: true })
+  defaultAnswerContent: string;
 
   @Column({ default: 0 })
   indexInWorkbook: number;
@@ -32,18 +30,28 @@ export class Question extends DefaultEntity {
     workbookId: number,
     origin: Question,
     createdAt: Date,
-    defaultAnswer: Answer,
+    defaultAnswerId: number,
+    defaultAnswerContent: string,
   ) {
     super(id, createdAt);
     this.content = content;
     this.workbookId = workbookId;
     this.origin = origin;
-    this.defaultAnswer = defaultAnswer;
+    this.defaultAnswerId = defaultAnswerId;
+    this.defaultAnswerContent = defaultAnswerContent;
     this.indexInWorkbook = 0;
   }
 
   static of(workbookId: number, origin: Question, content: string) {
-    return new Question(null, content, workbookId, origin, new Date(), null);
+    return new Question(
+      null,
+      content,
+      workbookId,
+      origin,
+      new Date(),
+      null,
+      null,
+    );
   }
 
   static copyOf(question: Question, workbookId: number) {
@@ -53,11 +61,13 @@ export class Question extends DefaultEntity {
       workbookId,
       question,
       new Date(),
-      question.defaultAnswer,
+      question.defaultAnswerId,
+      question.defaultAnswerContent,
     );
   }
 
   setDefaultAnswer(answer: Answer) {
-    this.defaultAnswer = answer;
+    this.defaultAnswerId = answer.id;
+    this.defaultAnswerContent = answer.content;
   }
 }

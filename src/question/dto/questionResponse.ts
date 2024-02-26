@@ -30,15 +30,14 @@ export class QuestionResponse {
   }
 
   static from(question: Question) {
-    const answer = question.defaultAnswer;
-    if (isEmpty(answer))
+    if (isEmpty(question.defaultAnswerId))
       return new QuestionResponse(question.id, question.content, null, null);
 
     return new QuestionResponse(
       question.id,
       question.content,
-      answer.id,
-      answer.content.toString(),
+      question.defaultAnswerId,
+      question.defaultAnswerContent,
     );
   }
 }

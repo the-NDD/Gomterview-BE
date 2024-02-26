@@ -288,12 +288,12 @@ describe('AnswerService 통합테스트', () => {
       const questionResponse = QuestionResponse.from(updatedQuestion);
 
       //then
-      expect(updatedQuestion.defaultAnswer.id).toEqual(answer.id);
+      expect(updatedQuestion.defaultAnswerId).toEqual(answer.id);
       expect(questionResponse.questionId).toBe(updatedQuestion.id);
       expect(questionResponse.questionContent).toBe(updatedQuestion.content);
-      expect(questionResponse.answerId).toBe(updatedQuestion.defaultAnswer.id);
+      expect(questionResponse.answerId).toBe(updatedQuestion.defaultAnswerId);
       expect(questionResponse.answerContent).toBe(
-        updatedQuestion.defaultAnswer.content,
+        updatedQuestion.defaultAnswerContent,
       );
     });
   });
@@ -411,7 +411,7 @@ describe('AnswerService 통합테스트', () => {
       const afterDeleteQuestion = await questionRepository.findById(
         question.id,
       );
-      expect(afterDeleteQuestion.defaultAnswer).toBeNull();
+      expect(afterDeleteQuestion.defaultAnswerId).toBeNull();
     });
 
     it('답변을 삭제할 때 다른 사람의 답변을 삭제하면 AnswerForbiddenException을 반환한다.', async () => {

@@ -30,7 +30,6 @@ export class QuestionRepository {
     return await this.repository
       .createQueryBuilder('Question')
       .leftJoinAndSelect('Question.origin', 'origin')
-      .leftJoinAndSelect('Question.defaultAnswer', 'defaultAnswer')
       .where('Question.workbook = :workbookId', { workbookId })
       .orderBy('Question.indexInWorkbook', 'ASC')
       .getMany();
@@ -40,7 +39,6 @@ export class QuestionRepository {
     return await this.repository
       .createQueryBuilder('Question')
       .leftJoinAndSelect('Question.origin', 'origin')
-      .leftJoinAndSelect('Question.defaultAnswer', 'defaultAnswer')
       .where('Question.id IN (:...ids)', { ids })
       .getMany();
   }
@@ -53,7 +51,6 @@ export class QuestionRepository {
     return await this.repository
       .createQueryBuilder('Question')
       .leftJoinAndSelect('Question.origin', 'origin')
-      .leftJoinAndSelect('Question.defaultAnswer', 'defaultAnswer')
       .where('Question.id = :id', { id })
       .getOne();
   }

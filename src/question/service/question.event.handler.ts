@@ -92,8 +92,8 @@ export class QuestionEventHandler {
     const question = await this.questionRepository.findQuestionWithOriginById(
       event.questionId,
     );
-    if (question.defaultAnswer) {
-      throw new QuestionDefaultAnswerExists(question.defaultAnswer.id);
+    if (question.defaultAnswerId) {
+      throw new QuestionDefaultAnswerExists(question.defaultAnswerId);
     }
   }
 
