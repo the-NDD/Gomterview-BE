@@ -11,6 +11,7 @@ import { Member } from 'src/member/entity/member';
 import { FindQuestionToValidateWorkbookOwnership } from 'src/question/event/find.question.to.validate.workbook.ownership.event';
 import { CheckQuestionToBeOriginEvent } from 'src/question/event/check.question.tobe.origin.event';
 import { ValidateDefaultAnswersExistenceEvent } from 'src/question/event/validate.default.answers.existence.event';
+import { ClearDefaultAnswerEvent } from '../event/clear.default.answer.event';
 
 @Injectable()
 export class AnswerEventHandler {
@@ -71,5 +72,10 @@ export class AnswerEventHandler {
       ValidateDefaultAnswersExistenceEvent.MESSAGE,
       event,
     );
+  }
+
+  async clearDefaultAnswer(answerId: number) {
+    const event = ClearDefaultAnswerEvent.of(answerId);
+    await this.emitter.emitAsync(ClearDefaultAnswerEvent.MESSAGE, event);
   }
 }
