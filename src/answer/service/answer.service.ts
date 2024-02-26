@@ -72,17 +72,6 @@ export class AnswerService {
 
   @Transactional()
   async getAnswerList(questionId: number) {
-    /* 
-    1. question도메인에 검증 이벤트를 발생시킨다.
-    2. 질문의 origin이 있는지 검증한다.
-      2-1. 있을 경우(예외 x)
-          1. 예외에서 questionId를 가져온다. 
-          2. questionId를 통해 질문들을 가져온다. 
-      2-2. 없을 경우(예외 핸들링)
-          1. id로 답변을 조회한다. 
-    3. answer와 question.defaultAnswer을 join해서 question.id가 일치하는 컬럼을 가져온다. 
-    4. 해당 answer를 제일 앞으로 가지는 배열을 반환한다.
-    */
     await this.answerEventHandler.validateQuestionExistence(questionId);
     let originId: number;
     try {
