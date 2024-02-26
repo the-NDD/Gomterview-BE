@@ -355,6 +355,7 @@ describe('AnswerService 통합테스트', () => {
 
       //then
       const list = await answerService.getAnswerList(question.id);
+      console.log(list);
       expect(list[0].content).toEqual('defaultAnswer');
     });
 
