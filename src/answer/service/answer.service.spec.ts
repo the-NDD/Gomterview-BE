@@ -43,6 +43,8 @@ import { categoryFixtureWithId } from '../../category/fixture/category.fixture';
 import { CategoryRepository } from '../../category/repository/category.repository';
 import { CategoryModule } from '../../category/category.module';
 import { QuestionResponse } from '../../question/dto/questionResponse';
+import { EventEmitter2, EventEmitterModule } from '@nestjs/event-emitter';
+import { AnswerEventHandler } from './answer.event.handler';
 
 describe('AnswerService 단위 테스트', () => {
   let service: AnswerService;
@@ -50,16 +52,9 @@ describe('AnswerService 단위 테스트', () => {
     save: jest.fn(),
     findById: jest.fn(),
   };
-  const mockQuestionRepository = {
-    findById: jest.fn(),
-    findWithOriginById: jest.fn(),
-    save: jest.fn(),
-    findOriginById: jest.fn(),
-    update: jest.fn(),
-  };
 
-  const mockWorkbookRepository = {
-    findById: jest.fn(),
+  const mockEmitter = {
+    emitAsync: jest.fn(),
   };
 
   jest.mock('typeorm-transactional', () => ({
@@ -68,20 +63,21 @@ describe('AnswerService 단위 테스트', () => {
 
   beforeAll(async () => {
     const module: TestingModule = await Test.createTestingModule({
-      imports: [await createTypeOrmModuleForTest()],
+      imports: [
+        await createTypeOrmModuleForTest(),
+        EventEmitterModule.forRoot(),
+      ],
       providers: [
         AnswerService,
         AnswerRepository,
-        QuestionRepository,
-        WorkbookRepository,
+        AnswerEventHandler,
+        EventEmitter2,
       ],
     })
       .overrideProvider(AnswerRepository)
       .useValue(mockAnswerRepository)
-      .overrideProvider(QuestionRepository)
-      .useValue(mockQuestionRepository)
-      .overrideProvider(WorkbookRepository)
-      .useValue(mockWorkbookRepository)
+      .overrideProvider(EventEmitter2)
+      .useValue(mockEmitter)
       .compile();
 
     service = module.get<AnswerService>(AnswerService);
@@ -94,11 +90,11 @@ describe('AnswerService 단위 테스트', () => {
   describe('답변 추가', () => {
     it('질문에 답변을 추가한다.', async () => {
       //given
-      mockQuestionRepository.findOriginById.mockResolvedValue(questionFixture);
 
       //when
-      const answer = Answer.of('test', memberFixture, questionFixture);
+      const answer = Answer.of('test', memberFixture, questionFixture.id);
       mockAnswerRepository.save.mockResolvedValue(answer);
+      mockEmitter.emitAsync.mockResolvedValue(undefined);
 
       //then
       await expect(
@@ -108,13 +104,11 @@ describe('AnswerService 단위 테스트', () => {
 
     it('질문에 답변을 추가할 때 id로 질문을 확인할 수 없을 때 QuestionNotFoundException을 반환한다.', async () => {
       //given
-      mockQuestionRepository.findOriginById.mockRejectedValue(
-        new QuestionNotFoundException(),
-      );
 
       //when
-      const answer = Answer.of('test', memberFixture, questionFixture);
+      const answer = Answer.of('test', memberFixture, questionFixture.id);
       mockAnswerRepository.save.mockResolvedValue(answer);
+      mockEmitter.emitAsync.mockRejectedValue(new QuestionNotFoundException());
 
       //then
       await expect(
@@ -124,13 +118,14 @@ describe('AnswerService 단위 테스트', () => {
   });
 
   describe('질문에 대표답변 등록', () => {
+    beforeAll(() => {
+      mockEmitter.emitAsync.mockResolvedValue(undefined);
+    });
+
     it('질문에 대한 대표답변을 등록하면 해당 Question에 바로 대표답변을 추가한다.', async () => {
       //given
 
       //when
-      mockQuestionRepository.findById.mockResolvedValue(questionFixture);
-      mockQuestionRepository.update.mockResolvedValue(questionFixture);
-      mockWorkbookRepository.findById.mockResolvedValue(workbookFixtureWithId);
       mockAnswerRepository.findById.mockResolvedValue(answerFixture);
 
       //then
@@ -143,9 +138,10 @@ describe('AnswerService 단위 테스트', () => {
       //given
 
       //when
-      mockQuestionRepository.findById.mockResolvedValue(undefined);
-      mockWorkbookRepository.findById.mockResolvedValue(workbookFixtureWithId);
       mockAnswerRepository.findById.mockResolvedValue(answerFixture);
+      mockEmitter.emitAsync.mockRejectedValueOnce(
+        new QuestionNotFoundException(),
+      );
 
       //then
       await expect(
@@ -157,23 +153,8 @@ describe('AnswerService 단위 테스트', () => {
       //given
 
       //when
-      mockQuestionRepository.findById.mockResolvedValue(questionFixture);
-      mockWorkbookRepository.findById.mockResolvedValue(
-        Workbook.of(
-          'FE 테스트',
-          '테스트용 FE 문제집입니다.',
-          categoryFixtureWithId,
-          new Member(
-            100,
-            'janghee@janghee.com',
-            'janghee',
-            'https://jangsarchive.tistory.com',
-            new Date(),
-          ),
-          true,
-        ),
-      );
       mockAnswerRepository.findById.mockResolvedValue(answerFixture);
+      mockEmitter.emitAsync.mockRejectedValue(new QuestionForbiddenException());
 
       //then
       await expect(
@@ -286,7 +267,7 @@ describe('AnswerService 통합테스트', () => {
   });
 
   describe('대표답변 설정', () => {
-    it('Member와 알맞은 Questin이 온다면, 정상적으로 대표 답변을 설정해준다.', async () => {
+    it('Member와 알맞은 Question이 온다면, 정상적으로 대표 답변을 설정해준다.', async () => {
       //given
       const member = await memberRepository.save(memberFixture);
       await categoryRepository.save(categoryFixtureWithId);
@@ -295,7 +276,7 @@ describe('AnswerService 통합테스트', () => {
         Question.of(workbook.id, null, 'test'),
       );
       const answer = await answerRepository.save(
-        Answer.of('test', member, question),
+        Answer.of('test', member, question.id),
       );
 
       //when
@@ -307,12 +288,12 @@ describe('AnswerService 통합테스트', () => {
       const questionResponse = QuestionResponse.from(updatedQuestion);
 
       //then
-      expect(updatedQuestion.defaultAnswer.id).toEqual(answer.id);
+      expect(updatedQuestion.defaultAnswerId).toEqual(answer.id);
       expect(questionResponse.questionId).toBe(updatedQuestion.id);
       expect(questionResponse.questionContent).toBe(updatedQuestion.content);
-      expect(questionResponse.answerId).toBe(updatedQuestion.defaultAnswer.id);
+      expect(questionResponse.answerId).toBe(updatedQuestion.defaultAnswerId);
       expect(questionResponse.answerContent).toBe(
-        updatedQuestion.defaultAnswer.content,
+        updatedQuestion.defaultAnswerContent,
       );
     });
   });
@@ -337,10 +318,10 @@ describe('AnswerService 통합테스트', () => {
       );
       for (let index = 1; index <= 10; index++) {
         await answerRepository.save(
-          Answer.of(`test${index}`, member, question),
+          Answer.of(`test${index}`, member, question.id),
         );
         await answerRepository.save(
-          Answer.of(`TEST${index}`, member1, question),
+          Answer.of(`TEST${index}`, member1, question.id),
         );
       }
 
@@ -361,19 +342,20 @@ describe('AnswerService 통합테스트', () => {
       );
       for (let index = 1; index <= 10; index++) {
         await answerRepository.save(
-          Answer.of(`test${index}`, member, question),
+          Answer.of(`test${index}`, member, question.id),
         );
       }
       const answer = await answerRepository.save(
-        Answer.of(`defaultAnswer`, member, question),
+        Answer.of(`defaultAnswer`, member, question.id),
       );
       question.setDefaultAnswer(answer);
-      await questionRepository.save(question);
+      await questionRepository.update(question);
 
       //when
 
       //then
       const list = await answerService.getAnswerList(question.id);
+      console.log(list);
       expect(list[0].content).toEqual('defaultAnswer');
     });
 
@@ -389,10 +371,12 @@ describe('AnswerService 통합테스트', () => {
         Question.of(workbook.id, origin, 'test'),
       );
       for (let index = 1; index <= 10; index++) {
-        await answerRepository.save(Answer.of(`test${index}`, member, origin));
+        await answerRepository.save(
+          Answer.of(`test${index}`, member, origin.id),
+        );
       }
       const answer = await answerRepository.save(
-        Answer.of(`defaultAnswer`, member, origin),
+        Answer.of(`defaultAnswer`, member, origin.id),
       );
       question.setDefaultAnswer(answer);
       await questionRepository.save(question);
@@ -415,10 +399,10 @@ describe('AnswerService 통합테스트', () => {
         Question.of(workbook.id, null, 'test'),
       );
       const answer = await answerRepository.save(
-        Answer.of(`defaultAnswer`, member, question),
+        Answer.of(`defaultAnswer`, member, question.id),
       );
       question.setDefaultAnswer(answer);
-      await questionRepository.save(question);
+      await questionRepository.update(question);
 
       //when
 
@@ -427,7 +411,7 @@ describe('AnswerService 통합테스트', () => {
       const afterDeleteQuestion = await questionRepository.findById(
         question.id,
       );
-      expect(afterDeleteQuestion.defaultAnswer).toBeNull();
+      expect(afterDeleteQuestion.defaultAnswerId).toBeNull();
     });
 
     it('답변을 삭제할 때 다른 사람의 답변을 삭제하면 AnswerForbiddenException을 반환한다.', async () => {
@@ -448,7 +432,7 @@ describe('AnswerService 통합테스트', () => {
         Question.of(workbook.id, null, 'test'),
       );
       const answer = await answerRepository.save(
-        Answer.of(`defaultAnswer`, member, question),
+        Answer.of(`defaultAnswer`, member, question.id),
       );
       question.setDefaultAnswer(answer);
       await questionRepository.save(question);
@@ -479,7 +463,7 @@ describe('AnswerService 통합테스트', () => {
         Question.of(workbook.id, null, 'test'),
       );
       const answer = await answerRepository.save(
-        Answer.of(`defaultAnswer`, member, question),
+        Answer.of(`defaultAnswer`, member, question.id),
       );
       question.setDefaultAnswer(answer);
       await questionRepository.save(question);

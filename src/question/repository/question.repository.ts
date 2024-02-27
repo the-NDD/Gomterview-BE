@@ -30,7 +30,6 @@ export class QuestionRepository {
     return await this.repository
       .createQueryBuilder('Question')
       .leftJoinAndSelect('Question.origin', 'origin')
-      .leftJoinAndSelect('Question.defaultAnswer', 'defaultAnswer')
       .where('Question.workbook = :workbookId', { workbookId })
       .orderBy('Question.indexInWorkbook', 'ASC')
       .getMany();
@@ -40,7 +39,6 @@ export class QuestionRepository {
     return await this.repository
       .createQueryBuilder('Question')
       .leftJoinAndSelect('Question.origin', 'origin')
-      .leftJoinAndSelect('Question.defaultAnswer', 'defaultAnswer')
       .where('Question.id IN (:...ids)', { ids })
       .getMany();
   }
@@ -53,9 +51,12 @@ export class QuestionRepository {
     return await this.repository
       .createQueryBuilder('Question')
       .leftJoinAndSelect('Question.origin', 'origin')
-      .leftJoinAndSelect('Question.defaultAnswer', 'defaultAnswer')
       .where('Question.id = :id', { id })
       .getOne();
+  }
+
+  async findAllByDefaultAnswerId(answerId: number) {
+    return await this.repository.findBy({ defaultAnswerId: answerId });
   }
 
   async findOriginById(id: number): Promise<Question | null> {
@@ -65,6 +66,18 @@ export class QuestionRepository {
 
   async update(question: Question) {
     await this.repository.update({ id: question.id }, question);
+  }
+
+  async clearDefaultAnswer(questions: Question[]) {
+    await this.repository
+      .createQueryBuilder()
+      .update(Question)
+      .set({
+        defaultAnswerId: null,
+        defaultAnswerContent: null,
+      })
+      .whereInIds(questions.map((each) => each.id))
+      .execute();
   }
 
   async remove(question: Question) {

@@ -1,40 +1,35 @@
 import { Injectable } from '@nestjs/common';
 import { AnswerRepository } from '../repository/answer.repository';
-import { QuestionRepository } from '../../question/repository/question.repository';
 import { CreateAnswerRequest } from '../dto/createAnswerRequest';
 import { Member } from '../../member/entity/member';
-import { Question } from '../../question/entity/question';
 import { Answer } from '../entity/answer';
 import { AnswerResponse } from '../dto/answerResponse';
 import { DefaultAnswerRequest } from '../dto/defaultAnswerRequest';
 import { validateAnswer } from '../util/answer.util';
-import { validateQuestion } from '../../question/util/question.util';
 import { AnswerForbiddenException } from '../exception/answer.exception';
-import { WorkbookRepository } from '../../workbook/repository/workbook.repository';
-import { QuestionForbiddenException } from '../../question/exception/question.exception';
-import { validateWorkbook } from '../../workbook/util/workbook.util';
 import { Transactional } from 'typeorm-transactional';
+import { AnswerEventHandler } from './answer.event.handler';
 
 @Injectable()
 export class AnswerService {
   constructor(
     private answerRepository: AnswerRepository,
-    private questionRepository: QuestionRepository,
-    private workbookRepository: WorkbookRepository,
+    private answerEventHandler: AnswerEventHandler,
   ) {}
 
   @Transactional()
   async addAnswer(createAnswerRequest: CreateAnswerRequest, member: Member) {
-    const question = await this.questionRepository.findOriginById(
+    await this.answerEventHandler.validateQuestionOrigin(
       createAnswerRequest.questionId,
     );
-
-    validateQuestion(question);
-
     const answer = await this.saveAnswerAndQuestion(
       createAnswerRequest,
-      question,
+      createAnswerRequest.questionId,
       member,
+    );
+    await this.answerEventHandler.updateAnswersQuestionId(
+      createAnswerRequest.questionId,
+      answer.id,
     );
     return AnswerResponse.from(answer, member);
   }
@@ -44,27 +39,21 @@ export class AnswerService {
     defaultAnswerRequest: DefaultAnswerRequest,
     member: Member,
   ) {
-    const question = await this.questionRepository.findById(
+    await this.answerEventHandler.validateQuestionExistence(
       defaultAnswerRequest.questionId,
     );
-    validateQuestion(question);
-
-    const workbook = await this.workbookRepository.findById(
-      question.workbookId,
+    await this.answerEventHandler.validateOwnershipByQuestionsWorkbook(
+      defaultAnswerRequest.questionId,
+      member,
     );
-    validateWorkbook(workbook);
-    if (!workbook.isOwnedBy(member)) {
-      throw new QuestionForbiddenException();
-    }
-
     const answer = await this.answerRepository.findById(
       defaultAnswerRequest.answerId,
     );
-
     validateAnswer(answer);
-
-    question.setDefaultAnswer(answer);
-    await this.questionRepository.update(question);
+    await this.answerEventHandler.updateQuestion(
+      defaultAnswerRequest.questionId,
+      answer,
+    );
   }
 
   @Transactional()
@@ -75,6 +64,7 @@ export class AnswerService {
 
     if (answer.isOwnedBy(member)) {
       await this.answerRepository.remove(answer);
+      await this.answerEventHandler.clearDefaultAnswer(answer.id);
       return;
     }
 
@@ -82,45 +72,38 @@ export class AnswerService {
   }
 
   @Transactional()
-  async getAnswerList(id: number) {
-    const question =
-      await this.questionRepository.findQuestionWithOriginById(id);
-    validateQuestion(question);
-    const questionId = question.origin ? question.origin.id : question.id;
-
-    const answers = (
-      await this.answerRepository.findAllByQuestionId(questionId)
-    ).map((answer) => AnswerResponse.from(answer, answer.member));
-
-    if (question.defaultAnswer) {
-      return this.createAnswerResponsesWithDefaultAnswer(question, answers);
+  async getAnswerList(questionId: number) {
+    await this.answerEventHandler.validateQuestionExistence(questionId);
+    let originId: number;
+    try {
+      await this.answerEventHandler.checkQuestionToBeOrigin(questionId);
+      originId = questionId;
+    } catch (e) {
+      originId = e.originId;
     }
 
+    const answers = (
+      await this.answerRepository.findAllByQuestionId(originId)
+    ).map((answer) => AnswerResponse.from(answer, answer.member));
+    try {
+      await this.answerEventHandler.validateDefaultAnswersExistence(questionId);
+    } catch (e) {
+      const defaultAnswer = answers
+        .filter((answer) => answer.answerId === e.answerId)
+        .pop();
+      const result = answers.filter((answer) => answer.answerId !== e.answerId);
+      result.unshift(defaultAnswer);
+      return result;
+    }
     return answers;
-  }
-
-  private createAnswerResponsesWithDefaultAnswer(
-    question: Question,
-    answers: AnswerResponse[],
-  ) {
-    const defaultAnswerResponse = AnswerResponse.from(
-      question.defaultAnswer,
-      question.defaultAnswer.member,
-    );
-
-    const resultList = answers.filter(
-      (response) => response.answerId != defaultAnswerResponse.answerId,
-    );
-    resultList.unshift(defaultAnswerResponse);
-    return resultList;
   }
 
   private async saveAnswerAndQuestion(
     createAnswerRequest: CreateAnswerRequest,
-    question: Question,
+    questionId: number,
     member: Member,
   ) {
-    const answer = Answer.of(createAnswerRequest.content, member, question);
+    const answer = Answer.of(createAnswerRequest.content, member, questionId);
     return await this.answerRepository.save(answer);
   }
 }

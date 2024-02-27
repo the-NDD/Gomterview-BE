@@ -254,7 +254,7 @@ describe('AnswerController 통합테스트', () => {
         Question.of(workbook.id, null, 'testQuestion'),
       );
       const answer = await answerRepository.save(
-        Answer.of('test', member, question),
+        Answer.of('test', member, question.id),
       );
       //when&then
       const token = await authService.login(memberFixturesOAuthRequest);
@@ -275,7 +275,7 @@ describe('AnswerController 통합테스트', () => {
         Question.of(workbook.id, null, 'testQuestion'),
       );
       const answer = await answerRepository.save(
-        Answer.of('test', member, question),
+        Answer.of('test', member, question.id),
       );
 
       //when&then
@@ -295,7 +295,7 @@ describe('AnswerController 통합테스트', () => {
         Question.of(workbook.id, null, 'testQuestion'),
       );
       const answer = await answerRepository.save(
-        Answer.of('test', member, question),
+        Answer.of('test', member, question.id),
       );
 
       //when&then
@@ -317,7 +317,7 @@ describe('AnswerController 통합테스트', () => {
         Question.of(workbook.id, null, 'testQuestion'),
       );
       const answer = await answerRepository.save(
-        Answer.of('test', member, question),
+        Answer.of('test', member, question.id),
       );
 
       //when&then
@@ -361,7 +361,7 @@ describe('AnswerController 통합테스트', () => {
       );
       for (let index = 1; index <= 10; index++) {
         await answerRepository.save(
-          Answer.of(`test${index}`, member, question),
+          Answer.of(`test${index}`, member, question.id),
         );
       }
 
@@ -383,13 +383,13 @@ describe('AnswerController 통합테스트', () => {
         Question.of(workbook.id, null, 'testQuestion'),
       );
       const answer = await answerRepository.save(
-        Answer.of('test', member, question),
+        Answer.of('test', member, question.id),
       );
       question.setDefaultAnswer(answer);
       await questionRepository.save(question);
       for (let index = 1; index <= 10; index++) {
         await answerRepository.save(
-          Answer.of(`test${index}`, member, question),
+          Answer.of(`test${index}`, member, question.id),
         );
       }
 
@@ -412,7 +412,7 @@ describe('AnswerController 통합테스트', () => {
       );
       for (let index = 1; index <= 10; index++) {
         await answerRepository.save(
-          Answer.of(`test${index}`, member, question),
+          Answer.of(`test${index}`, member, question.id),
         );
       }
 
@@ -436,7 +436,7 @@ describe('AnswerController 통합테스트', () => {
         Question.of(workbook.id, null, 'testQuestion'),
       );
       const answer = await answerRepository.save(
-        Answer.of('test', member, question),
+        Answer.of('test', member, question.id),
       );
 
       //when&then
@@ -457,7 +457,7 @@ describe('AnswerController 통합테스트', () => {
         Question.of(workbook.id, null, 'testQuestion'),
       );
       const answer = await answerRepository.save(
-        Answer.of('test', member, question),
+        Answer.of('test', member, question.id),
       );
 
       //when&then
@@ -474,7 +474,7 @@ describe('AnswerController 통합테스트', () => {
         Question.of(workbook.id, null, 'testQuestion'),
       );
       const answer = await answerRepository.save(
-        Answer.of('test', member, question),
+        Answer.of('test', member, question.id),
       );
 
       //when&then
