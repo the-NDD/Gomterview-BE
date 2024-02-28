@@ -214,7 +214,6 @@ describe('VideoService 단위 테스트', () => {
     it('비디오 상세 정보 조회 성공 시 VideoDetailResponse 형식으로 반환된다.', async () => {
       // given
       const video = videoFixture;
-      video.member = member;
 
       // when
       mockVideoRepository.findById.mockResolvedValue(video);
@@ -232,7 +231,6 @@ describe('VideoService 단위 테스트', () => {
     it('비디오 상세 정보 조회 성공 시 비디오가 private이면 해시값으로 null을 반환한다.', async () => {
       // given
       const video = privateVideoFixture;
-      video.member = memberFixture;
 
       // when
       mockVideoRepository.findById.mockResolvedValue(video);

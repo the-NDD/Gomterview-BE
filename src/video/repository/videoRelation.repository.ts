@@ -37,7 +37,6 @@ export class VideoRelationRepository {
       .createQueryBuilder('VideoRelation')
       .leftJoinAndSelect('VideoRelation.parent', 'parent')
       .leftJoinAndSelect('VideoRelation.child', 'child')
-      .leftJoinAndSelect('child.member', 'member')
       .where('parent.id = :parentId', { parentId })
       .getMany();
   }
