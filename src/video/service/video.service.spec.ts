@@ -59,6 +59,7 @@ import { RelatableVideoResponse } from '../dto/RelatableVideoResponse';
 import { UpdateVideoRequest } from '../dto/updateVideoRequest';
 import { CategoryModule } from 'src/category/category.module';
 import { WorkbookModule } from 'src/workbook/workbook.module';
+import { EventEmitter2 } from '@nestjs/event-emitter';
 
 describe('VideoService 단위 테스트', () => {
   let videoService: VideoService;
@@ -76,20 +77,16 @@ describe('VideoService 단위 테스트', () => {
     updateVideoInfo: jest.fn(),
   };
 
-  const mockMemberRepository = {
-    findById: jest.fn(),
-  };
-
-  const mockQuestionRepository = {
-    findById: jest.fn(),
-  };
-
   const mockVideoRelationRepository = {
     findAllByParentId: jest.fn(),
     deleteAll: jest.fn(),
     insert: jest.fn(),
     findChildrenByParentId: jest.fn(),
     save: jest.fn(),
+  };
+
+  const mockEmitter = {
+    emitAsync: jest.fn(),
   };
 
   // jest.mock('typeorm-transactional', () => ({
@@ -102,18 +99,15 @@ describe('VideoService 단위 테스트', () => {
         VideoService,
         VideoRepository,
         VideoRelationRepository,
-        MemberRepository,
-        QuestionRepository,
+        EventEmitter2,
       ],
     })
       .overrideProvider(VideoRepository)
       .useValue(mockVideoRepository)
-      .overrideProvider(MemberRepository)
-      .useValue(mockMemberRepository)
-      .overrideProvider(QuestionRepository)
-      .useValue(mockQuestionRepository)
       .overrideProvider(VideoRelationRepository)
       .useValue(mockVideoRelationRepository)
+      .overrideProvider(EventEmitter2)
+      .useValue(mockEmitter)
       .compile();
 
     videoService = module.get<VideoService>(VideoService);
@@ -296,7 +290,7 @@ describe('VideoService 단위 테스트', () => {
       getValueFromRedisSpy.mockResolvedValue(url);
 
       mockVideoRepository.findByUrl.mockResolvedValue(video);
-      mockMemberRepository.findById.mockResolvedValue(member);
+      mockEmitter.emitAsync.mockResolvedValue(undefined);
       const response = await videoService.getVideoDetailByHash(hash);
 
       // then
@@ -329,7 +323,7 @@ describe('VideoService 단위 테스트', () => {
       // when
       getValueFromRedisSpy.mockResolvedValue(url);
       mockVideoRepository.findByUrl.mockResolvedValue(video);
-      mockMemberRepository.findById.mockResolvedValue(member);
+      mockEmitter.emitAsync.mockResolvedValue(undefined);
 
       // then
       await expect(videoService.getVideoDetailByHash(hash)).rejects.toThrow(
@@ -345,7 +339,7 @@ describe('VideoService 단위 테스트', () => {
       // when
       getValueFromRedisSpy.mockResolvedValue(url);
       mockVideoRepository.findByUrl.mockResolvedValue(null);
-      mockMemberRepository.findById.mockResolvedValue(member);
+      mockEmitter.emitAsync.mockResolvedValue(undefined);
 
       // then
       await expect(videoService.getVideoDetailByHash(hash)).rejects.toThrow(
@@ -362,7 +356,7 @@ describe('VideoService 단위 테스트', () => {
       // when
       getValueFromRedisSpy.mockResolvedValue(url);
       mockVideoRepository.findByUrl.mockResolvedValue(video);
-      mockMemberRepository.findById.mockResolvedValue(member);
+      mockEmitter.emitAsync.mockResolvedValue(undefined);
 
       // then
       await expect(videoService.getVideoDetailByHash(hash)).rejects.toThrow(
@@ -393,7 +387,7 @@ describe('VideoService 단위 테스트', () => {
       // when
       getValueFromRedisSpy.mockResolvedValue(url);
       mockVideoRepository.findByUrl.mockResolvedValue(video);
-      mockMemberRepository.findById.mockResolvedValue(undefined);
+      mockEmitter.emitAsync.mockRejectedValue(new MemberNotFoundException());
 
       // then
       await expect(videoService.getVideoDetailByHash(hash)).rejects.toThrow(
@@ -688,7 +682,7 @@ describe('VideoService 단위 테스트', () => {
       const ids = videoListExample.map((each) => each.id);
 
       // when
-      mockMemberRepository.findById.mockResolvedValue(memberFixture);
+      mockEmitter.emitAsync.mockResolvedValue(undefined);
       mockVideoRepository.findAllVideosByMemberId.mockResolvedValue(
         videoListExample,
       );
@@ -709,7 +703,7 @@ describe('VideoService 단위 테스트', () => {
       ids.pop();
 
       // when
-      mockMemberRepository.findById.mockResolvedValue(memberFixture);
+      mockEmitter.emitAsync.mockResolvedValue(undefined);
       mockVideoRepository.findAllVideosByMemberId.mockResolvedValue(
         videoListExample,
       );
@@ -731,7 +725,7 @@ describe('VideoService 단위 테스트', () => {
       ids.push(100);
 
       // when
-      mockMemberRepository.findById.mockResolvedValue(memberFixture);
+      mockEmitter.emitAsync.mockResolvedValue(undefined);
       mockVideoRepository.findAllVideosByMemberId.mockResolvedValue(
         videoListExample,
       );
@@ -751,7 +745,7 @@ describe('VideoService 단위 테스트', () => {
       const ids = videoListExample.map((each) => each.id);
 
       // when
-      mockMemberRepository.findById.mockResolvedValue(memberFixture);
+      mockEmitter.emitAsync.mockResolvedValue(undefined);
       mockVideoRepository.findAllVideosByMemberId.mockResolvedValue(
         videoListExample,
       );
