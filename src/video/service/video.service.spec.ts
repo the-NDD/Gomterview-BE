@@ -1075,6 +1075,8 @@ describe('VideoService 통합 테스트', () => {
       const hash = (await videoService.getVideoDetail(video.id, memberFixture))
         .hash;
       await memberRepository.remove(memberFixture);
+      video.memberId = null;
+      await videoRepository.save(video);
 
       //when
 
