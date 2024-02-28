@@ -24,14 +24,13 @@ export class WorkbookRepository {
   async findByNameAndMemberId(title: string, memberId: number) {
     return await this.repository.findOneBy({
       title: title,
-      member: { id: memberId },
+      memberId: memberId,
     });
   }
 
   async findAll() {
     return this.repository
       .createQueryBuilder('Workbook')
-      .leftJoinAndSelect('Workbook.member', 'member')
       .where('Workbook.isPublic = :state', { state: true })
       .orderBy('Workbook.copyCount', 'DESC')
       .getMany();
@@ -40,7 +39,6 @@ export class WorkbookRepository {
   async findAllByCategoryId(categoryId: number) {
     return this.repository
       .createQueryBuilder('Workbook')
-      .leftJoinAndSelect('Workbook.member', 'member')
       .where('Workbook.isPublic = :state', { state: true })
       .andWhere('workbook.category = :categoryId', { categoryId })
       .orderBy('Workbook.copyCount', 'DESC')
@@ -60,8 +58,7 @@ export class WorkbookRepository {
   async findMembersWorkbooks(memberId: number) {
     return await this.repository
       .createQueryBuilder('Workbook')
-      .leftJoinAndSelect('Workbook.member', 'member')
-      .where('member.id = :memberId', { memberId })
+      .where('Workbook.member = :memberId', { memberId })
       .orderBy('Workbook.copyCount', 'DESC')
       .getMany();
   }
@@ -69,7 +66,6 @@ export class WorkbookRepository {
   async findById(id: number) {
     return await this.repository
       .createQueryBuilder('Workbook')
-      .leftJoinAndSelect('Workbook.member', 'member')
       .where('Workbook.id = :id', { id })
       .getOne();
   }
