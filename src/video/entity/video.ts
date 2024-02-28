@@ -1,8 +1,7 @@
 // video.entity.ts
-import { Column, Entity, Index, JoinColumn, ManyToOne } from 'typeorm';
+import { Column, Entity, Index } from 'typeorm';
 import { DefaultEntity } from 'src/app.entity';
 import { Member } from 'src/member/entity/member';
-import { Question } from 'src/question/entity/question';
 import { CreateVideoRequest } from '../dto/createVideoRequest';
 import {
   DEFAULT_THUMBNAIL,
@@ -21,15 +20,13 @@ export class Video extends DefaultEntity {
   memberId: number;
 
   @Column({ nullable: true })
+  memberNickname: string;
+
+  @Column({ nullable: true })
+  memberProfileImg: string;
+
+  @Column({ nullable: true })
   questionId: number;
-
-  @ManyToOne(() => Member, { onDelete: 'SET NULL' })
-  @JoinColumn({ name: 'memberId' })
-  member: Member;
-
-  @ManyToOne(() => Question, { onDelete: 'SET NULL' })
-  @JoinColumn({ name: 'questionId' })
-  question: Question;
 
   @Column()
   name: string;
@@ -55,6 +52,8 @@ export class Video extends DefaultEntity {
   constructor(
     id: number,
     memberId: number,
+    memberNickname: string,
+    memberProfileImg: string,
     questionId: number,
     name: string,
     url: string,
@@ -65,6 +64,8 @@ export class Video extends DefaultEntity {
   ) {
     super(id, new Date());
     this.memberId = memberId;
+    this.memberNickname = memberNickname;
+    this.memberProfileImg = memberProfileImg;
     this.questionId = questionId;
     this.name = name;
     this.url = url;
@@ -79,6 +80,8 @@ export class Video extends DefaultEntity {
     return new Video(
       null,
       member.id,
+      member.nickname,
+      member.profileImg,
       createVideoRequest.questionId,
       `${member.nickname}_${createVideoRequest.videoName}`,
       createVideoRequest.url,

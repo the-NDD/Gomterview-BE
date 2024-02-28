@@ -38,7 +38,6 @@ export class VideoRelationRepository {
       .leftJoinAndSelect('VideoRelation.parent', 'parent')
       .leftJoinAndSelect('VideoRelation.child', 'child')
       .leftJoinAndSelect('child.member', 'member')
-      .where('child.memberId = member.id')
       .where('parent.id = :parentId', { parentId })
       .getMany();
   }

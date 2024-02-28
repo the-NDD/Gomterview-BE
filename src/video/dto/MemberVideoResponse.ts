@@ -58,15 +58,14 @@ export class MemberVideoResponse {
   }
 
   public static from(video: Video) {
-    const member = video.member;
     return new MemberVideoResponse(
       video.id,
       video.thumbnail,
       video.name,
       video.videoLength,
       parseDateToString(video.createdAt),
-      member.nickname,
-      member.profileImg,
+      video.memberNickname,
+      video.memberProfileImg,
     );
   }
 }

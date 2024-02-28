@@ -19,8 +19,6 @@ export class VideoRepository {
   async findAllVideosByMemberId(memberId: number) {
     return this.videoRepository
       .createQueryBuilder('video')
-      .leftJoinAndSelect('video.member', 'member')
-      .where('video.memberId = member.id')
       .where('video.memberId = :memberId', { memberId })
       .orderBy('video.myPageIndex', 'ASC')
       .getMany();
@@ -36,8 +34,6 @@ export class VideoRepository {
   async findAllPublicVideos() {
     return await this.videoRepository
       .createQueryBuilder('video')
-      .leftJoinAndSelect('video.member', 'member')
-      .where('video.memberId = member.id')
       .where('video.visibility =:visibility', { visibility: PUBLIC })
       .orderBy('video.createdAt', 'DESC')
       .getMany();
@@ -46,8 +42,6 @@ export class VideoRepository {
   async findById(id: number) {
     return await this.videoRepository
       .createQueryBuilder('video')
-      .leftJoinAndSelect('video.member', 'member')
-      .where('video.memberId = member.id')
       .andWhere('video.id = :id', { id })
       .getOne();
   }
