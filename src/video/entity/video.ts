@@ -1,6 +1,5 @@
 // video.entity.ts
 import { Column, Entity, Index } from 'typeorm';
-import { DefaultEntity } from 'src/app.entity';
 import { Member } from 'src/member/entity/member';
 import { CreateVideoRequest } from '../dto/createVideoRequest';
 import {
@@ -10,21 +9,13 @@ import {
 import { LINK_ONLY, PRIVATE, PUBLIC } from '../constant/videoVisibility';
 import { UpdateVideoRequest } from '../dto/updateVideoRequest';
 import { deleteObjectInIDrive } from 'src/util/idrive.util';
+import { OwnedEntity } from 'src/owned.entity';
 
 @Entity({ name: 'Video' })
 @Index('idx_video_url', ['url'])
 @Index('idx_video_myPageIndex', ['myPageIndex'])
 @Index('idx_visibility', ['visibility'])
-export class Video extends DefaultEntity {
-  @Column({ nullable: true })
-  memberId: number;
-
-  @Column({ nullable: true })
-  memberNickname: string;
-
-  @Column({ nullable: true })
-  memberProfileImg: string;
-
+export class Video extends OwnedEntity {
   @Column({ nullable: true })
   questionId: number;
 
@@ -62,10 +53,7 @@ export class Video extends DefaultEntity {
     visibility: string,
     videoAnswer: string,
   ) {
-    super(id, new Date());
-    this.memberId = memberId;
-    this.memberNickname = memberNickname;
-    this.memberProfileImg = memberProfileImg;
+    super(id, new Date(), memberId, memberNickname, memberProfileImg);
     this.questionId = questionId;
     this.name = name;
     this.url = url;

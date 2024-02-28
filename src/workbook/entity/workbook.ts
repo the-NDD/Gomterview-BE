@@ -1,14 +1,14 @@
-import { DefaultEntity } from '../../app.entity';
 import { Column, Entity, Index } from 'typeorm';
 import { Category } from '../../category/entity/category';
 import { UpdateWorkbookRequest } from '../dto/updateWorkbookRequest';
 import { CreateWorkbookRequest } from '../dto/createWorkbookRequest';
 import { Member } from 'src/member/entity/member';
+import { OwnedEntity } from 'src/owned.entity';
 
 @Entity({ name: 'Workbook' })
 @Index('idx_isPublic', ['isPublic'])
 @Index('idx_isPublic_categoryId', ['isPublic', 'categoryId'])
-export class Workbook extends DefaultEntity {
+export class Workbook extends OwnedEntity {
   @Column()
   title: string;
 
@@ -20,15 +20,6 @@ export class Workbook extends DefaultEntity {
 
   @Column()
   copyCount: number;
-
-  @Column({ name: 'member' })
-  memberId: number;
-
-  @Column({ name: 'memberNickname' })
-  memberNickname: string;
-
-  @Column({ name: 'memberProfileImg' })
-  memberProfileImg: string;
 
   @Column({ default: true })
   isPublic: boolean;
@@ -45,14 +36,11 @@ export class Workbook extends DefaultEntity {
     memberProfileImg: string,
     isPublic: boolean,
   ) {
-    super(id, createdAt);
+    super(id, createdAt, memberId, memberNickname, memberProfileImg);
     this.title = title;
     this.content = content;
     this.categoryId = categoryId;
     this.copyCount = copyCount;
-    this.memberId = memberId;
-    this.memberNickname = memberNickname;
-    this.memberProfileImg = memberProfileImg;
     this.isPublic = isPublic;
   }
 
