@@ -135,14 +135,14 @@ export class VideoService {
     if (!video) throw new VideoNotFoundException();
 
     if (video.isPublic()) {
-      return VideoDetailResponse.from(video, video.member, null);
+      return VideoDetailResponse.from(video, null);
     }
 
     if (!member) throw new VideoAccessForbiddenException();
     this.validateVideoOwnership(video, member.id);
 
     const hash = await this.updateVideoHashInRedis(video);
-    return VideoDetailResponse.from(video, video.member, hash);
+    return VideoDetailResponse.from(video, hash);
   }
 
   async getVideoDetailByHash(hash: string) {
@@ -159,7 +159,7 @@ export class VideoService {
     const videoOwner = await this.memberRepository.findById(video.memberId);
     if (isEmpty(videoOwner)) throw new MemberNotFoundException();
 
-    return VideoDetailResponse.from(video, videoOwner, hash);
+    return VideoDetailResponse.from(video, hash);
   }
 
   async getAllVideosByMemberId(member: Member) {

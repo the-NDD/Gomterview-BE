@@ -74,11 +74,11 @@ export class VideoDetailResponse {
     this.videoAnswer = videoAnswer;
   }
 
-  static from(video: Video, member: Member, hash: string | null) {
+  static from(video: Video, hash: string | null) {
     return new VideoDetailResponse(
       video.id,
-      member.id,
-      member.nickname,
+      video.memberId,
+      video.memberNickname,
       video.url,
       video.name,
       hash,
