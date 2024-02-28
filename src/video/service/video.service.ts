@@ -343,17 +343,6 @@ export class VideoService {
     ).filter((each) => each.id !== video.id);
   }
 
-  private async deleteByChildId(
-    relations: VideoRelation[],
-    relatedVideoIds: number[],
-  ) {
-    await this.videoRelationRepository.deleteAll(
-      relations.filter(
-        (relation) => !relatedVideoIds.includes(relation.child.id),
-      ),
-    );
-  }
-
   private compareIds(videoIds: number[], sortedIds: number[]) {
     if (videoIds.length !== sortedIds.length) {
       return false;
