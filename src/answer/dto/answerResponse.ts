@@ -1,5 +1,4 @@
 import { Answer } from '../entity/answer';
-import { Member } from '../../member/entity/member';
 import { ApiProperty } from '@nestjs/swagger';
 import { createPropertyOption } from '../../util/swagger.util';
 import { isEmpty } from 'class-validator';
@@ -40,22 +39,13 @@ export class AnswerResponse {
     this.profileImg = profileImg;
   }
 
-  static from(answer: Answer, member: Member) {
-    if (isEmpty(member)) {
-      return new AnswerResponse(
-        answer.id,
-        answer.content.toString(),
-        null,
-        null,
-        null,
-      );
-    }
+  static from(answer: Answer) {
     return new AnswerResponse(
       answer.id,
       answer.content.toString(),
-      member.id,
-      member.nickname,
-      member.profileImg,
+      answer.memberId,
+      answer.memberNickname,
+      answer.memberProfileImg,
     );
   }
 }

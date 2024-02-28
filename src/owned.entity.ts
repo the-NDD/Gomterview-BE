@@ -14,13 +14,13 @@ export class OwnedEntity extends DefaultEntity {
   @CreateDateColumn()
   readonly createdAt: Date;
 
-  @Column({ name: 'member' })
+  @Column({ name: 'member', nullable: true })
   memberId: number;
 
-  @Column({ name: 'memberNickname' })
+  @Column({ name: 'memberNickname', nullable: true })
   memberNickname: string;
 
-  @Column({ name: 'memberProfileImg' })
+  @Column({ name: 'memberProfileImg', nullable: true })
   memberProfileImg: string;
 
   constructor(
