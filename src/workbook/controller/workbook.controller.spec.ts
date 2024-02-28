@@ -176,7 +176,9 @@ describe('WorkbookController 단위테스트', () => {
             'title',
             null,
             categoryFixtureWithId,
-            memberFixture,
+            memberFixture.id,
+            memberFixture.nickname,
+            memberFixture.profileImg,
             true,
           ),
         ),
@@ -404,7 +406,9 @@ describe('WorkbookController 통합테스트', () => {
             `title_${category.name}`,
             `content_${category.name}`,
             category,
-            member,
+            member.id,
+            member.nickname,
+            member.profileImg,
             true,
           ),
         );
@@ -454,7 +458,9 @@ describe('WorkbookController 통합테스트', () => {
             `title_${category.name}`,
             `content_${category.name}`,
             category,
-            member,
+            member.id,
+            member.nickname,
+            member.profileImg,
             true,
           ),
         );
@@ -466,7 +472,9 @@ describe('WorkbookController 통합테스트', () => {
           `other${category.name}`,
           `other${category.name}`,
           category,
-          other,
+          other.id,
+          other.nickname,
+          other.profileImg,
           true,
         ),
       );
@@ -500,7 +508,9 @@ describe('WorkbookController 통합테스트', () => {
           `title_${category.name}`,
           `content_${category.name}`,
           category,
-          member,
+          member.id,
+          member.nickname,
+          member.profileImg,
           true,
         );
         for (
@@ -520,7 +530,9 @@ describe('WorkbookController 통합테스트', () => {
         `other${category.name}`,
         `other${category.name}`,
         category,
-        other,
+        other.id,
+        other.nickname,
+        other.profileImg,
         true,
       );
       for (let index = 0; index < 10; index++) {
@@ -555,7 +567,9 @@ describe('WorkbookController 통합테스트', () => {
         `other${category.name}`,
         `other${category.name}`,
         category,
-        other,
+        other.id,
+        other.nickname,
+        other.profileImg,
         true,
       );
       await workbookRepository.save(workbook);

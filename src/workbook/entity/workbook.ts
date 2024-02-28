@@ -24,7 +24,7 @@ export class Workbook extends DefaultEntity {
   @Column({ name: 'member' })
   memberId: number;
 
-  @Column({ name: 'memberProfileImg' })
+  @Column({ name: 'memberNickname' })
   memberNickname: string;
 
   @Column({ name: 'memberProfileImg' })

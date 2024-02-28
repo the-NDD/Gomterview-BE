@@ -27,7 +27,7 @@ export class WorkbookEventHandler {
       validateWorkbookEvent.workbookId,
     );
     if (isEmpty(workbook)) throw new WorkbookNotFoundException();
-    if (!workbook.isOwnedBy(member)) throw new WorkbookForbiddenException();
+    if (!workbook.isOwnedBy(member.id)) throw new WorkbookForbiddenException();
   }
 
   @OnEvent(ValidateWorkbookOwnershipForQuestionEvent.MESSAGE, {
@@ -39,7 +39,7 @@ export class WorkbookEventHandler {
     const member = event.member;
     const workbook = await this.workbookRepository.findById(event.workbookId);
     if (isEmpty(workbook)) throw new WorkbookNotFoundException();
-    if (!workbook.isOwnedBy(member)) throw new QuestionForbiddenException();
+    if (!workbook.isOwnedBy(member.id)) throw new QuestionForbiddenException();
   }
 
   @OnEvent(IncreaseCopyCountEvent.MESSAGE, { suppressErrors: false })
