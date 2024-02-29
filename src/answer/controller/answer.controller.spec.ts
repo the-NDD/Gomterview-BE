@@ -67,7 +67,7 @@ describe('AnswerController 단위테스트', () => {
     it('원본 질문에 바로 질문을 추가할 수 있다.', async () => {
       //given
       mockAnswerService.addAnswer.mockResolvedValue(
-        AnswerResponse.from(answerFixture, memberFixture),
+        AnswerResponse.from(answerFixture),
       );
 
       //when
@@ -78,7 +78,7 @@ describe('AnswerController 단위테스트', () => {
           createAnswerRequestFixture,
           mockReqWithMemberFixture,
         ),
-      ).resolves.toEqual(AnswerResponse.from(answerFixture, memberFixture));
+      ).resolves.toEqual(AnswerResponse.from(answerFixture));
     });
   });
 

@@ -99,7 +99,7 @@ describe('AnswerService 단위 테스트', () => {
       //then
       await expect(
         service.addAnswer(createAnswerRequestFixture, memberFixture),
-      ).resolves.toEqual(AnswerResponse.from(answer, memberFixture));
+      ).resolves.toEqual(AnswerResponse.from(answer));
     });
 
     it('질문에 답변을 추가할 때 id로 질문을 확인할 수 없을 때 QuestionNotFoundException을 반환한다.', async () => {
@@ -231,7 +231,7 @@ describe('AnswerService 통합테스트', () => {
         member.id,
         question.id,
       );
-      expect(answerResponse).toEqual(AnswerResponse.from(answer, member));
+      expect(answerResponse).toEqual(AnswerResponse.from(answer));
     });
 
     it('복사된 질문에 답변을 추가해도, 원본 질문에 저장된다.', async () => {
@@ -262,7 +262,7 @@ describe('AnswerService 통합테스트', () => {
         member.id,
         originalQuestion.id,
       );
-      expect(answerResponse).toEqual(AnswerResponse.from(answer, member));
+      expect(answerResponse).toEqual(AnswerResponse.from(answer));
     });
   });
 
@@ -355,7 +355,6 @@ describe('AnswerService 통합테스트', () => {
 
       //then
       const list = await answerService.getAnswerList(question.id);
-      console.log(list);
       expect(list[0].content).toEqual('defaultAnswer');
     });
 

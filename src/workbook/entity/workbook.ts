@@ -1,14 +1,14 @@
-import { DefaultEntity } from '../../app.entity';
-import { Column, Entity, Index, JoinColumn, ManyToOne } from 'typeorm';
-import { Member } from '../../member/entity/member';
+import { Column, Entity, Index } from 'typeorm';
 import { Category } from '../../category/entity/category';
 import { UpdateWorkbookRequest } from '../dto/updateWorkbookRequest';
 import { CreateWorkbookRequest } from '../dto/createWorkbookRequest';
+import { Member } from 'src/member/entity/member';
+import { OwnedEntity } from 'src/owned.entity';
 
 @Entity({ name: 'Workbook' })
 @Index('idx_isPublic', ['isPublic'])
 @Index('idx_isPublic_categoryId', ['isPublic', 'categoryId'])
-export class Workbook extends DefaultEntity {
+export class Workbook extends OwnedEntity {
   @Column()
   title: string;
 
@@ -21,10 +21,6 @@ export class Workbook extends DefaultEntity {
   @Column()
   copyCount: number;
 
-  @ManyToOne(() => Member, { nullable: true, onDelete: 'CASCADE', eager: true })
-  @JoinColumn({ name: 'member' })
-  member: Member;
-
   @Column({ default: true })
   isPublic: boolean;
 
@@ -35,15 +31,16 @@ export class Workbook extends DefaultEntity {
     content: string,
     categoryId: number,
     copyCount: number,
-    member: Member,
+    memberId: number,
+    memberNickname: string,
+    memberProfileImg: string,
     isPublic: boolean,
   ) {
-    super(id, createdAt);
+    super(id, createdAt, memberId, memberNickname, memberProfileImg);
     this.title = title;
     this.content = content;
     this.categoryId = categoryId;
     this.copyCount = copyCount;
-    this.member = member;
     this.isPublic = isPublic;
   }
 
@@ -51,7 +48,9 @@ export class Workbook extends DefaultEntity {
     title: string,
     content: string,
     category: Category,
-    member: Member,
+    memberId: number,
+    memberNickname: string,
+    memberProfileImg: string,
     isPublic: boolean,
   ): Workbook {
     return new Workbook(
@@ -61,7 +60,9 @@ export class Workbook extends DefaultEntity {
       content,
       category.id,
       0,
-      member,
+      memberId,
+      memberNickname,
+      memberProfileImg,
       isPublic,
     );
   }
@@ -77,13 +78,15 @@ export class Workbook extends DefaultEntity {
       createWorkbookRequest.content,
       createWorkbookRequest.categoryId,
       0,
-      member,
+      member.id,
+      member.nickname,
+      member.profileImg,
       createWorkbookRequest.isPublic,
     );
   }
 
-  isOwnedBy(member: Member) {
-    return this.member.id === member.id;
+  isOwnedBy(memberId: number) {
+    return this.memberId === memberId;
   }
 
   increaseCopyCount() {

@@ -11,7 +11,7 @@ export const validateWorkbook = (workbook: Workbook) => {
 };
 
 export const validateWorkbookOwner = (workbook: Workbook, member: Member) => {
-  if (!workbook.isOwnedBy(member)) {
+  if (!workbook.isOwnedBy(member.id)) {
     throw new WorkbookForbiddenException();
   }
 };

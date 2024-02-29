@@ -1,3 +1,7 @@
+import {
+  memberFixture,
+  otherMemberFixture,
+} from 'src/member/fixture/member.fixture';
 import { LINK_ONLY, PRIVATE, PUBLIC } from '../constant/videoVisibility';
 import { CreateVideoRequest } from '../dto/createVideoRequest';
 import { UpdateVideoIndexRequest } from '../dto/updateVideoIndexRequest';
@@ -7,7 +11,9 @@ import { PreSignedInfo } from '../interface/video.interface';
 export const videoListExample = [
   new Video(
     5,
-    1,
+    memberFixture.id,
+    memberFixture.nickname,
+    memberFixture.profileImg,
     1,
     'test1.webm',
     'https://test-video1.com',
@@ -18,7 +24,9 @@ export const videoListExample = [
   ),
   new Video(
     6,
-    1,
+    memberFixture.id,
+    memberFixture.nickname,
+    memberFixture.profileImg,
     1,
     'test2.webm',
     'https://test-video2.com',
@@ -29,7 +37,9 @@ export const videoListExample = [
   ),
   new Video(
     7,
-    1,
+    memberFixture.id,
+    memberFixture.nickname,
+    memberFixture.profileImg,
     1,
     'test3.webm',
     'https://test-video3.com',
@@ -40,7 +50,9 @@ export const videoListExample = [
   ),
   new Video(
     8,
-    1,
+    memberFixture.id,
+    memberFixture.nickname,
+    memberFixture.profileImg,
     1,
     'test4.webm',
     'https://test-video4.com',
@@ -54,7 +66,9 @@ export const videoListExample = [
 export const videoListFixture = [
   new Video(
     9,
-    1,
+    memberFixture.id,
+    memberFixture.nickname,
+    memberFixture.profileImg,
     1,
     '루이뷔통통튀기네',
     'https://test.com',
@@ -65,7 +79,9 @@ export const videoListFixture = [
   ),
   new Video(
     10,
-    1,
+    memberFixture.id,
+    memberFixture.nickname,
+    memberFixture.profileImg,
     4,
     '루이뷔통통튀기네',
     'https://foo.com',
@@ -78,7 +94,9 @@ export const videoListFixture = [
 
 export const videoFixture = new Video(
   1,
-  1,
+  memberFixture.id,
+  memberFixture.nickname,
+  memberFixture.profileImg,
   1,
   '루이뷔통통튀기네',
   'https://test.com',
@@ -90,7 +108,9 @@ export const videoFixture = new Video(
 
 export const linkOnlyVideoFixture = new Video(
   1,
-  1,
+  memberFixture.id,
+  memberFixture.nickname,
+  memberFixture.profileImg,
   1,
   '루이뷔통통튀기네',
   'https://test.com',
@@ -102,7 +122,9 @@ export const linkOnlyVideoFixture = new Video(
 
 export const privateVideoFixture = new Video(
   2,
-  1,
+  memberFixture.id,
+  memberFixture.nickname,
+  memberFixture.profileImg,
   1,
   '루이뷔통통튀기네',
   'https://priavte-test.com',
@@ -114,7 +136,9 @@ export const privateVideoFixture = new Video(
 
 export const videoOfOtherFixture = new Video(
   3,
-  999,
+  otherMemberFixture.id,
+  otherMemberFixture.nickname,
+  otherMemberFixture.profileImg,
   1,
   '루이뷔통통튀기네',
   'https://test.com',
@@ -126,6 +150,8 @@ export const videoOfOtherFixture = new Video(
 
 export const videoOfWithdrawnMemberFixture = new Video(
   4,
+  null,
+  null,
   null,
   1,
   '루이뷔통통튀기네',

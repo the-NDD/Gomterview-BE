@@ -457,7 +457,15 @@ describe('QuestionService 통합 테스트', () => {
     }
     const other = await memberRepository.save(otherMemberFixture);
     const othersWorkbook = await workbookRepository.save(
-      Workbook.of('test', 'test', categoryFixtureWithId, other, true),
+      Workbook.of(
+        'test',
+        'test',
+        categoryFixtureWithId,
+        other.id,
+        other.nickname,
+        other.profileImg,
+        true,
+      ),
     );
     //when
     const copyRequest = new CopyQuestionRequest(othersWorkbook.id, [1, 2, 3]);
@@ -474,7 +482,15 @@ describe('QuestionService 통합 테스트', () => {
     await categoryRepository.save(categoryFixtureWithId);
     const workbook = await workbookRepository.save(workbookFixture);
     const workbook2 = await workbookRepository.save(
-      Workbook.of('copy', 'copy', categoryFixtureWithId, memberFixture, true),
+      Workbook.of(
+        'copy',
+        'copy',
+        categoryFixtureWithId,
+        memberFixture.id,
+        memberFixture.nickname,
+        memberFixture.profileImg,
+        true,
+      ),
     );
 
     const questionIds = [];
@@ -491,7 +507,15 @@ describe('QuestionService 통합 테스트', () => {
 
     const other = await memberRepository.save(otherMemberFixture);
     const othersWorkbook = await workbookRepository.save(
-      Workbook.of('test', 'test', categoryFixtureWithId, other, true),
+      Workbook.of(
+        'test',
+        'test',
+        categoryFixtureWithId,
+        other.id,
+        other.nickname,
+        other.profileImg,
+        true,
+      ),
     );
     //when
     const copyRequest = new CopyQuestionRequest(othersWorkbook.id, questionIds);

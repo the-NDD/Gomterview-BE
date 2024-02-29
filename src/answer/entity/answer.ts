@@ -1,15 +1,11 @@
-import { Column, Entity, JoinColumn, ManyToOne } from 'typeorm';
-import { DefaultEntity } from '../../app.entity';
+import { Column, Entity } from 'typeorm';
 import { Member } from '../../member/entity/member';
+import { OwnedEntity } from 'src/owned.entity';
 
 @Entity({ name: 'Answer' })
-export class Answer extends DefaultEntity {
+export class Answer extends OwnedEntity {
   @Column({ type: 'blob' })
   content: string;
-
-  @ManyToOne(() => Member, { onDelete: 'CASCADE', eager: true, nullable: true })
-  @JoinColumn()
-  member: Member;
 
   @Column({ name: 'question' })
   questionId: number;
@@ -18,21 +14,30 @@ export class Answer extends DefaultEntity {
     id: number,
     createdAt: Date,
     content: string,
-    member: Member,
+    memberId: number,
+    memberNickname: string,
+    memberProfileImg: string,
     questionId: number,
   ) {
-    super(id, createdAt);
+    super(id, createdAt, memberId, memberNickname, memberProfileImg);
     this.content = content;
-    this.member = member;
     this.questionId = questionId;
   }
 
   static of(content: string, member: Member, questionId: number) {
-    return new Answer(null, new Date(), content, member, questionId);
+    return new Answer(
+      null,
+      new Date(),
+      content,
+      member.id,
+      member.nickname,
+      member.profileImg,
+      questionId,
+    );
   }
 
   isOwnedBy(member: Member) {
-    return this.member.id === member.id;
+    return this.memberId === member.id;
   }
 
   updateQuestionId(questionId: number) {

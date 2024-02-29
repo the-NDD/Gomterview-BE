@@ -1,8 +1,6 @@
 // video.entity.ts
-import { Column, Entity, Index, JoinColumn, ManyToOne } from 'typeorm';
-import { DefaultEntity } from 'src/app.entity';
+import { Column, Entity, Index } from 'typeorm';
 import { Member } from 'src/member/entity/member';
-import { Question } from 'src/question/entity/question';
 import { CreateVideoRequest } from '../dto/createVideoRequest';
 import {
   DEFAULT_THUMBNAIL,
@@ -11,25 +9,15 @@ import {
 import { LINK_ONLY, PRIVATE, PUBLIC } from '../constant/videoVisibility';
 import { UpdateVideoRequest } from '../dto/updateVideoRequest';
 import { deleteObjectInIDrive } from 'src/util/idrive.util';
+import { OwnedEntity } from 'src/owned.entity';
 
 @Entity({ name: 'Video' })
 @Index('idx_video_url', ['url'])
 @Index('idx_video_myPageIndex', ['myPageIndex'])
 @Index('idx_visibility', ['visibility'])
-export class Video extends DefaultEntity {
-  @Column({ nullable: true })
-  memberId: number;
-
+export class Video extends OwnedEntity {
   @Column({ nullable: true })
   questionId: number;
-
-  @ManyToOne(() => Member, { onDelete: 'SET NULL' })
-  @JoinColumn({ name: 'memberId' })
-  member: Member;
-
-  @ManyToOne(() => Question, { onDelete: 'SET NULL' })
-  @JoinColumn({ name: 'questionId' })
-  question: Question;
 
   @Column()
   name: string;
@@ -55,6 +43,8 @@ export class Video extends DefaultEntity {
   constructor(
     id: number,
     memberId: number,
+    memberNickname: string,
+    memberProfileImg: string,
     questionId: number,
     name: string,
     url: string,
@@ -63,8 +53,7 @@ export class Video extends DefaultEntity {
     visibility: string,
     videoAnswer: string,
   ) {
-    super(id, new Date());
-    this.memberId = memberId;
+    super(id, new Date(), memberId, memberNickname, memberProfileImg);
     this.questionId = questionId;
     this.name = name;
     this.url = url;
@@ -79,6 +68,8 @@ export class Video extends DefaultEntity {
     return new Video(
       null,
       member.id,
+      member.nickname,
+      member.profileImg,
       createVideoRequest.questionId,
       `${member.nickname}_${createVideoRequest.videoName}`,
       createVideoRequest.url,

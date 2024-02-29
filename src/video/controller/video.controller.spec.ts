@@ -233,11 +233,7 @@ describe('VideoController 단위 테스트', () => {
       const video = videoFixture;
 
       // when
-      const mockVideoDetailWithHash = VideoDetailResponse.from(
-        video,
-        memberFixture,
-        hash,
-      );
+      const mockVideoDetailWithHash = VideoDetailResponse.from(video, hash);
       mockVideoService.getVideoDetailByHash.mockResolvedValue(
         mockVideoDetailWithHash,
       );
@@ -357,11 +353,7 @@ describe('VideoController 단위 테스트', () => {
       // given
 
       // when
-      const mockVideoDetailWithHash = VideoDetailResponse.from(
-        video,
-        memberFixture,
-        hash,
-      );
+      const mockVideoDetailWithHash = VideoDetailResponse.from(video, hash);
       mockVideoService.getVideoDetail.mockResolvedValue(
         mockVideoDetailWithHash,
       );
@@ -377,11 +369,7 @@ describe('VideoController 단위 테스트', () => {
       // given
 
       // when
-      const mockVideoDetailWithHash = VideoDetailResponse.from(
-        video,
-        memberFixture,
-        null,
-      );
+      const mockVideoDetailWithHash = VideoDetailResponse.from(video, null);
       mockVideoService.getVideoDetail.mockResolvedValue(
         mockVideoDetailWithHash,
       );
@@ -865,7 +853,7 @@ describe('VideoController 통합 테스트', () => {
         .expect(200)
         .expect((res) =>
           expect(res.body).toMatchObject(
-            VideoDetailResponse.from(videoFixture, memberFixture, hash),
+            VideoDetailResponse.from(videoFixture, hash),
           ),
         );
     });
@@ -886,7 +874,7 @@ describe('VideoController 통합 테스트', () => {
         .expect(200)
         .expect((res) =>
           expect(res.body).toMatchObject(
-            VideoDetailResponse.from(videoFixture, memberFixture, hash),
+            VideoDetailResponse.from(videoFixture, hash),
           ),
         );
     });
@@ -975,7 +963,7 @@ describe('VideoController 통합 테스트', () => {
         .expect(200)
         .expect((res) =>
           expect(res.body).toMatchObject(
-            VideoDetailResponse.from(videoFixture, memberFixture, null),
+            VideoDetailResponse.from(videoFixture, null),
           ),
         );
     });
@@ -992,7 +980,7 @@ describe('VideoController 통합 테스트', () => {
         .expect(200)
         .expect((res) => {
           expect(res.body).toMatchObject(
-            VideoDetailResponse.from(privateVideoFixture, memberFixture, null),
+            VideoDetailResponse.from(privateVideoFixture, null),
           );
         });
     });

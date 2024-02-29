@@ -5,6 +5,9 @@ import { MemberRepository } from '../repository/member.repository';
 import { getTokenValue } from 'src/util/token.util';
 import { MemberNicknameResponse } from '../dto/memberNicknameResponse';
 import { companies } from 'src/constant/constant';
+import { OnEvent } from '@nestjs/event-emitter';
+import { ValidateMemberExistenceEvent } from '../event/validate.member.existence.event';
+import { MemberNotFoundException } from '../exception/member.exception';
 
 @Injectable()
 export class MemberService {
@@ -29,5 +32,11 @@ export class MemberService {
     const randomCompany =
       companies[Math.floor(Math.random() * companies.length)];
     return `${randomCompany} 최종 면접에 들어온 ${nickname}`;
+  }
+
+  @OnEvent(ValidateMemberExistenceEvent.MESSAGE, { suppressErrors: false })
+  async validateMemberExistence(event: ValidateMemberExistenceEvent) {
+    const member = await this.memberRepository.findById(event.memberId);
+    if (!member) throw new MemberNotFoundException();
   }
 }

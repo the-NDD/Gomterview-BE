@@ -258,7 +258,15 @@ describe('QuestionController 통합테스트', () => {
         memberFixturesOAuthRequest.email,
       );
       const copyWorkbook = await workbookRepository.save(
-        Workbook.of('copy', 'copy', categoryFixtureWithId, requester, true),
+        Workbook.of(
+          'copy',
+          'copy',
+          categoryFixtureWithId,
+          requester.id,
+          requester.nickname,
+          requester.profileImg,
+          true,
+        ),
       );
 
       const copyRequest = new CopyQuestionRequest(copyWorkbook.id, [
@@ -286,7 +294,15 @@ describe('QuestionController 통합테스트', () => {
         oauthRequestFixture.email,
       );
       const copyWorkbook = await workbookRepository.save(
-        Workbook.of('copy', 'copy', categoryFixtureWithId, requester, true),
+        Workbook.of(
+          'copy',
+          'copy',
+          categoryFixtureWithId,
+          requester.id,
+          requester.nickname,
+          requester.profileImg,
+          true,
+        ),
       );
 
       const copyRequest = new CopyQuestionRequest(copyWorkbook.id, [
@@ -316,7 +332,15 @@ describe('QuestionController 통합테스트', () => {
         oauthRequestFixture.email,
       );
       const copyWorkbook = await workbookRepository.save(
-        Workbook.of('copy', 'copy', categoryFixtureWithId, requester, true),
+        Workbook.of(
+          'copy',
+          'copy',
+          categoryFixtureWithId,
+          requester.id,
+          requester.nickname,
+          requester.profileImg,
+          true,
+        ),
       );
 
       const copyRequest = new CopyQuestionRequest(copyWorkbook.id, [
@@ -343,7 +367,15 @@ describe('QuestionController 통합테스트', () => {
         oauthRequestFixture.email,
       );
       await workbookRepository.save(
-        Workbook.of('copy', 'copy', categoryFixtureWithId, requester, true),
+        Workbook.of(
+          'copy',
+          'copy',
+          categoryFixtureWithId,
+          requester.id,
+          requester.nickname,
+          requester.profileImg,
+          true,
+        ),
       );
 
       const copyRequest = new CopyQuestionRequest(135124, [question.id]);

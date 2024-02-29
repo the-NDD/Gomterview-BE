@@ -31,7 +31,7 @@ export class AnswerService {
       createAnswerRequest.questionId,
       answer.id,
     );
-    return AnswerResponse.from(answer, member);
+    return AnswerResponse.from(answer);
   }
 
   @Transactional()
@@ -84,7 +84,7 @@ export class AnswerService {
 
     const answers = (
       await this.answerRepository.findAllByQuestionId(originId)
-    ).map((answer) => AnswerResponse.from(answer, answer.member));
+    ).map((answer) => AnswerResponse.from(answer));
     try {
       await this.answerEventHandler.validateDefaultAnswersExistence(questionId);
     } catch (e) {
