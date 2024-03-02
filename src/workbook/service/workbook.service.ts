@@ -108,5 +108,6 @@ export class WorkbookService {
     validateWorkbook(workbook);
     validateWorkbookOwner(workbook, member);
     await this.workbookRepository.remove(workbook);
+    await this.eventHandler.publishWorkbookDeleteEvent([workbookId]);
   }
 }

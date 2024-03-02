@@ -18,6 +18,7 @@ import { ValidateDefaultAnswersExistenceEvent } from '../event/validate.default.
 import { Member } from 'src/member/entity/member';
 import { IncreaseCopyCountEvent } from 'src/workbook/event/increase.copyCount.event';
 import { ClearDefaultAnswerEvent } from 'src/answer/event/clear.default.answer.event';
+import { DeleteWorkbooksEvent } from 'src/workbook/event/delete.workbook.event';
 
 @Injectable()
 export class QuestionEventHandler {
@@ -104,6 +105,12 @@ export class QuestionEventHandler {
       event.answerId,
     );
     await this.questionRepository.clearDefaultAnswer(questions);
+  }
+
+  @OnEvent(DeleteWorkbooksEvent.MESSAGE)
+  async deleteQuestionsInWorkbooks(event: DeleteWorkbooksEvent) {
+    const workbookIds = event.workbookIds;
+    await this.questionRepository.removeAllByWorkbookIds(workbookIds);
   }
 
   async validateWorkbookOwnership(workbookId: number, member: Member) {

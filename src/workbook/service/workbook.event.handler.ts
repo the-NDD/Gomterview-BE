@@ -11,6 +11,7 @@ import { isEmpty } from 'class-validator';
 import { QuestionForbiddenException } from 'src/question/exception/question.exception';
 import { IncreaseCopyCountEvent } from '../event/increase.copyCount.event';
 import { DeleteMemberInfoEvent } from 'src/member/event/delete.member.info.event';
+import { DeleteWorkbooksEvent } from '../event/delete.workbook.event';
 
 @Injectable()
 export class WorkbookEventHandler {
@@ -21,6 +22,11 @@ export class WorkbookEventHandler {
 
   async validateCategoryExistence(categoryId: number) {
     await this.emitter.emitAsync('category.validate', categoryId);
+  }
+
+  async publishWorkbookDeleteEvent(workbookIds: number[]) {
+    const event = DeleteWorkbooksEvent.of(workbookIds);
+    await this.emitter.emitAsync(DeleteWorkbooksEvent.MESSAGE, event);
   }
 
   @OnEvent(ValidateWorkbookEvent.MESSAGE, {
@@ -62,5 +68,6 @@ export class WorkbookEventHandler {
       event.memberId,
     );
     await this.workbookRepository.removeAll(workbooks);
+    await this.publishWorkbookDeleteEvent(workbooks.map((each) => each.id));
   }
 }
