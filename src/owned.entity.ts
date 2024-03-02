@@ -8,12 +8,6 @@ import { DefaultEntity } from './app.entity';
 
 @Entity()
 export class OwnedEntity extends DefaultEntity {
-  @PrimaryGeneratedColumn()
-  readonly id: number;
-
-  @CreateDateColumn()
-  readonly createdAt: Date;
-
   @Column({ name: 'member', nullable: true })
   memberId: number;
 

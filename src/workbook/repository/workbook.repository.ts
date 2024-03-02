@@ -28,6 +28,13 @@ export class WorkbookRepository {
     });
   }
 
+  async findAllbyMemberId(memberId: number) {
+    return this.repository
+      .createQueryBuilder('Workbook')
+      .where('Workbook.member = :state', { state: memberId })
+      .getMany();
+  }
+
   async findAll() {
     return this.repository
       .createQueryBuilder('Workbook')
@@ -80,5 +87,9 @@ export class WorkbookRepository {
 
   async remove(workbook: Workbook) {
     await this.repository.remove(workbook);
+  }
+
+  async removeAll(workbooks: Workbook[]) {
+    await this.repository.remove(workbooks);
   }
 }

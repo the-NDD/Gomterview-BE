@@ -10,6 +10,7 @@ import { ValidateWorkbookOwnershipForQuestionEvent } from '../event/validate.wor
 import { isEmpty } from 'class-validator';
 import { QuestionForbiddenException } from 'src/question/exception/question.exception';
 import { IncreaseCopyCountEvent } from '../event/increase.copyCount.event';
+import { DeleteMemberInfoEvent } from 'src/member/event/delete.member.info.event';
 
 @Injectable()
 export class WorkbookEventHandler {
@@ -17,6 +18,10 @@ export class WorkbookEventHandler {
     private workbookRepository: WorkbookRepository,
     private emitter: EventEmitter2,
   ) {}
+
+  async validateCategoryExistence(categoryId: number) {
+    await this.emitter.emitAsync('category.validate', categoryId);
+  }
 
   @OnEvent(ValidateWorkbookEvent.MESSAGE, {
     suppressErrors: false,
@@ -51,7 +56,11 @@ export class WorkbookEventHandler {
     await this.workbookRepository.update(workbook);
   }
 
-  async validateCategoryExistence(categoryId: number) {
-    await this.emitter.emitAsync('category.validate', categoryId);
+  @OnEvent(DeleteMemberInfoEvent.MESSAGE)
+  async deleteMemberInfo(event: DeleteMemberInfoEvent) {
+    const workbooks = await this.workbookRepository.findAllbyMemberId(
+      event.memberId,
+    );
+    await this.workbookRepository.removeAll(workbooks);
   }
 }

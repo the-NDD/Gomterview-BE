@@ -59,6 +59,19 @@ export class VideoRepository {
       .execute();
   }
 
+  async clearMemberInfo(videoIds: number[]) {
+    return await this.videoRepository
+      .createQueryBuilder()
+      .update(Video)
+      .set({
+        memberId: null,
+        memberNickname: null,
+        memberProfileImg: null,
+      })
+      .where(`id in ${videoIds.join(', ')}`)
+      .execute();
+  }
+
   async updateVideoInfo(video: Video) {
     return await this.videoRepository.update(video.id, {
       name: video.name,
