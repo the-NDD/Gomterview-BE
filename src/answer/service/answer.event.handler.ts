@@ -13,6 +13,7 @@ import { CheckQuestionToBeOriginEvent } from 'src/question/event/check.question.
 import { ValidateDefaultAnswersExistenceEvent } from 'src/question/event/validate.default.answers.existence.event';
 import { ClearDefaultAnswerEvent } from '../event/clear.default.answer.event';
 import { DeleteMemberInfoEvent } from 'src/member/event/delete.member.info.event';
+import { DeleteQuestionEvent } from 'src/question/event/delete.question.event';
 
 @Injectable()
 export class AnswerEventHandler {
@@ -33,6 +34,15 @@ export class AnswerEventHandler {
     const answers = await this.answerRepository.findAllByMemberId(
       event.memberId,
     );
+    await this.answerRepository.removeAll(answers);
+  }
+
+  @OnEvent(DeleteQuestionEvent.MESSAGE)
+  async deleteAnswersInQuestion(event: DeleteQuestionEvent) {
+    const answers = await this.answerRepository.findAllByQuestionId(
+      event.questionId,
+    );
+    if (answers.length == 0) return;
     await this.answerRepository.removeAll(answers);
   }
 

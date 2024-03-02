@@ -19,7 +19,15 @@ export class VideoRepository {
   async findAllVideosByMemberId(memberId: number) {
     return this.videoRepository
       .createQueryBuilder('video')
-      .where('video.memberId = :memberId', { memberId })
+      .where('video.member = :memberId', { memberId })
+      .orderBy('video.myPageIndex', 'ASC')
+      .getMany();
+  }
+
+  async findAllVideosByQuestionId(questionId: number) {
+    return this.videoRepository
+      .createQueryBuilder('video')
+      .where('video.question = :questionId', { questionId })
       .orderBy('video.myPageIndex', 'ASC')
       .getMany();
   }
@@ -67,6 +75,17 @@ export class VideoRepository {
         memberId: null,
         memberNickname: null,
         memberProfileImg: null,
+      })
+      .where(`id in ${videoIds.join(', ')}`)
+      .execute();
+  }
+
+  async clearQuestionInfo(videoIds: number[]) {
+    return await this.videoRepository
+      .createQueryBuilder()
+      .update(Video)
+      .set({
+        questionId: null,
       })
       .where(`id in ${videoIds.join(', ')}`)
       .execute();
