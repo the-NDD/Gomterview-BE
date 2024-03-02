@@ -60,6 +60,7 @@ import { UpdateVideoRequest } from '../dto/updateVideoRequest';
 import { CategoryModule } from 'src/category/category.module';
 import { WorkbookModule } from 'src/workbook/workbook.module';
 import { EventEmitter2 } from '@nestjs/event-emitter';
+import { VideoEventHandler } from './video.event.handler';
 
 describe('VideoService 단위 테스트', () => {
   let videoService: VideoService;
@@ -100,6 +101,7 @@ describe('VideoService 단위 테스트', () => {
         VideoRepository,
         VideoRelationRepository,
         EventEmitter2,
+        VideoEventHandler,
       ],
     })
       .overrideProvider(VideoRepository)
