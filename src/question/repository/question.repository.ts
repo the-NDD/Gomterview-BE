@@ -88,7 +88,7 @@ export class QuestionRepository {
     await this.repository
       .createQueryBuilder('Question')
       .delete()
-      .where(`Question.workbook in ${workbookIds.join(', ')}`)
+      .where('Question.workbook IN (:...workbookIds)', { workbookIds })
       .execute();
   }
 

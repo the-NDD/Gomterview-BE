@@ -45,6 +45,7 @@ import { CopyQuestionRequest } from '../dto/copyQuestionRequest';
 import { UpdateIndexInWorkbookRequest } from '../dto/updateIndexInWorkbookRequest';
 import { EventEmitter2, EventEmitterModule } from '@nestjs/event-emitter';
 import { QuestionEventHandler } from './question.event.handler';
+import { WorkbookService } from 'src/workbook/service/workbook.service';
 
 describe('QuestionService', () => {
   let service: QuestionService;
@@ -358,6 +359,7 @@ describe('QuestionService 통합 테스트', () => {
   let app: INestApplication;
   let questionService: QuestionService;
   let workbookRepository: WorkbookRepository;
+  let workbookService: WorkbookService;
   let questionRepository: QuestionRepository;
   let memberRepository: MemberRepository;
   let categoryRepository: CategoryRepository;
@@ -378,6 +380,7 @@ describe('QuestionService 통합 테스트', () => {
     questionService = moduleFixture.get<QuestionService>(QuestionService);
     workbookRepository =
       moduleFixture.get<WorkbookRepository>(WorkbookRepository);
+    workbookService = moduleFixture.get<WorkbookService>(WorkbookService);
     questionRepository =
       moduleFixture.get<QuestionRepository>(QuestionRepository);
     memberRepository = moduleFixture.get<MemberRepository>(MemberRepository);
@@ -552,5 +555,31 @@ describe('QuestionService 통합 테스트', () => {
     //then
     const result = await questionRepository.findByWorkbookId(workbook.id);
     expect(result.map((each) => each.indexInWorkbook)).toEqual([0, 1, 2]);
+  });
+
+  describe('onDelete', () => {
+    it('문제집이 삭제될 때 질문도 같이 삭제된다.', async () => {
+      //given
+      await memberRepository.save(memberFixture);
+      await categoryRepository.save(categoryFixtureWithId);
+      const workbook = await workbookRepository.save(workbookFixture);
+
+      const questionIds = [];
+
+      for (let index = 0; index < 3; index++) {
+        const question = await questionRepository.save(
+          Question.of(workbook.id, null, 'tester'),
+        );
+        questionIds.push(question.id); // 1, 2, 3
+      }
+
+      //then
+      await workbookService.deleteWorkbookById(workbook.id, memberFixture);
+
+      //expect
+      expect(
+        questionRepository.findAllByIds(questionIds),
+      ).resolves.toStrictEqual([]);
+    });
   });
 });
