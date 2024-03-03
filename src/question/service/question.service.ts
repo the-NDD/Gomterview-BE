@@ -91,6 +91,7 @@ export class QuestionService {
       question.workbookId,
       member,
     );
+    this.eventHandler.publishQuestionDeleted(questionId);
     await this.questionRepository.remove(question);
   }
 

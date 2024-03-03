@@ -34,6 +34,7 @@ import {
 } from '../exception/answer.exception';
 import { WorkbookRepository } from '../../workbook/repository/workbook.repository';
 import {
+  createWorkbookRequestFixture,
   workbookFixture,
   workbookFixtureWithId,
 } from '../../workbook/fixture/workbook.fixture';
@@ -46,6 +47,7 @@ import { QuestionResponse } from '../../question/dto/questionResponse';
 import { EventEmitter2, EventEmitterModule } from '@nestjs/event-emitter';
 import { AnswerEventHandler } from './answer.event.handler';
 import { MemberService } from 'src/member/service/member.service';
+import { QuestionService } from 'src/question/service/question.service';
 
 describe('AnswerService 단위 테스트', () => {
   let service: AnswerService;
@@ -174,6 +176,7 @@ describe('AnswerService 통합테스트', () => {
   let answerRepository: AnswerRepository;
   let answerService: AnswerService;
   let categoryRepository: CategoryRepository;
+  let questionService: QuestionService;
 
   beforeAll(async () => {
     const modules = [
@@ -194,6 +197,7 @@ describe('AnswerService 통합테스트', () => {
       moduleFixture.get<WorkbookRepository>(WorkbookRepository);
     questionRepository =
       moduleFixture.get<QuestionRepository>(QuestionRepository);
+    questionService = moduleFixture.get<QuestionService>(QuestionService);
     memberRepository = moduleFixture.get<MemberRepository>(MemberRepository);
     memberService = moduleFixture.get<MemberService>(MemberService);
     categoryRepository =
@@ -499,6 +503,28 @@ describe('AnswerService 통합테스트', () => {
 
       //then
       expect(answerRepository.findById(answer.id)).resolves.toBeNull();
+    });
+
+    it('질문이 삭제되면 답변들도 삭제된다', async () => {
+      //given
+      const member = await memberRepository.save(memberFixture);
+      await categoryRepository.save(categoryFixtureWithId);
+      const workbook = await workbookRepository.save(
+        Workbook.from(createWorkbookRequestFixture, member),
+      );
+      const question = await questionRepository.save(
+        Question.of(workbook.id, null, 'test'),
+      );
+      const answer = await answerRepository.save(
+        Answer.of(`defaultAnswer`, member, question.id),
+      );
+
+      //when
+      await questionService.deleteQuestionById(question.id, member);
+
+      //then
+      const afterDeleteQuestion = await answerRepository.findById(answer.id);
+      expect(afterDeleteQuestion).toBeNull();
     });
   });
 });

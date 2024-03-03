@@ -31,19 +31,12 @@ export class AnswerEventHandler {
 
   @OnEvent(DeleteMemberInfoEvent.MESSAGE)
   async deleteMemberInfo(event: DeleteMemberInfoEvent) {
-    const answers = await this.answerRepository.findAllByMemberId(
-      event.memberId,
-    );
-    await this.answerRepository.removeAll(answers);
+    await this.answerRepository.deleteAllByMemberId(event.memberId);
   }
 
   @OnEvent(DeleteQuestionEvent.MESSAGE)
   async deleteAnswersInQuestion(event: DeleteQuestionEvent) {
-    const answers = await this.answerRepository.findAllByQuestionId(
-      event.questionId,
-    );
-    if (answers.length == 0) return;
-    await this.answerRepository.removeAll(answers);
+    await this.answerRepository.deleteAllByQuestionId(event.questionId);
   }
 
   async updateAnswersQuestionId(questionId: number, answerId: number) {

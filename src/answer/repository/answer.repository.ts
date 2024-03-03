@@ -46,6 +46,22 @@ export class AnswerRepository {
       .getMany();
   }
 
+  async deleteAllByQuestionId(questionId: number) {
+    return this.repository
+      .createQueryBuilder('answer')
+      .delete()
+      .where('answer.question = :questionId', { questionId })
+      .execute();
+  }
+
+  async deleteAllByMemberId(memberId: number) {
+    return this.repository
+      .createQueryBuilder('answer')
+      .delete()
+      .where('answer.member = :memberId', { memberId })
+      .execute();
+  }
+
   async update(answer: Answer) {
     await this.repository.update(answer.id, answer);
   }
