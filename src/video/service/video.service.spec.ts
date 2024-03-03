@@ -61,6 +61,8 @@ import { CategoryModule } from 'src/category/category.module';
 import { WorkbookModule } from 'src/workbook/workbook.module';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { VideoEventHandler } from './video.event.handler';
+import { MemberService } from 'src/member/service/member.service';
+import { MemberModule } from 'src/member/member.module';
 
 describe('VideoService 단위 테스트', () => {
   let videoService: VideoService;
@@ -831,6 +833,7 @@ describe('VideoService 통합 테스트', () => {
   let videoService: VideoService;
   let categoryRepository: CategoryRepository;
   let memberRepository: MemberRepository;
+  let memberService: MemberService;
   let questionRepository: QuestionRepository;
   let workbookRepository: WorkbookRepository;
   let videoRepository: VideoRepository;
@@ -838,6 +841,7 @@ describe('VideoService 통합 테스트', () => {
 
   beforeAll(async () => {
     const modules = [
+      MemberModule,
       VideoModule,
       QuestionModule,
       CategoryModule,
@@ -854,6 +858,7 @@ describe('VideoService 통합 테스트', () => {
     videoService = moduleFixture.get<VideoService>(VideoService);
     categoryRepository =
       moduleFixture.get<CategoryRepository>(CategoryRepository);
+    memberService = moduleFixture.get<MemberService>(MemberService);
     memberRepository = moduleFixture.get<MemberRepository>(MemberRepository);
     questionRepository =
       moduleFixture.get<QuestionRepository>(QuestionRepository);
@@ -1583,6 +1588,28 @@ describe('VideoService 통합 테스트', () => {
       expect(videoService.deleteVideo(video.id, member)).rejects.toThrow(
         VideoAccessForbiddenException,
       );
+    });
+  });
+
+  describe('onDelete', () => {
+    it('회원이 삭제되면 회원이 작성한 답변도 삭제된다.', async () => {
+      //given
+      const deleteObjectInIDriveSpy = jest.spyOn(
+        idriveUtil,
+        'deleteObjectInIDrive',
+      );
+      deleteObjectInIDriveSpy.mockResolvedValue(undefined);
+
+      const member = memberFixture;
+      const video = await videoRepository.save(videoFixture);
+
+      //when
+      await memberService.deleteMember(member);
+      const afterMemberDelete = await videoRepository.findById(video.id);
+      //then
+      expect(afterMemberDelete.memberId).toBeNull();
+      expect(afterMemberDelete.memberNickname).toBeNull();
+      expect(afterMemberDelete.memberProfileImg).toBeNull();
     });
   });
 

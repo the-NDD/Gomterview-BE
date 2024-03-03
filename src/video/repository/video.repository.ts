@@ -63,11 +63,11 @@ export class VideoRepository {
       .createQueryBuilder()
       .update(Video)
       .set({ isPublic: () => 'NOT isPublic' })
-      .where('id = :id', { id: Number(videoId) })
+      .where('video.id = :id', { id: Number(videoId) })
       .execute();
   }
 
-  async clearMemberInfo(videoIds: number[]) {
+  async clearMemberInfo(ids: number[]) {
     return await this.videoRepository
       .createQueryBuilder()
       .update(Video)
@@ -76,18 +76,18 @@ export class VideoRepository {
         memberNickname: null,
         memberProfileImg: null,
       })
-      .where(`id in ${videoIds.join(', ')}`)
+      .where('video.id IN (:...ids)', { ids })
       .execute();
   }
 
-  async clearQuestionInfo(videoIds: number[]) {
+  async clearQuestionInfo(ids: number[]) {
     return await this.videoRepository
       .createQueryBuilder()
       .update(Video)
       .set({
         questionId: null,
       })
-      .where(`id in ${videoIds.join(', ')}`)
+      .where('video.id IN (:...ids)', { ids })
       .execute();
   }
 
@@ -108,7 +108,7 @@ export class VideoRepository {
         name: updateRequest.videoName,
         visibility: updateRequest.visibility,
       })
-      .where('id= :id', { id: Number(videoId) })
+      .where('video.id= :id', { id: Number(videoId) })
       .execute();
   }
 
