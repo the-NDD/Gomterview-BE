@@ -63,6 +63,7 @@ import { EventEmitter2 } from '@nestjs/event-emitter';
 import { VideoEventHandler } from './video.event.handler';
 import { MemberService } from 'src/member/service/member.service';
 import { MemberModule } from 'src/member/member.module';
+import { QuestionService } from 'src/question/service/question.service';
 
 describe('VideoService 단위 테스트', () => {
   let videoService: VideoService;
@@ -835,6 +836,7 @@ describe('VideoService 통합 테스트', () => {
   let memberRepository: MemberRepository;
   let memberService: MemberService;
   let questionRepository: QuestionRepository;
+  let questionService: QuestionService;
   let workbookRepository: WorkbookRepository;
   let videoRepository: VideoRepository;
   let videoRelationRepository: VideoRelationRepository;
@@ -862,6 +864,7 @@ describe('VideoService 통합 테스트', () => {
     memberRepository = moduleFixture.get<MemberRepository>(MemberRepository);
     questionRepository =
       moduleFixture.get<QuestionRepository>(QuestionRepository);
+    questionService = moduleFixture.get<QuestionService>(QuestionService);
     workbookRepository =
       moduleFixture.get<WorkbookRepository>(WorkbookRepository);
     videoRepository = moduleFixture.get<VideoRepository>(VideoRepository);
@@ -1610,6 +1613,18 @@ describe('VideoService 통합 테스트', () => {
       expect(afterMemberDelete.memberId).toBeNull();
       expect(afterMemberDelete.memberNickname).toBeNull();
       expect(afterMemberDelete.memberProfileImg).toBeNull();
+    });
+
+    it('질문이 삭제되면 영상의 질문정보도 null처리된다.', async () => {
+      //given
+      const member = memberFixture;
+      const video = await videoRepository.save(videoFixture);
+
+      //when
+      await questionService.deleteQuestionById(video.questionId, member);
+      const afterQuestionDelete = await videoRepository.findById(video.id);
+      //then
+      expect(afterQuestionDelete.questionId).toBeNull();
     });
   });
 

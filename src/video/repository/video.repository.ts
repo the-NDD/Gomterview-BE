@@ -28,7 +28,6 @@ export class VideoRepository {
     return this.videoRepository
       .createQueryBuilder('video')
       .where('video.question = :questionId', { questionId })
-      .orderBy('video.myPageIndex', 'ASC')
       .getMany();
   }
 

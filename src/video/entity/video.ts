@@ -16,7 +16,7 @@ import { OwnedEntity } from 'src/owned.entity';
 @Index('idx_video_myPageIndex', ['myPageIndex'])
 @Index('idx_visibility', ['visibility'])
 export class Video extends OwnedEntity {
-  @Column({ nullable: true })
+  @Column({ nullable: true, name: 'question' })
   questionId: number;
 
   @Column()
