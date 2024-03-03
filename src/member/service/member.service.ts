@@ -38,8 +38,8 @@ export class MemberService {
   }
 
   async deleteMember(member: Member) {
-    await this.memberRepository.remove(member);
     const event = DeleteMemberInfoEvent.of(member.id);
+    await this.memberRepository.remove(member);
     await this.emitter.emitAsync(DeleteMemberInfoEvent.MESSAGE, event);
   }
 
