@@ -42,6 +42,8 @@ import { UpdateWorkbookRequest } from '../dto/updateWorkbookRequest';
 import { TokenModule } from '../../token/token.module';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { WorkbookEventHandler } from './workbook.event.handler';
+import { MemberService } from 'src/member/service/member.service';
+import { MemberModule } from 'src/member/member.module';
 
 describe('WorkbookService 단위테스트', () => {
   let module: TestingModule;
@@ -357,9 +359,16 @@ describe('WorkbookService 통합테스트', () => {
   let memberRepository: MemberRepository;
   let workbookService: WorkbookService;
   let workbookRepository: WorkbookRepository;
+  let memberService: MemberService;
 
   beforeAll(async () => {
-    const modules = [AuthModule, WorkbookModule, CategoryModule, TokenModule];
+    const modules = [
+      AuthModule,
+      WorkbookModule,
+      CategoryModule,
+      TokenModule,
+      MemberModule,
+    ];
 
     const moduleFixture: TestingModule =
       await createIntegrationTestModule(modules);
@@ -370,6 +379,7 @@ describe('WorkbookService 통합테스트', () => {
     await app.init();
 
     memberRepository = moduleFixture.get<MemberRepository>(MemberRepository);
+    memberService = moduleFixture.get<MemberService>(MemberService);
     categoryRepository =
       moduleFixture.get<CategoryRepository>(CategoryRepository);
     workbookService = moduleFixture.get<WorkbookService>(WorkbookService);
@@ -724,6 +734,22 @@ describe('WorkbookService 통합테스트', () => {
       await expect(
         workbookService.deleteWorkbookById(1244232, memberFixture),
       ).rejects.toThrow(new WorkbookNotFoundException());
+    });
+  });
+
+  describe('onDeleteEvent', () => {
+    it('회원 삭제시 문제집은 같이 삭제된다.', async () => {
+      //given
+      await memberRepository.save(memberFixture);
+      await categoryRepository.save(categoryFixtureWithId);
+      await workbookRepository.save(workbookFixtureWithId);
+
+      //when
+      await memberService.deleteMember(memberFixture);
+      //then
+      expect(
+        workbookRepository.findById(workbookFixtureWithId.id),
+      ).resolves.toBeNull();
     });
   });
 

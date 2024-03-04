@@ -19,8 +19,15 @@ export class VideoRepository {
   async findAllVideosByMemberId(memberId: number) {
     return this.videoRepository
       .createQueryBuilder('video')
-      .where('video.memberId = :memberId', { memberId })
+      .where('video.member = :memberId', { memberId })
       .orderBy('video.myPageIndex', 'ASC')
+      .getMany();
+  }
+
+  async findAllVideosByQuestionId(questionId: number) {
+    return this.videoRepository
+      .createQueryBuilder('video')
+      .where('video.question = :questionId', { questionId })
       .getMany();
   }
 
@@ -55,7 +62,31 @@ export class VideoRepository {
       .createQueryBuilder()
       .update(Video)
       .set({ isPublic: () => 'NOT isPublic' })
-      .where('id = :id', { id: Number(videoId) })
+      .where('video.id = :id', { id: Number(videoId) })
+      .execute();
+  }
+
+  async clearMemberInfo(ids: number[]) {
+    return await this.videoRepository
+      .createQueryBuilder()
+      .update(Video)
+      .set({
+        memberId: null,
+        memberNickname: null,
+        memberProfileImg: null,
+      })
+      .where('video.id IN (:...ids)', { ids })
+      .execute();
+  }
+
+  async clearQuestionInfo(ids: number[]) {
+    return await this.videoRepository
+      .createQueryBuilder()
+      .update(Video)
+      .set({
+        questionId: null,
+      })
+      .where('video.id IN (:...ids)', { ids })
       .execute();
   }
 
@@ -76,7 +107,7 @@ export class VideoRepository {
         name: updateRequest.videoName,
         visibility: updateRequest.visibility,
       })
-      .where('id= :id', { id: Number(videoId) })
+      .where('video.id= :id', { id: Number(videoId) })
       .execute();
   }
 

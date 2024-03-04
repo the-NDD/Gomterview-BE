@@ -15,6 +15,7 @@ import { addAppModules, createIntegrationTestModule } from 'src/util/test.util';
 import { AuthModule } from 'src/auth/auth.module';
 import { AuthService } from 'src/auth/service/auth.service';
 import { JwtService } from '@nestjs/jwt';
+import { EventEmitter2 } from '@nestjs/event-emitter';
 
 describe('MemberService 단위 테스트', () => {
   let memberService: MemberService;
@@ -35,7 +36,7 @@ describe('MemberService 단위 테스트', () => {
 
   beforeAll(async () => {
     const module: TestingModule = await Test.createTestingModule({
-      providers: [MemberService, MemberRepository, TokenService],
+      providers: [MemberService, MemberRepository, TokenService, EventEmitter2],
     })
       .overrideProvider(TokenService)
       .useValue(mockTokenService)

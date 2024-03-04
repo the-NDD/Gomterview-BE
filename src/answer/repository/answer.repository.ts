@@ -38,11 +38,39 @@ export class AnswerRepository {
       .getMany();
   }
 
+  async findAllByMemberId(memberId: number) {
+    return this.repository
+      .createQueryBuilder('answer')
+      .where('answer.member = :memberId', { memberId })
+      .orderBy('answer.createdAt', 'DESC')
+      .getMany();
+  }
+
+  async deleteAllByQuestionId(questionId: number) {
+    return this.repository
+      .createQueryBuilder('answer')
+      .delete()
+      .where('answer.question = :questionId', { questionId })
+      .execute();
+  }
+
+  async deleteAllByMemberId(memberId: number) {
+    return this.repository
+      .createQueryBuilder('answer')
+      .delete()
+      .where('answer.member = :memberId', { memberId })
+      .execute();
+  }
+
   async update(answer: Answer) {
     await this.repository.update(answer.id, answer);
   }
 
   async remove(answer: Answer) {
+    await this.repository.remove(answer);
+  }
+
+  async removeAll(answer: Answer[]) {
     await this.repository.remove(answer);
   }
 }

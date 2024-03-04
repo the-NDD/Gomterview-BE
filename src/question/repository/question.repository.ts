@@ -84,6 +84,14 @@ export class QuestionRepository {
     await this.repository.remove(question);
   }
 
+  async removeAllByWorkbookIds(workbookIds: number[]) {
+    await this.repository
+      .createQueryBuilder('Question')
+      .delete()
+      .where('Question.workbook IN (:...workbookIds)', { workbookIds })
+      .execute();
+  }
+
   async updateIndex(ids: number[]) {
     const caseStatements = ids.map(
       (id) => `WHEN id = ${id} THEN ${ids.indexOf(id)}`,

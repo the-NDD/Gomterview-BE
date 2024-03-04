@@ -12,6 +12,8 @@ import { FindQuestionToValidateWorkbookOwnership } from 'src/question/event/find
 import { CheckQuestionToBeOriginEvent } from 'src/question/event/check.question.tobe.origin.event';
 import { ValidateDefaultAnswersExistenceEvent } from 'src/question/event/validate.default.answers.existence.event';
 import { ClearDefaultAnswerEvent } from '../event/clear.default.answer.event';
+import { DeleteMemberInfoEvent } from 'src/member/event/delete.member.info.event';
+import { DeleteQuestionEvent } from 'src/question/event/delete.question.event';
 
 @Injectable()
 export class AnswerEventHandler {
@@ -25,6 +27,16 @@ export class AnswerEventHandler {
     const answer = await this.answerRepository.findById(event.answerId);
     answer.updateQuestionId(event.questionId);
     await this.answerRepository.update(answer);
+  }
+
+  @OnEvent(DeleteMemberInfoEvent.MESSAGE)
+  async deleteMemberInfo(event: DeleteMemberInfoEvent) {
+    await this.answerRepository.deleteAllByMemberId(event.memberId);
+  }
+
+  @OnEvent(DeleteQuestionEvent.MESSAGE)
+  async deleteAnswersInQuestion(event: DeleteQuestionEvent) {
+    await this.answerRepository.deleteAllByQuestionId(event.questionId);
   }
 
   async updateAnswersQuestionId(questionId: number, answerId: number) {

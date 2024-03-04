@@ -60,6 +60,10 @@ import { UpdateVideoRequest } from '../dto/updateVideoRequest';
 import { CategoryModule } from 'src/category/category.module';
 import { WorkbookModule } from 'src/workbook/workbook.module';
 import { EventEmitter2 } from '@nestjs/event-emitter';
+import { VideoEventHandler } from './video.event.handler';
+import { MemberService } from 'src/member/service/member.service';
+import { MemberModule } from 'src/member/member.module';
+import { QuestionService } from 'src/question/service/question.service';
 
 describe('VideoService 단위 테스트', () => {
   let videoService: VideoService;
@@ -100,6 +104,7 @@ describe('VideoService 단위 테스트', () => {
         VideoRepository,
         VideoRelationRepository,
         EventEmitter2,
+        VideoEventHandler,
       ],
     })
       .overrideProvider(VideoRepository)
@@ -829,13 +834,16 @@ describe('VideoService 통합 테스트', () => {
   let videoService: VideoService;
   let categoryRepository: CategoryRepository;
   let memberRepository: MemberRepository;
+  let memberService: MemberService;
   let questionRepository: QuestionRepository;
+  let questionService: QuestionService;
   let workbookRepository: WorkbookRepository;
   let videoRepository: VideoRepository;
   let videoRelationRepository: VideoRelationRepository;
 
   beforeAll(async () => {
     const modules = [
+      MemberModule,
       VideoModule,
       QuestionModule,
       CategoryModule,
@@ -852,9 +860,11 @@ describe('VideoService 통합 테스트', () => {
     videoService = moduleFixture.get<VideoService>(VideoService);
     categoryRepository =
       moduleFixture.get<CategoryRepository>(CategoryRepository);
+    memberService = moduleFixture.get<MemberService>(MemberService);
     memberRepository = moduleFixture.get<MemberRepository>(MemberRepository);
     questionRepository =
       moduleFixture.get<QuestionRepository>(QuestionRepository);
+    questionService = moduleFixture.get<QuestionService>(QuestionService);
     workbookRepository =
       moduleFixture.get<WorkbookRepository>(WorkbookRepository);
     videoRepository = moduleFixture.get<VideoRepository>(VideoRepository);
@@ -1581,6 +1591,40 @@ describe('VideoService 통합 테스트', () => {
       expect(videoService.deleteVideo(video.id, member)).rejects.toThrow(
         VideoAccessForbiddenException,
       );
+    });
+  });
+
+  describe('onDelete', () => {
+    it('회원이 삭제되면 회원이 작성한 답변도 삭제된다.', async () => {
+      //given
+      const deleteObjectInIDriveSpy = jest.spyOn(
+        idriveUtil,
+        'deleteObjectInIDrive',
+      );
+      deleteObjectInIDriveSpy.mockResolvedValue(undefined);
+
+      const member = memberFixture;
+      const video = await videoRepository.save(videoFixture);
+
+      //when
+      await memberService.deleteMember(member);
+      const afterMemberDelete = await videoRepository.findById(video.id);
+      //then
+      expect(afterMemberDelete.memberId).toBeNull();
+      expect(afterMemberDelete.memberNickname).toBeNull();
+      expect(afterMemberDelete.memberProfileImg).toBeNull();
+    });
+
+    it('질문이 삭제되면 영상의 질문정보도 null처리된다.', async () => {
+      //given
+      const member = memberFixture;
+      const video = await videoRepository.save(videoFixture);
+
+      //when
+      await questionService.deleteQuestionById(video.questionId, member);
+      const afterQuestionDelete = await videoRepository.findById(video.id);
+      //then
+      expect(afterQuestionDelete.questionId).toBeNull();
     });
   });
 
