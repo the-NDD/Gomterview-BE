@@ -37,7 +37,7 @@ export class QuestionResponse {
       question.id,
       question.content,
       question.defaultAnswerId,
-      question.defaultAnswerContent,
+      question.defaultAnswerContent.toString(),
     );
   }
 }
