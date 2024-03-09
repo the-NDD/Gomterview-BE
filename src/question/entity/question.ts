@@ -20,7 +20,7 @@ export class Question extends DefaultEntity {
   @Column({ name: 'defaultAnswer', nullable: true })
   defaultAnswerId: number;
 
-  @Column({ name: 'answerContent', nullable: true, type: 'text' })
+  @Column({ name: 'answerContent', nullable: true, type: 'blob' })
   defaultAnswerContent: string;
 
   @Column({ default: 0 })
