@@ -1,8 +1,8 @@
-import { Module } from '@nestjs/common';
+import { ArgumentsHost, Catch, ExceptionFilter, Module } from '@nestjs/common';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { MYSQL_OPTION } from './config/typeorm.config';
+import { DatabaseException, MYSQL_OPTION } from './config/typeorm.config';
 import { MemberModule } from './member/member.module';
 import { AuthModule } from './auth/auth.module';
 import { TokenModule } from './token/token.module';
@@ -10,27 +10,33 @@ import { QuestionModule } from './question/question.module';
 import { VideoModule } from './video/video.module';
 import { CategoryModule } from './category/category.module';
 import { AnswerModule } from './answer/answer.module';
-import { CategoryRepository } from './category/repository/category.repository';
-import { QuestionRepository } from './question/repository/question.repository';
-import { AnswerRepository } from './answer/repository/answer.repository';
-import { Category } from './category/entity/category';
-import { Member } from './member/entity/member';
-import { Question } from './question/entity/question';
-import { Answer } from './answer/entity/answer';
 import { WorkbookModule } from './workbook/workbook.module';
-import { MulterModule } from '@nestjs/platform-express';
-import { Workbook } from './workbook/entity/workbook';
-import { HealthModule } from './health/health.module';
 import { EventEmitterModule } from '@nestjs/event-emitter';
+import { Response } from 'express';
+import { APP_FILTER } from '@nestjs/core';
+
+@Catch(DatabaseException)
+export class DatabaseConnectionFilter implements ExceptionFilter {
+  catch(exception: DatabaseException, host: ArgumentsHost) {
+    const ctx = host.switchToHttp();
+    const response = ctx.getResponse<Response>();
+    response.status(503).json(exception);
+  }
+}
+
+@Catch(AggregateError)
+export class AggregateErrorFilter implements ExceptionFilter {
+  catch(exception: DatabaseException, host: ArgumentsHost) {
+    const ctx = host.switchToHttp();
+    const response = ctx.getResponse<Response>();
+    response.status(503).json(exception);
+  }
+}
 
 @Module({
   imports: [
     EventEmitterModule.forRoot(),
     TypeOrmModule.forRootAsync(MYSQL_OPTION),
-    TypeOrmModule.forFeature([Category, Member, Question, Answer, Workbook]),
-    MulterModule.register({
-      dest: './uploads', // 파일이 저장될 경로 설정
-    }),
     MemberModule,
     AuthModule,
     TokenModule,
@@ -39,14 +45,18 @@ import { EventEmitterModule } from '@nestjs/event-emitter';
     CategoryModule,
     AnswerModule,
     WorkbookModule,
-    HealthModule,
   ],
   controllers: [AppController],
   providers: [
     AppService,
-    CategoryRepository,
-    QuestionRepository,
-    AnswerRepository,
+    {
+      provide: APP_FILTER,
+      useClass: DatabaseConnectionFilter,
+    },
+    {
+      provide: APP_FILTER,
+      useClass: AggregateErrorFilter,
+    },
   ],
 })
 export class AppModule {}
