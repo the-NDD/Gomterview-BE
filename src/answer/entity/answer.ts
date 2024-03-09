@@ -1,8 +1,9 @@
-import { Column, Entity } from 'typeorm';
+import { Column, Entity, Index } from 'typeorm';
 import { Member } from '../../member/entity/member';
 import { OwnedEntity } from 'src/owned.entity';
 
 @Entity({ name: 'Answer' })
+@Index('Answer_memberId', ['memberId'])
 export class Answer extends OwnedEntity {
   @Column({ type: 'blob' })
   content: string;

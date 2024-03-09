@@ -8,6 +8,7 @@ import { OwnedEntity } from 'src/owned.entity';
 @Entity({ name: 'Workbook' })
 @Index('idx_isPublic', ['isPublic'])
 @Index('idx_isPublic_categoryId', ['isPublic', 'categoryId'])
+@Index('Workbook_memberId', ['memberId'])
 export class Workbook extends OwnedEntity {
   @Column()
   title: string;
