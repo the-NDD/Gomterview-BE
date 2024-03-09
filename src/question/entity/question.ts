@@ -18,7 +18,7 @@ export class Question extends DefaultEntity {
   @Column({ name: 'defaultAnswer', nullable: true })
   defaultAnswerId: number;
 
-  @Column({ name: 'answerContent', nullable: true })
+  @Column({ name: 'answerContent', nullable: true, type: 'text' })
   defaultAnswerContent: string;
 
   @Column({ default: 0 })
