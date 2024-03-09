@@ -4,6 +4,7 @@ import { OwnedEntity } from 'src/owned.entity';
 
 @Entity({ name: 'Answer' })
 @Index('Answer_memberId', ['memberId'])
+@Index('Answer_questionId', ['questionId'])
 export class Answer extends OwnedEntity {
   @Column({ type: 'blob' })
   content: string;
