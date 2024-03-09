@@ -4,6 +4,8 @@ import { Answer } from '../../answer/entity/answer';
 
 @Entity({ name: 'Question' })
 @Index('idx_indexInWorkbook', ['indexInWorkbook'])
+@Index('Question_workbook', ['workbookId'])
+@Index('Question_defaultAnswer', ['defaultAnswerId'])
 export class Question extends DefaultEntity {
   @Column({ type: 'text' })
   readonly content: string;
@@ -18,7 +20,7 @@ export class Question extends DefaultEntity {
   @Column({ name: 'defaultAnswer', nullable: true })
   defaultAnswerId: number;
 
-  @Column({ name: 'answerContent', nullable: true })
+  @Column({ name: 'answerContent', nullable: true, type: 'text' })
   defaultAnswerContent: string;
 
   @Column({ default: 0 })
