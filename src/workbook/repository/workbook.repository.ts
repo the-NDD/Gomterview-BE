@@ -47,7 +47,7 @@ export class WorkbookRepository {
     return this.repository
       .createQueryBuilder('Workbook')
       .where('Workbook.isPublic = :state', { state: true })
-      .andWhere('workbook.category = :categoryId', { categoryId })
+      .andWhere('Workbook.category = :categoryId', { categoryId })
       .orderBy('Workbook.copyCount', 'DESC')
       .getMany();
   }
