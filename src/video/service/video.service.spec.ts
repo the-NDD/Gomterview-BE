@@ -468,7 +468,7 @@ describe('VideoService 단위 테스트', () => {
       result.forEach((element) => {
         expect(element).toBeInstanceOf(SingleVideoResponse);
       });
-      expect(result[0].thumbnail).toBe(DEFAULT_THUMBNAIL);
+      expect(result[0].thumbnail).toBe('');
     });
 
     it('비디오 전체 조회 시 저장된 비디오가 없으면 빈 배열이 반환된다.', async () => {
@@ -1103,7 +1103,7 @@ describe('VideoService 통합 테스트', () => {
       // then
       expect(result).toHaveLength(1);
       expect(result[0]).toBeInstanceOf(SingleVideoResponse);
-      expect(result[0].thumbnail).toBe(video.thumbnail);
+      expect(result[0].thumbnail).toBe('');
       expect(result[0].videoName).toBe(video.name);
       expect(result[0].videoLength).toBe(video.videoLength);
       expect(result[0].visibility).toBe(video.visibility);

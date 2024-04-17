@@ -2,6 +2,7 @@ import { ApiProperty } from '@nestjs/swagger';
 import { createPropertyOption } from 'src/util/swagger.util';
 import { Video } from '../entity/video';
 import { parseDateToString } from 'src/util/util';
+import { parseThumbnail } from '../util/video.util';
 
 export class SingleVideoResponse {
   @ApiProperty(createPropertyOption(1, '비디오 ID', Number))
@@ -53,7 +54,7 @@ export class SingleVideoResponse {
   static from(video: Video) {
     return new SingleVideoResponse(
       video.id,
-      video.thumbnail,
+      parseThumbnail(video.thumbnail),
       video.name,
       video.videoLength,
       video.visibility,
