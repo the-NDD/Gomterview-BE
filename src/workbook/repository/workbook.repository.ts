@@ -24,15 +24,20 @@ export class WorkbookRepository {
   async findByNameAndMemberId(title: string, memberId: number) {
     return await this.repository.findOneBy({
       title: title,
-      member: { id: memberId },
+      memberId: memberId,
     });
+  }
+
+  async findAllbyMemberId(memberId: number) {
+    return this.repository
+      .createQueryBuilder('Workbook')
+      .where('Workbook.member = :state', { state: memberId })
+      .getMany();
   }
 
   async findAll() {
     return this.repository
       .createQueryBuilder('Workbook')
-      .leftJoinAndSelect('Workbook.category', 'category')
-      .leftJoinAndSelect('Workbook.member', 'member')
       .where('Workbook.isPublic = :state', { state: true })
       .orderBy('Workbook.copyCount', 'DESC')
       .getMany();
@@ -41,10 +46,8 @@ export class WorkbookRepository {
   async findAllByCategoryId(categoryId: number) {
     return this.repository
       .createQueryBuilder('Workbook')
-      .leftJoinAndSelect('Workbook.member', 'member')
-      .leftJoinAndSelect('Workbook.category', 'category')
       .where('Workbook.isPublic = :state', { state: true })
-      .andWhere('category.id = :categoryId', { categoryId })
+      .andWhere('Workbook.category = :categoryId', { categoryId })
       .orderBy('Workbook.copyCount', 'DESC')
       .getMany();
   }
@@ -62,8 +65,7 @@ export class WorkbookRepository {
   async findMembersWorkbooks(memberId: number) {
     return await this.repository
       .createQueryBuilder('Workbook')
-      .leftJoinAndSelect('Workbook.member', 'member')
-      .where('member.id = :memberId', { memberId })
+      .where('Workbook.member = :memberId', { memberId })
       .orderBy('Workbook.copyCount', 'DESC')
       .getMany();
   }
@@ -71,8 +73,6 @@ export class WorkbookRepository {
   async findById(id: number) {
     return await this.repository
       .createQueryBuilder('Workbook')
-      .leftJoinAndSelect('Workbook.member', 'member')
-      .leftJoinAndSelect('Workbook.category', 'category')
       .where('Workbook.id = :id', { id })
       .getOne();
   }
@@ -87,5 +87,9 @@ export class WorkbookRepository {
 
   async remove(workbook: Workbook) {
     await this.repository.remove(workbook);
+  }
+
+  async removeAll(workbooks: Workbook[]) {
+    await this.repository.remove(workbooks);
   }
 }

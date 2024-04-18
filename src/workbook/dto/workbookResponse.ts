@@ -57,12 +57,11 @@ export class WorkbookResponse {
   }
 
   static of(workbook: Workbook) {
-    const member = workbook.member;
     return new WorkbookResponse(
       workbook.id,
-      workbook.category.id,
-      member.nickname,
-      member.profileImg,
+      workbook.categoryId,
+      workbook.memberNickname,
+      workbook.memberProfileImg,
       workbook.copyCount,
       workbook.title,
       workbook.content,

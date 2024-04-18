@@ -25,22 +25,52 @@ export class AnswerRepository {
   ) {
     return await this.repository.findOneBy({
       content: content,
-      member: { id: memberId },
-      question: { id: questionId },
+      memberId: memberId,
+      questionId: questionId,
     });
   }
 
   async findAllByQuestionId(questionId: number) {
     return this.repository
       .createQueryBuilder('answer')
-      .leftJoinAndSelect('answer.member', 'member')
-      .leftJoinAndSelect('answer.question', 'question')
-      .where('question.id = :questionId', { questionId })
+      .where('answer.question = :questionId', { questionId })
       .orderBy('answer.createdAt', 'DESC')
       .getMany();
   }
 
+  async findAllByMemberId(memberId: number) {
+    return this.repository
+      .createQueryBuilder('answer')
+      .where('answer.member = :memberId', { memberId })
+      .orderBy('answer.createdAt', 'DESC')
+      .getMany();
+  }
+
+  async deleteAllByQuestionId(questionId: number) {
+    return this.repository
+      .createQueryBuilder('answer')
+      .delete()
+      .where('answer.question = :questionId', { questionId })
+      .execute();
+  }
+
+  async deleteAllByMemberId(memberId: number) {
+    return this.repository
+      .createQueryBuilder('answer')
+      .delete()
+      .where('answer.member = :memberId', { memberId })
+      .execute();
+  }
+
+  async update(answer: Answer) {
+    await this.repository.update(answer.id, answer);
+  }
+
   async remove(answer: Answer) {
+    await this.repository.remove(answer);
+  }
+
+  async removeAll(answer: Answer[]) {
     await this.repository.remove(answer);
   }
 }

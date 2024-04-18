@@ -1,6 +1,8 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { createPropertyOption } from 'src/util/swagger.util';
 import { Video } from '../entity/video';
+import { parseDateToString } from 'src/util/util';
+import { parseThumbnail } from '../util/video.util';
 
 export class SingleVideoResponse {
   @ApiProperty(createPropertyOption(1, '비디오 ID', Number))
@@ -30,10 +32,8 @@ export class SingleVideoResponse {
   )
   readonly visibility: string;
 
-  @ApiProperty(
-    createPropertyOption(1699858790176, '비디오 생성 일자(ms 단위)', Number),
-  )
-  readonly createdAt: number;
+  @ApiProperty(createPropertyOption('1998.09.05', '영상 생성 일자', Number))
+  readonly createdAt: string;
 
   constructor(
     id: number,
@@ -41,7 +41,7 @@ export class SingleVideoResponse {
     videoName: string,
     videoLength: string,
     visibility: string,
-    createdAt: number,
+    createdAt: string,
   ) {
     this.id = id;
     this.thumbnail = thumbnail;
@@ -54,11 +54,11 @@ export class SingleVideoResponse {
   static from(video: Video) {
     return new SingleVideoResponse(
       video.id,
-      video.thumbnail,
+      parseThumbnail(video.thumbnail),
       video.name,
       video.videoLength,
       video.visibility,
-      video.createdAt.getTime(),
+      parseDateToString(video.createdAt),
     );
   }
 }

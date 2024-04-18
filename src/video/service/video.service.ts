@@ -21,14 +21,12 @@ import { isEmpty, notEquals } from 'class-validator';
 import { VideoDetailResponse } from '../dto/videoDetailResponse';
 import * as crypto from 'crypto';
 import 'dotenv/config';
-import { MemberRepository } from 'src/member/repository/member.repository';
 import {
   deleteFromRedis,
   getValueFromRedis,
   saveToRedis,
 } from 'src/util/redis.util';
 import { SingleVideoResponse } from '../dto/singleVideoResponse';
-import { MemberNotFoundException } from 'src/member/exception/member.exception';
 import {
   deleteObjectInIDrive,
   getSignedUrlWithKey,
@@ -45,13 +43,15 @@ import {
   IDRIVE_THUMBNAIL_ENDPOINT,
   IDRIVE_VIDEO_ENDPOINT,
 } from 'src/constant/constant';
+import { EventEmitter2 } from '@nestjs/event-emitter';
+import { ValidateMemberExistenceEvent } from 'src/member/event/validate.member.existence.event';
 
 @Injectable()
 export class VideoService {
   constructor(
     private videoRepository: VideoRepository,
-    private memberRepository: MemberRepository,
     private videoRelationRepository: VideoRelationRepository,
+    private emitter: EventEmitter2,
   ) {}
 
   // async saveVideoOnCloud(
@@ -110,8 +110,8 @@ export class VideoService {
 
   async createVideo(member: Member, createVideoRequest: CreateVideoRequest) {
     validateManipulatedToken(member);
-
     const newVideo = Video.from(member, createVideoRequest);
+    await this.updateVideoHashInRedis(newVideo);
     await this.videoRepository.save(newVideo);
   }
 
@@ -134,14 +134,14 @@ export class VideoService {
     if (!video) throw new VideoNotFoundException();
 
     if (video.isPublic()) {
-      return VideoDetailResponse.from(video, video.member, null);
+      return VideoDetailResponse.from(video, null);
     }
 
     if (!member) throw new VideoAccessForbiddenException();
     this.validateVideoOwnership(video, member.id);
 
-    const hash = video.isLinkOnly() ? this.getHashedUrl(video.url) : null;
-    return VideoDetailResponse.from(video, video.member, hash);
+    const hash = await this.updateVideoHashInRedis(video);
+    return VideoDetailResponse.from(video, hash);
   }
 
   async getVideoDetailByHash(hash: string) {
@@ -154,11 +154,9 @@ export class VideoService {
     if (isEmpty(video)) throw new VideoNotFoundException();
     if (video.isPrivate()) throw new VideoAccessForbiddenException();
     if (isEmpty(video.memberId)) throw new VideoOfWithdrawnMemberException();
-
-    const videoOwner = await this.memberRepository.findById(video.memberId);
-    if (isEmpty(videoOwner)) throw new MemberNotFoundException();
-
-    return VideoDetailResponse.from(video, videoOwner, hash);
+    const event = ValidateMemberExistenceEvent.of(video.memberId);
+    await this.emitter.emitAsync(ValidateMemberExistenceEvent.MESSAGE, event);
+    return VideoDetailResponse.from(video, hash);
   }
 
   async getAllVideosByMemberId(member: Member) {
@@ -306,13 +304,14 @@ export class VideoService {
       // 현재가 private이 아니면 토글 후 private이 되기에 redis에서 해시값 삭제 후 null 반환
       try {
         await deleteFromRedis(hash);
-        return;
+        return null;
       } catch (e) {
         return;
       }
     }
 
     await saveToRedis(hash, video.url);
+    return hash;
   }
 
   private async validateMembersVideos(
@@ -342,17 +341,6 @@ export class VideoService {
     return (
       await this.videoRepository.findAllVideosByMemberId(memberId)
     ).filter((each) => each.id !== video.id);
-  }
-
-  private async deleteByChildId(
-    relations: VideoRelation[],
-    relatedVideoIds: number[],
-  ) {
-    await this.videoRelationRepository.deleteAll(
-      relations.filter(
-        (relation) => !relatedVideoIds.includes(relation.child.id),
-      ),
-    );
   }
 
   private compareIds(videoIds: number[], sortedIds: number[]) {

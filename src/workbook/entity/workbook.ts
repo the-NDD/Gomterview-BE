@@ -1,29 +1,26 @@
-import { DefaultEntity } from '../../app.entity';
-import { Column, Entity, Index, JoinColumn, ManyToOne } from 'typeorm';
-import { Member } from '../../member/entity/member';
+import { Column, Entity, Index } from 'typeorm';
 import { Category } from '../../category/entity/category';
 import { UpdateWorkbookRequest } from '../dto/updateWorkbookRequest';
+import { CreateWorkbookRequest } from '../dto/createWorkbookRequest';
+import { Member } from 'src/member/entity/member';
+import { OwnedEntity } from 'src/owned.entity';
 
 @Entity({ name: 'Workbook' })
 @Index('idx_isPublic', ['isPublic'])
-@Index('idx_isPublic_categoryId', ['isPublic', 'category'])
-export class Workbook extends DefaultEntity {
+@Index('idx_isPublic_categoryId', ['isPublic', 'categoryId'])
+@Index('Workbook_memberId', ['memberId'])
+export class Workbook extends OwnedEntity {
   @Column()
   title: string;
 
   @Column({ type: 'blob', nullable: true })
   content: string;
 
-  @ManyToOne(() => Category)
-  @JoinColumn({ name: 'category' })
-  category: Category;
+  @Column({ name: 'category' })
+  categoryId: number;
 
   @Column()
   copyCount: number;
-
-  @ManyToOne(() => Member, { nullable: true, onDelete: 'CASCADE', eager: true })
-  @JoinColumn({ name: 'member' })
-  member: Member;
 
   @Column({ default: true })
   isPublic: boolean;
@@ -33,17 +30,18 @@ export class Workbook extends DefaultEntity {
     createdAt: Date,
     title: string,
     content: string,
-    category: Category,
+    categoryId: number,
     copyCount: number,
-    member: Member,
+    memberId: number,
+    memberNickname: string,
+    memberProfileImg: string,
     isPublic: boolean,
   ) {
-    super(id, createdAt);
+    super(id, createdAt, memberId, memberNickname, memberProfileImg);
     this.title = title;
     this.content = content;
-    this.category = category;
+    this.categoryId = categoryId;
     this.copyCount = copyCount;
-    this.member = member;
     this.isPublic = isPublic;
   }
 
@@ -51,7 +49,9 @@ export class Workbook extends DefaultEntity {
     title: string,
     content: string,
     category: Category,
-    member: Member,
+    memberId: number,
+    memberNickname: string,
+    memberProfileImg: string,
     isPublic: boolean,
   ): Workbook {
     return new Workbook(
@@ -59,25 +59,45 @@ export class Workbook extends DefaultEntity {
       new Date(),
       title,
       content,
-      category,
+      category.id,
       0,
-      member,
+      memberId,
+      memberNickname,
+      memberProfileImg,
       isPublic,
     );
   }
 
-  isOwnedBy(member: Member) {
-    return this.member.id === member.id;
+  static from(
+    createWorkbookRequest: CreateWorkbookRequest,
+    member: Member,
+  ): Workbook {
+    return new Workbook(
+      null,
+      new Date(),
+      createWorkbookRequest.title,
+      createWorkbookRequest.content,
+      createWorkbookRequest.categoryId,
+      0,
+      member.id,
+      member.nickname,
+      member.profileImg,
+      createWorkbookRequest.isPublic,
+    );
+  }
+
+  isOwnedBy(memberId: number) {
+    return this.memberId === memberId;
   }
 
   increaseCopyCount() {
     this.copyCount++;
   }
 
-  updateInfo(updateWorkbookRequest: UpdateWorkbookRequest, category: Category) {
+  updateInfo(updateWorkbookRequest: UpdateWorkbookRequest) {
     this.title = updateWorkbookRequest.title;
     this.content = updateWorkbookRequest.content;
-    this.category = category;
+    this.categoryId = updateWorkbookRequest.categoryId;
     this.isPublic = updateWorkbookRequest.isPublic;
   }
 }

@@ -29,10 +29,8 @@ export class QuestionRepository {
   async findByWorkbookId(workbookId: number) {
     return await this.repository
       .createQueryBuilder('Question')
-      .leftJoinAndSelect('Question.workbook', 'workbook')
       .leftJoinAndSelect('Question.origin', 'origin')
-      .leftJoinAndSelect('Question.defaultAnswer', 'defaultAnswer')
-      .where('workbook.id = :workbookId', { workbookId })
+      .where('Question.workbook = :workbookId', { workbookId })
       .orderBy('Question.indexInWorkbook', 'ASC')
       .getMany();
   }
@@ -40,9 +38,7 @@ export class QuestionRepository {
   async findAllByIds(ids: number[]) {
     return await this.repository
       .createQueryBuilder('Question')
-      .leftJoinAndSelect('Question.workbook', 'workbook')
       .leftJoinAndSelect('Question.origin', 'origin')
-      .leftJoinAndSelect('Question.defaultAnswer', 'defaultAnswer')
       .where('Question.id IN (:...ids)', { ids })
       .getMany();
   }
@@ -55,9 +51,12 @@ export class QuestionRepository {
     return await this.repository
       .createQueryBuilder('Question')
       .leftJoinAndSelect('Question.origin', 'origin')
-      .leftJoinAndSelect('Question.defaultAnswer', 'defaultAnswer')
       .where('Question.id = :id', { id })
       .getOne();
+  }
+
+  async findAllByDefaultAnswerId(answerId: number) {
+    return await this.repository.findBy({ defaultAnswerId: answerId });
   }
 
   async findOriginById(id: number): Promise<Question | null> {
@@ -69,8 +68,28 @@ export class QuestionRepository {
     await this.repository.update({ id: question.id }, question);
   }
 
+  async clearDefaultAnswer(questions: Question[]) {
+    await this.repository
+      .createQueryBuilder()
+      .update(Question)
+      .set({
+        defaultAnswerId: null,
+        defaultAnswerContent: null,
+      })
+      .whereInIds(questions.map((each) => each.id))
+      .execute();
+  }
+
   async remove(question: Question) {
     await this.repository.remove(question);
+  }
+
+  async removeAllByWorkbookIds(workbookIds: number[]) {
+    await this.repository
+      .createQueryBuilder('Question')
+      .delete()
+      .where('Question.workbook IN (:...workbookIds)', { workbookIds })
+      .execute();
   }
 
   async updateIndex(ids: number[]) {

@@ -1,39 +1,48 @@
-import { Column, Entity, JoinColumn, ManyToOne } from 'typeorm';
-import { DefaultEntity } from '../../app.entity';
+import { Column, Entity, Index } from 'typeorm';
 import { Member } from '../../member/entity/member';
-import { Question } from '../../question/entity/question';
+import { OwnedEntity } from 'src/owned.entity';
 
 @Entity({ name: 'Answer' })
-export class Answer extends DefaultEntity {
+@Index('Answer_memberId', ['memberId'])
+@Index('Answer_questionId', ['questionId'])
+export class Answer extends OwnedEntity {
   @Column({ type: 'blob' })
   content: string;
 
-  @ManyToOne(() => Member, { onDelete: 'CASCADE', eager: true, nullable: true })
-  @JoinColumn()
-  member: Member;
-
-  @ManyToOne(() => Question, { onDelete: 'CASCADE' })
-  @JoinColumn()
-  question: Question;
+  @Column({ name: 'question' })
+  questionId: number;
 
   constructor(
     id: number,
     createdAt: Date,
     content: string,
-    member: Member,
-    question: Question,
+    memberId: number,
+    memberNickname: string,
+    memberProfileImg: string,
+    questionId: number,
   ) {
-    super(id, createdAt);
+    super(id, createdAt, memberId, memberNickname, memberProfileImg);
     this.content = content;
-    this.member = member;
-    this.question = question;
+    this.questionId = questionId;
   }
 
-  static of(content: string, member: Member, question: Question) {
-    return new Answer(null, new Date(), content, member, question);
+  static of(content: string, member: Member, questionId: number) {
+    return new Answer(
+      null,
+      new Date(),
+      content,
+      member.id,
+      member.nickname,
+      member.profileImg,
+      questionId,
+    );
   }
 
   isOwnedBy(member: Member) {
-    return this.member.id === member.id;
+    return this.memberId === member.id;
+  }
+
+  updateQuestionId(questionId: number) {
+    this.questionId = questionId;
   }
 }

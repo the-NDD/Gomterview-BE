@@ -11,7 +11,9 @@ export const workbookFixture = Workbook.of(
   '테스트 문제집',
   '테스트로 만드는 문제집입니다.',
   categoryFixtureWithId,
-  memberFixture,
+  memberFixture.id,
+  memberFixture.nickname,
+  memberFixture.profileImg,
   true,
 );
 
@@ -19,7 +21,9 @@ export const otherWorkbookFixture = Workbook.of(
   '테스트 문제집',
   '테스트로 만드는 문제집입니다.',
   categoryFixtureWithId,
-  otherMemberFixture,
+  otherMemberFixture.id,
+  otherMemberFixture.nickname,
+  otherMemberFixture.profileImg,
   true,
 );
 
@@ -28,9 +32,11 @@ export const workbookFixtureWithId = new Workbook(
   new Date(),
   '테스트 문제집',
   '테스트로 만드는 문제집입니다.',
-  categoryFixtureWithId,
+  categoryFixtureWithId.id,
   0,
-  memberFixture,
+  memberFixture.id,
+  memberFixture.nickname,
+  memberFixture.profileImg,
   true,
 );
 

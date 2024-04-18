@@ -1,8 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { WorkbookRepository } from '../repository/workbook.repository';
 import { CreateWorkbookRequest } from '../dto/createWorkbookRequest';
-import { CategoryRepository } from '../../category/repository/category.repository';
-import { validateCategory } from '../../category/util/category.util';
 import { Workbook } from '../entity/workbook';
 import { Member } from '../../member/entity/member';
 import { validateManipulatedToken } from '../../util/token.util';
@@ -12,12 +10,13 @@ import { validateWorkbook, validateWorkbookOwner } from '../util/workbook.util';
 import { WorkbookTitleResponse } from '../dto/workbookTitleResponse';
 import { UpdateWorkbookRequest } from '../dto/updateWorkbookRequest';
 import { Transactional } from 'typeorm-transactional';
+import { WorkbookEventHandler } from './workbook.event.handler';
 
 @Injectable()
 export class WorkbookService {
   constructor(
-    private workbookRepository: WorkbookRepository,
-    private categoryRepository: CategoryRepository,
+    private readonly workbookRepository: WorkbookRepository,
+    private eventHandler: WorkbookEventHandler,
   ) {}
 
   @Transactional()
@@ -25,19 +24,12 @@ export class WorkbookService {
     createWorkbookRequest: CreateWorkbookRequest,
     member: Member,
   ) {
-    const category = await this.categoryRepository.findByCategoryId(
+    validateManipulatedToken(member);
+    await this.eventHandler.validateCategoryExistence(
       createWorkbookRequest.categoryId,
     );
-    validateManipulatedToken(member);
-    validateCategory(category);
 
-    const workbook = Workbook.of(
-      createWorkbookRequest.title,
-      createWorkbookRequest.content,
-      category,
-      member,
-      createWorkbookRequest.isPublic,
-    );
+    const workbook = Workbook.from(createWorkbookRequest, member);
     const result = await this.workbookRepository.insert(workbook);
     return result.identifiers[0].id as number;
   }
@@ -57,8 +49,7 @@ export class WorkbookService {
   }
 
   private async findAllByCategory(categoryId: number) {
-    const category = await this.categoryRepository.findByCategoryId(categoryId);
-    validateCategory(category);
+    await this.eventHandler.validateCategoryExistence(categoryId);
 
     const workbooks =
       await this.workbookRepository.findAllByCategoryId(categoryId);
@@ -93,20 +84,18 @@ export class WorkbookService {
     updateWorkbookRequest: UpdateWorkbookRequest,
     member: Member,
   ) {
-    const category = await this.categoryRepository.findByCategoryId(
+    await this.eventHandler.validateCategoryExistence(
       updateWorkbookRequest.categoryId,
     );
-    validateManipulatedToken(member);
-    validateCategory(category);
 
     const workbook = await this.workbookRepository.findById(
       updateWorkbookRequest.workbookId,
     );
-
+    validateManipulatedToken(member);
     validateWorkbook(workbook);
     validateWorkbookOwner(workbook, member);
 
-    workbook.updateInfo(updateWorkbookRequest, category);
+    workbook.updateInfo(updateWorkbookRequest);
     await this.workbookRepository.update(workbook);
     return WorkbookResponse.of(workbook);
   }
@@ -119,5 +108,6 @@ export class WorkbookService {
     validateWorkbook(workbook);
     validateWorkbookOwner(workbook, member);
     await this.workbookRepository.remove(workbook);
+    await this.eventHandler.publishWorkbookDeleteEvent([workbookId]);
   }
 }

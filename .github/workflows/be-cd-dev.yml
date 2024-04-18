@@ -38,6 +38,6 @@ jobs:
       - name: Pull Docker image
         run: sudo docker pull ${{secrets.BE_DOCKER_USERNAME}}/${{secrets.BE_DOCKER_REPO}}:${{secrets.DOCKER_DEV_TAG}}
       - name: Delete Old docker container
-        run: sudo docker rm -f server || true
+        run: sudo docker rm -f dev-server || true
       - name: Run Docker Container
-        run: docker run --memory=1g --memory-swap=2g --restart=unless-stopped -d -p 80:8080 --name server --network ndd-network ${{secrets.BE_DOCKER_USERNAME}}/${{secrets.BE_DOCKER_REPO}}:${{secrets.DOCKER_DEV_TAG}}
+        run: docker run --memory=1g --memory-swap=2g --restart=unless-stopped -d -p 8081:8080 --name dev-server --network ndd-network ${{secrets.BE_DOCKER_USERNAME}}/${{secrets.BE_DOCKER_REPO}}:${{secrets.DOCKER_DEV_TAG}}

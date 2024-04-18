@@ -9,6 +9,7 @@ import { QuestionRepository } from 'src/question/repository/question.repository'
 import { MemberRepository } from 'src/member/repository/member.repository';
 import {
   createVideoRequestFixture,
+  linkOnlyVideoFixture,
   privateVideoFixture,
   updateVideoRequestFixture,
   videoFixture,
@@ -50,13 +51,19 @@ import { QuestionModule } from 'src/question/question.module';
 import { CreateVideoRequest } from '../dto/createVideoRequest';
 import { DEFAULT_THUMBNAIL } from '../../constant/constant';
 import * as idriveUtil from 'src/util/idrive.util';
-import redisMock from 'ioredis-mock';
 import { UpdateVideoIndexRequest } from '../dto/updateVideoIndexRequest';
 import { VideoRelationRepository } from '../repository/videoRelation.repository';
 import { VideoRelation } from '../entity/videoRelation';
 import { MemberVideoResponse } from '../dto/MemberVideoResponse';
 import { RelatableVideoResponse } from '../dto/RelatableVideoResponse';
 import { UpdateVideoRequest } from '../dto/updateVideoRequest';
+import { CategoryModule } from 'src/category/category.module';
+import { WorkbookModule } from 'src/workbook/workbook.module';
+import { EventEmitter2 } from '@nestjs/event-emitter';
+import { VideoEventHandler } from './video.event.handler';
+import { MemberService } from 'src/member/service/member.service';
+import { MemberModule } from 'src/member/member.module';
+import { QuestionService } from 'src/question/service/question.service';
 
 describe('VideoService 단위 테스트', () => {
   let videoService: VideoService;
@@ -74,20 +81,16 @@ describe('VideoService 단위 테스트', () => {
     updateVideoInfo: jest.fn(),
   };
 
-  const mockMemberRepository = {
-    findById: jest.fn(),
-  };
-
-  const mockQuestionRepository = {
-    findById: jest.fn(),
-  };
-
   const mockVideoRelationRepository = {
     findAllByParentId: jest.fn(),
     deleteAll: jest.fn(),
     insert: jest.fn(),
     findChildrenByParentId: jest.fn(),
     save: jest.fn(),
+  };
+
+  const mockEmitter = {
+    emitAsync: jest.fn(),
   };
 
   // jest.mock('typeorm-transactional', () => ({
@@ -100,18 +103,16 @@ describe('VideoService 단위 테스트', () => {
         VideoService,
         VideoRepository,
         VideoRelationRepository,
-        MemberRepository,
-        QuestionRepository,
+        EventEmitter2,
+        VideoEventHandler,
       ],
     })
       .overrideProvider(VideoRepository)
       .useValue(mockVideoRepository)
-      .overrideProvider(MemberRepository)
-      .useValue(mockMemberRepository)
-      .overrideProvider(QuestionRepository)
-      .useValue(mockQuestionRepository)
       .overrideProvider(VideoRelationRepository)
       .useValue(mockVideoRelationRepository)
+      .overrideProvider(EventEmitter2)
+      .useValue(mockEmitter)
       .compile();
 
     videoService = module.get<VideoService>(VideoService);
@@ -212,7 +213,6 @@ describe('VideoService 단위 테스트', () => {
     it('비디오 상세 정보 조회 성공 시 VideoDetailResponse 형식으로 반환된다.', async () => {
       // given
       const video = videoFixture;
-      video.member = member;
 
       // when
       mockVideoRepository.findById.mockResolvedValue(video);
@@ -230,7 +230,6 @@ describe('VideoService 단위 테스트', () => {
     it('비디오 상세 정보 조회 성공 시 비디오가 private이면 해시값으로 null을 반환한다.', async () => {
       // given
       const video = privateVideoFixture;
-      video.member = memberFixture;
 
       // when
       mockVideoRepository.findById.mockResolvedValue(video);
@@ -296,7 +295,7 @@ describe('VideoService 단위 테스트', () => {
       getValueFromRedisSpy.mockResolvedValue(url);
 
       mockVideoRepository.findByUrl.mockResolvedValue(video);
-      mockMemberRepository.findById.mockResolvedValue(member);
+      mockEmitter.emitAsync.mockResolvedValue(undefined);
       const response = await videoService.getVideoDetailByHash(hash);
 
       // then
@@ -329,7 +328,7 @@ describe('VideoService 단위 테스트', () => {
       // when
       getValueFromRedisSpy.mockResolvedValue(url);
       mockVideoRepository.findByUrl.mockResolvedValue(video);
-      mockMemberRepository.findById.mockResolvedValue(member);
+      mockEmitter.emitAsync.mockResolvedValue(undefined);
 
       // then
       await expect(videoService.getVideoDetailByHash(hash)).rejects.toThrow(
@@ -345,7 +344,7 @@ describe('VideoService 단위 테스트', () => {
       // when
       getValueFromRedisSpy.mockResolvedValue(url);
       mockVideoRepository.findByUrl.mockResolvedValue(null);
-      mockMemberRepository.findById.mockResolvedValue(member);
+      mockEmitter.emitAsync.mockResolvedValue(undefined);
 
       // then
       await expect(videoService.getVideoDetailByHash(hash)).rejects.toThrow(
@@ -362,7 +361,7 @@ describe('VideoService 단위 테스트', () => {
       // when
       getValueFromRedisSpy.mockResolvedValue(url);
       mockVideoRepository.findByUrl.mockResolvedValue(video);
-      mockMemberRepository.findById.mockResolvedValue(member);
+      mockEmitter.emitAsync.mockResolvedValue(undefined);
 
       // then
       await expect(videoService.getVideoDetailByHash(hash)).rejects.toThrow(
@@ -393,7 +392,7 @@ describe('VideoService 단위 테스트', () => {
       // when
       getValueFromRedisSpy.mockResolvedValue(url);
       mockVideoRepository.findByUrl.mockResolvedValue(video);
-      mockMemberRepository.findById.mockResolvedValue(undefined);
+      mockEmitter.emitAsync.mockRejectedValue(new MemberNotFoundException());
 
       // then
       await expect(videoService.getVideoDetailByHash(hash)).rejects.toThrow(
@@ -469,7 +468,7 @@ describe('VideoService 단위 테스트', () => {
       result.forEach((element) => {
         expect(element).toBeInstanceOf(SingleVideoResponse);
       });
-      expect(result[0].thumbnail).toBe(DEFAULT_THUMBNAIL);
+      expect(result[0].thumbnail).toBe('');
     });
 
     it('비디오 전체 조회 시 저장된 비디오가 없으면 빈 배열이 반환된다.', async () => {
@@ -688,7 +687,7 @@ describe('VideoService 단위 테스트', () => {
       const ids = videoListExample.map((each) => each.id);
 
       // when
-      mockMemberRepository.findById.mockResolvedValue(memberFixture);
+      mockEmitter.emitAsync.mockResolvedValue(undefined);
       mockVideoRepository.findAllVideosByMemberId.mockResolvedValue(
         videoListExample,
       );
@@ -709,7 +708,7 @@ describe('VideoService 단위 테스트', () => {
       ids.pop();
 
       // when
-      mockMemberRepository.findById.mockResolvedValue(memberFixture);
+      mockEmitter.emitAsync.mockResolvedValue(undefined);
       mockVideoRepository.findAllVideosByMemberId.mockResolvedValue(
         videoListExample,
       );
@@ -731,7 +730,7 @@ describe('VideoService 단위 테스트', () => {
       ids.push(100);
 
       // when
-      mockMemberRepository.findById.mockResolvedValue(memberFixture);
+      mockEmitter.emitAsync.mockResolvedValue(undefined);
       mockVideoRepository.findAllVideosByMemberId.mockResolvedValue(
         videoListExample,
       );
@@ -751,7 +750,7 @@ describe('VideoService 단위 테스트', () => {
       const ids = videoListExample.map((each) => each.id);
 
       // when
-      mockMemberRepository.findById.mockResolvedValue(memberFixture);
+      mockEmitter.emitAsync.mockResolvedValue(undefined);
       mockVideoRepository.findAllVideosByMemberId.mockResolvedValue(
         videoListExample,
       );
@@ -835,13 +834,21 @@ describe('VideoService 통합 테스트', () => {
   let videoService: VideoService;
   let categoryRepository: CategoryRepository;
   let memberRepository: MemberRepository;
+  let memberService: MemberService;
   let questionRepository: QuestionRepository;
+  let questionService: QuestionService;
   let workbookRepository: WorkbookRepository;
   let videoRepository: VideoRepository;
   let videoRelationRepository: VideoRelationRepository;
 
   beforeAll(async () => {
-    const modules = [VideoModule, QuestionModule];
+    const modules = [
+      MemberModule,
+      VideoModule,
+      QuestionModule,
+      CategoryModule,
+      WorkbookModule,
+    ];
 
     const moduleFixture: TestingModule =
       await createIntegrationTestModule(modules);
@@ -853,9 +860,11 @@ describe('VideoService 통합 테스트', () => {
     videoService = moduleFixture.get<VideoService>(VideoService);
     categoryRepository =
       moduleFixture.get<CategoryRepository>(CategoryRepository);
+    memberService = moduleFixture.get<MemberService>(MemberService);
     memberRepository = moduleFixture.get<MemberRepository>(MemberRepository);
     questionRepository =
       moduleFixture.get<QuestionRepository>(QuestionRepository);
+    questionService = moduleFixture.get<QuestionService>(QuestionService);
     workbookRepository =
       moduleFixture.get<WorkbookRepository>(WorkbookRepository);
     videoRepository = moduleFixture.get<VideoRepository>(VideoRepository);
@@ -1007,19 +1016,12 @@ describe('VideoService 통합 테스트', () => {
   });
 
   describe('getVideoDetailByHash', () => {
-    let mockRedis;
-
-    beforeEach(async () => {
-      mockRedis = new redisMock();
-    });
-
     it('해시로 비디오 세부 정보 조회 성공 시 VideoDetailResponse 형식으로 반환된다.', async () => {
       //given
-      const video = await videoRepository.save(videoFixture);
+      const video = await videoRepository.save(linkOnlyVideoFixture);
       const member = await memberRepository.findById(video.memberId);
-      const hash = crypto.createHash('md5').update(video.url).digest('hex');
-      await redisUtil.saveToRedis(hash, video.url, mockRedis);
-
+      const hash = (await videoService.getVideoDetail(video.id, memberFixture))
+        .hash;
       //when
       const result = await videoService.getVideoDetailByHash(hash);
 
@@ -1046,9 +1048,9 @@ describe('VideoService 통합 테스트', () => {
 
     it('해시로 비디오 상세 정보 조회 시 해시로 조회되는 비디오가 없다면 VideoNotFoundException을 반환한다.', async () => {
       // given
-      const video = await videoRepository.save(videoFixture);
-      const hash = crypto.createHash('md5').update(video.url).digest('hex');
-      await redisUtil.saveToRedis(hash, video.url, mockRedis);
+      const video = await videoRepository.save(linkOnlyVideoFixture);
+      const hash = (await videoService.getVideoDetail(video.id, memberFixture))
+        .hash;
       await videoRepository.remove(video);
 
       // when
@@ -1061,8 +1063,7 @@ describe('VideoService 통합 테스트', () => {
 
     it('해시로 비디오 상세 정보 조회 시 해시로 조회되는 비디오가 없다면 VideoNotFoundWithHashException을 반환한다.', async () => {
       // given
-      const video = await videoRepository.save(videoFixture);
-      const hash = crypto.createHash('md5').update(video.url).digest('hex');
+      const hash = crypto.createHash('md5').update('wrong').digest('hex');
 
       // when
 
@@ -1074,9 +1075,12 @@ describe('VideoService 통합 테스트', () => {
 
     it('해시로 비디오 세부 정보 조회 시 탈퇴한 회원의 비디오를 조회하려 하면 VideoOfWithdrawnMemberException을 반환한다.', async () => {
       //given
-      const video = await videoRepository.save(videoOfWithdrawnMemberFixture);
-      const hash = crypto.createHash('md5').update(video.url).digest('hex');
-      await redisUtil.saveToRedis(hash, video.url, mockRedis);
+      const video = await videoRepository.save(linkOnlyVideoFixture);
+      const hash = (await videoService.getVideoDetail(video.id, memberFixture))
+        .hash;
+      await memberRepository.remove(memberFixture);
+      video.memberId = null;
+      await videoRepository.save(video);
 
       //when
 
@@ -1084,24 +1088,6 @@ describe('VideoService 통합 테스트', () => {
       await expect(videoService.getVideoDetailByHash(hash)).rejects.toThrow(
         VideoOfWithdrawnMemberException,
       );
-    });
-
-    it('해시로 비디오 세부 정보 조회 시 private인 비디오를 조회하려 하면 VideoAccessForbiddenException을 반환한다.', async () => {
-      //given
-      const video = await videoRepository.save(privateVideoFixture);
-      const hash = crypto.createHash('md5').update(video.url).digest('hex');
-      await redisUtil.saveToRedis(hash, video.url, mockRedis);
-
-      //when
-
-      //then
-      await expect(videoService.getVideoDetailByHash(hash)).rejects.toThrow(
-        VideoAccessForbiddenException,
-      );
-    });
-
-    afterEach(() => {
-      redisUtil.clearRedis(mockRedis);
     });
   });
 
@@ -1117,7 +1103,7 @@ describe('VideoService 통합 테스트', () => {
       // then
       expect(result).toHaveLength(1);
       expect(result[0]).toBeInstanceOf(SingleVideoResponse);
-      expect(result[0].thumbnail).toBe(video.thumbnail);
+      expect(result[0].thumbnail).toBe('');
       expect(result[0].videoName).toBe(video.name);
       expect(result[0].videoLength).toBe(video.videoLength);
       expect(result[0].visibility).toBe(video.visibility);
@@ -1605,6 +1591,40 @@ describe('VideoService 통합 테스트', () => {
       expect(videoService.deleteVideo(video.id, member)).rejects.toThrow(
         VideoAccessForbiddenException,
       );
+    });
+  });
+
+  describe('onDelete', () => {
+    it('회원이 삭제되면 회원이 작성한 답변도 삭제된다.', async () => {
+      //given
+      const deleteObjectInIDriveSpy = jest.spyOn(
+        idriveUtil,
+        'deleteObjectInIDrive',
+      );
+      deleteObjectInIDriveSpy.mockResolvedValue(undefined);
+
+      const member = memberFixture;
+      const video = await videoRepository.save(videoFixture);
+
+      //when
+      await memberService.deleteMember(member);
+      const afterMemberDelete = await videoRepository.findById(video.id);
+      //then
+      expect(afterMemberDelete.memberId).toBeNull();
+      expect(afterMemberDelete.memberNickname).toBeNull();
+      expect(afterMemberDelete.memberProfileImg).toBeNull();
+    });
+
+    it('질문이 삭제되면 영상의 질문정보도 null처리된다.', async () => {
+      //given
+      const member = memberFixture;
+      const video = await videoRepository.save(videoFixture);
+
+      //when
+      await questionService.deleteQuestionById(video.questionId, member);
+      const afterQuestionDelete = await videoRepository.findById(video.id);
+      //then
+      expect(afterQuestionDelete.questionId).toBeNull();
     });
   });
 

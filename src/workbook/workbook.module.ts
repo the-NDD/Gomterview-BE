@@ -4,23 +4,17 @@ import { Workbook } from './entity/workbook';
 import { WorkbookRepository } from './repository/workbook.repository';
 import { WorkbookService } from './service/workbook.service';
 import { WorkbookController } from './controller/workbook.controller';
-import { Category } from '../category/entity/category';
-import { CategoryRepository } from '../category/repository/category.repository';
-import { CategoryModule } from '../category/category.module';
 import { TokenSoftGuard } from '../token/guard/token.soft.guard';
 import { TokenModule } from '../token/token.module';
+import { WorkbookEventHandler } from './service/workbook.event.handler';
 
 @Module({
-  imports: [
-    TypeOrmModule.forFeature([Workbook, Category]),
-    CategoryModule,
-    TokenModule,
-  ],
+  imports: [TypeOrmModule.forFeature([Workbook]), TokenModule],
   providers: [
     WorkbookRepository,
     WorkbookService,
-    CategoryRepository,
     TokenSoftGuard,
+    WorkbookEventHandler,
   ],
   controllers: [WorkbookController],
 })

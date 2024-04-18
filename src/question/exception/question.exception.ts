@@ -25,4 +25,27 @@ class QuestionForbiddenException extends HttpForbiddenException {
   }
 }
 
-export { QuestionNotFoundException, QuestionForbiddenException };
+class QuestionOriginFound extends Error {
+  readonly originId: number;
+
+  constructor(originId: number) {
+    super();
+    this.originId = originId;
+  }
+}
+
+class QuestionDefaultAnswerExists extends Error {
+  readonly answerId: number;
+
+  constructor(answerId: number) {
+    super();
+    this.answerId = answerId;
+  }
+}
+
+export {
+  QuestionNotFoundException,
+  QuestionForbiddenException,
+  QuestionOriginFound,
+  QuestionDefaultAnswerExists,
+};

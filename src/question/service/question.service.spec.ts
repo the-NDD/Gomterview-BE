@@ -43,6 +43,9 @@ import { CategoryModule } from '../../category/category.module';
 import { WorkbookIdResponse } from '../../workbook/dto/workbookIdResponse';
 import { CopyQuestionRequest } from '../dto/copyQuestionRequest';
 import { UpdateIndexInWorkbookRequest } from '../dto/updateIndexInWorkbookRequest';
+import { EventEmitter2, EventEmitterModule } from '@nestjs/event-emitter';
+import { QuestionEventHandler } from './question.event.handler';
+import { WorkbookService } from 'src/workbook/service/workbook.service';
 
 describe('QuestionService', () => {
   let service: QuestionService;
@@ -58,9 +61,8 @@ describe('QuestionService', () => {
     updateIndex: jest.fn(),
   };
 
-  const mockWorkbookRepository = {
-    findById: jest.fn(),
-    update: jest.fn(),
+  const mockEmitter = {
+    emitAsync: jest.fn(),
   };
 
   jest.mock('typeorm-transactional', () => ({
@@ -69,13 +71,21 @@ describe('QuestionService', () => {
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
-      imports: [await createTypeOrmModuleForTest()],
-      providers: [QuestionService, QuestionRepository, WorkbookRepository],
+      imports: [
+        await createTypeOrmModuleForTest(),
+        EventEmitterModule.forRoot(),
+      ],
+      providers: [
+        QuestionService,
+        QuestionRepository,
+        EventEmitter2,
+        QuestionEventHandler,
+      ],
     })
       .overrideProvider(QuestionRepository)
       .useValue(mockQuestionRepository)
-      .overrideProvider(WorkbookRepository)
-      .useValue(mockWorkbookRepository)
+      .overrideProvider(EventEmitter2)
+      .useValue(mockEmitter)
       .compile();
 
     service = module.get<QuestionService>(QuestionService);
@@ -90,7 +100,7 @@ describe('QuestionService', () => {
       //given
 
       //when
-      mockWorkbookRepository.findById.mockResolvedValue(workbookFixture);
+      mockEmitter.emitAsync.mockResolvedValue(undefined);
       mockQuestionRepository.insert.mockResolvedValue(questionFixture);
 
       //then
@@ -103,7 +113,7 @@ describe('QuestionService', () => {
       //given
 
       //when
-      mockWorkbookRepository.findById.mockResolvedValue(undefined);
+      mockEmitter.emitAsync.mockRejectedValue(new WorkbookNotFoundException());
 
       //then
       await expect(
@@ -146,7 +156,7 @@ describe('QuestionService', () => {
       //when
       mockQuestionRepository.findById.mockResolvedValue(questionFixture);
       mockQuestionRepository.remove.mockResolvedValue(undefined);
-      mockWorkbookRepository.findById.mockResolvedValue(workbookFixture);
+      mockEmitter.emitAsync.mockResolvedValue(undefined);
 
       //then
       await expect(
@@ -159,7 +169,7 @@ describe('QuestionService', () => {
       //when
       mockQuestionRepository.findById.mockResolvedValue(questionFixture);
       mockQuestionRepository.remove.mockResolvedValue(undefined);
-      mockWorkbookRepository.findById.mockResolvedValue(workbookFixture);
+      mockEmitter.emitAsync.mockResolvedValue(undefined);
 
       //then
       await expect(
@@ -172,7 +182,7 @@ describe('QuestionService', () => {
       //when
       mockQuestionRepository.findById.mockResolvedValue(null);
       mockQuestionRepository.remove.mockResolvedValue(undefined);
-      mockWorkbookRepository.findById.mockResolvedValue(workbookFixture);
+      mockEmitter.emitAsync.mockResolvedValue(undefined);
 
       //then
       await expect(
@@ -185,7 +195,7 @@ describe('QuestionService', () => {
       //when
       mockQuestionRepository.findById.mockResolvedValue(questionFixture);
       mockQuestionRepository.remove.mockResolvedValue(undefined);
-      mockWorkbookRepository.findById.mockResolvedValue(undefined);
+      mockEmitter.emitAsync.mockRejectedValue(new WorkbookNotFoundException());
 
       //then
       await expect(
@@ -198,7 +208,7 @@ describe('QuestionService', () => {
       //when
       mockQuestionRepository.findById.mockResolvedValue(questionFixture);
       mockQuestionRepository.remove.mockResolvedValue(undefined);
-      mockWorkbookRepository.findById.mockResolvedValue(workbookFixture);
+      mockEmitter.emitAsync.mockRejectedValue(new WorkbookForbiddenException());
 
       //then
       await expect(
@@ -226,8 +236,7 @@ describe('QuestionService', () => {
         questionFixture,
       ]);
       mockQuestionRepository.saveAll.mockResolvedValue(undefined);
-      mockWorkbookRepository.update.mockResolvedValue(undefined);
-      mockWorkbookRepository.findById.mockResolvedValue(workbookFixtureWithId);
+      mockEmitter.emitAsync.mockResolvedValue(undefined);
 
       //then
       const result = await service.copyQuestions(
@@ -247,8 +256,7 @@ describe('QuestionService', () => {
         questionFixture,
       ]);
       mockQuestionRepository.saveAll.mockResolvedValue(undefined);
-      mockWorkbookRepository.update.mockResolvedValue(undefined);
-      mockWorkbookRepository.findById.mockResolvedValue(null);
+      mockEmitter.emitAsync.mockRejectedValue(new WorkbookNotFoundException());
 
       //then
       await expect(
@@ -265,8 +273,7 @@ describe('QuestionService', () => {
         questionFixture,
       ]);
       mockQuestionRepository.saveAll.mockResolvedValue(undefined);
-      mockWorkbookRepository.update.mockResolvedValue(undefined);
-      mockWorkbookRepository.findById.mockResolvedValue(workbookFixtureWithId);
+      mockEmitter.emitAsync.mockRejectedValue(new WorkbookForbiddenException());
 
       //then
       await expect(
@@ -284,7 +291,7 @@ describe('QuestionService', () => {
         questionFixture,
       ]);
       mockQuestionRepository.updateIndex.mockResolvedValue(undefined);
-      mockWorkbookRepository.findById.mockResolvedValue(workbookFixtureWithId);
+      mockEmitter.emitAsync.mockResolvedValue(undefined);
       //when
 
       //then
@@ -301,7 +308,7 @@ describe('QuestionService', () => {
         questionFixture,
       ]);
       mockQuestionRepository.updateIndex.mockResolvedValue(undefined);
-      mockWorkbookRepository.findById.mockResolvedValue(undefined);
+      mockEmitter.emitAsync.mockRejectedValue(new WorkbookNotFoundException());
       //when
 
       //then
@@ -318,7 +325,7 @@ describe('QuestionService', () => {
         questionFixture,
       ]);
       mockQuestionRepository.updateIndex.mockResolvedValue(undefined);
-      mockWorkbookRepository.findById.mockResolvedValue(workbookFixtureWithId);
+      mockEmitter.emitAsync.mockRejectedValue(new WorkbookForbiddenException());
       //when
 
       //then
@@ -337,7 +344,7 @@ describe('QuestionService', () => {
         questionFixture,
       ]);
       mockQuestionRepository.updateIndex.mockResolvedValue(undefined);
-      mockWorkbookRepository.findById.mockResolvedValue(workbookFixtureWithId);
+      mockEmitter.emitAsync.mockResolvedValue(undefined);
       //when
 
       //then
@@ -352,6 +359,7 @@ describe('QuestionService 통합 테스트', () => {
   let app: INestApplication;
   let questionService: QuestionService;
   let workbookRepository: WorkbookRepository;
+  let workbookService: WorkbookService;
   let questionRepository: QuestionRepository;
   let memberRepository: MemberRepository;
   let categoryRepository: CategoryRepository;
@@ -372,6 +380,7 @@ describe('QuestionService 통합 테스트', () => {
     questionService = moduleFixture.get<QuestionService>(QuestionService);
     workbookRepository =
       moduleFixture.get<WorkbookRepository>(WorkbookRepository);
+    workbookService = moduleFixture.get<WorkbookService>(WorkbookService);
     questionRepository =
       moduleFixture.get<QuestionRepository>(QuestionRepository);
     memberRepository = moduleFixture.get<MemberRepository>(MemberRepository);
@@ -431,7 +440,7 @@ describe('QuestionService 통합 테스트', () => {
     await categoryRepository.save(categoryFixtureWithId);
     const workbook = await workbookRepository.save(workbookFixture);
     const question = await questionRepository.save(
-      Question.of(workbook, null, 'tester'),
+      Question.of(workbook.id, null, 'tester'),
     );
     //when
 
@@ -447,11 +456,19 @@ describe('QuestionService 통합 테스트', () => {
     await categoryRepository.save(categoryFixtureWithId);
     const workbook = await workbookRepository.save(workbookFixture);
     for (let index = 0; index < 3; index++) {
-      await questionRepository.save(Question.of(workbook, null, 'tester'));
+      await questionRepository.save(Question.of(workbook.id, null, 'tester'));
     }
     const other = await memberRepository.save(otherMemberFixture);
     const othersWorkbook = await workbookRepository.save(
-      Workbook.of('test', 'test', categoryFixtureWithId, other, true),
+      Workbook.of(
+        'test',
+        'test',
+        categoryFixtureWithId,
+        other.id,
+        other.nickname,
+        other.profileImg,
+        true,
+      ),
     );
     //when
     const copyRequest = new CopyQuestionRequest(othersWorkbook.id, [1, 2, 3]);
@@ -468,24 +485,40 @@ describe('QuestionService 통합 테스트', () => {
     await categoryRepository.save(categoryFixtureWithId);
     const workbook = await workbookRepository.save(workbookFixture);
     const workbook2 = await workbookRepository.save(
-      Workbook.of('copy', 'copy', categoryFixtureWithId, memberFixture, true),
+      Workbook.of(
+        'copy',
+        'copy',
+        categoryFixtureWithId,
+        memberFixture.id,
+        memberFixture.nickname,
+        memberFixture.profileImg,
+        true,
+      ),
     );
 
     const questionIds = [];
 
     for (let index = 0; index < 3; index++) {
       const question = await questionRepository.save(
-        Question.of(workbook, null, 'tester'),
+        Question.of(workbook.id, null, 'tester'),
       );
       questionIds.push(
-        (await questionRepository.save(Question.copyOf(question, workbook2)))
+        (await questionRepository.save(Question.copyOf(question, workbook2.id)))
           .id,
       );
     }
 
     const other = await memberRepository.save(otherMemberFixture);
     const othersWorkbook = await workbookRepository.save(
-      Workbook.of('test', 'test', categoryFixtureWithId, other, true),
+      Workbook.of(
+        'test',
+        'test',
+        categoryFixtureWithId,
+        other.id,
+        other.nickname,
+        other.profileImg,
+        true,
+      ),
     );
     //when
     const copyRequest = new CopyQuestionRequest(othersWorkbook.id, questionIds);
@@ -506,7 +539,7 @@ describe('QuestionService 통합 테스트', () => {
 
     for (let index = 0; index < 3; index++) {
       const question = await questionRepository.save(
-        Question.of(workbook, null, 'tester'),
+        Question.of(workbook.id, null, 'tester'),
       );
       questionIds.push(question.id); // 1, 2, 3
     }
@@ -522,5 +555,31 @@ describe('QuestionService 통합 테스트', () => {
     //then
     const result = await questionRepository.findByWorkbookId(workbook.id);
     expect(result.map((each) => each.indexInWorkbook)).toEqual([0, 1, 2]);
+  });
+
+  describe('onDelete', () => {
+    it('문제집이 삭제될 때 질문도 같이 삭제된다.', async () => {
+      //given
+      await memberRepository.save(memberFixture);
+      await categoryRepository.save(categoryFixtureWithId);
+      const workbook = await workbookRepository.save(workbookFixture);
+
+      const questionIds = [];
+
+      for (let index = 0; index < 3; index++) {
+        const question = await questionRepository.save(
+          Question.of(workbook.id, null, 'tester'),
+        );
+        questionIds.push(question.id); // 1, 2, 3
+      }
+
+      //then
+      await workbookService.deleteWorkbookById(workbook.id, memberFixture);
+
+      //expect
+      expect(
+        questionRepository.findAllByIds(questionIds),
+      ).resolves.toStrictEqual([]);
+    });
   });
 });

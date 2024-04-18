@@ -19,10 +19,12 @@ import { Question } from '../question/entity/question';
 import { Answer } from '../answer/entity/answer';
 import { Video } from '../video/entity/video';
 import { VideoRelation } from 'src/video/entity/videoRelation';
+import { EventEmitterModule } from '@nestjs/event-emitter';
 
 export const createIntegrationTestModule = async (modules: unknown[]) => {
   const ormModule = await createTypeOrmModuleForTest();
   modules.push(ormModule);
+  modules.push(EventEmitterModule.forRoot());
 
   return await Test.createTestingModule({
     imports: modules as DynamicModule[],

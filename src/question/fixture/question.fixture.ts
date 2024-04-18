@@ -7,17 +7,50 @@ import { UpdateIndexInWorkbookRequest } from '../dto/updateIndexInWorkbookReques
 export const questionFixture = new Question(
   1,
   'tester',
-  workbookFixtureWithId,
+  workbookFixtureWithId.id,
   null,
   new Date(),
+  null,
   null,
 );
 
 export const questionListFixture = [
-  new Question(1, 'tester', workbookFixtureWithId, null, new Date(), null),
-  new Question(2, 'tester', workbookFixtureWithId, null, new Date(), null),
-  new Question(3, 'tester', workbookFixtureWithId, null, new Date(), null),
-  new Question(4, 'tester', workbookFixtureWithId, null, new Date(), null),
+  new Question(
+    1,
+    'tester',
+    workbookFixtureWithId.id,
+    null,
+    new Date(),
+    null,
+    null,
+  ),
+  new Question(
+    2,
+    'tester',
+    workbookFixtureWithId.id,
+    null,
+    new Date(),
+    null,
+    null,
+  ),
+  new Question(
+    3,
+    'tester',
+    workbookFixtureWithId.id,
+    null,
+    new Date(),
+    null,
+    null,
+  ),
+  new Question(
+    4,
+    'tester',
+    workbookFixtureWithId.id,
+    null,
+    new Date(),
+    null,
+    null,
+  ),
 ];
 
 export const createQuestionRequestFixture = new CreateQuestionRequest(

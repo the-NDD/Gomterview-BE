@@ -31,4 +31,8 @@ export class MemberRepository {
   async query(query: string) {
     return await this.memberRepository.query(query);
   }
+
+  async remove(member: Member) {
+    await this.memberRepository.remove(member);
+  }
 }

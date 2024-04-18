@@ -40,13 +40,14 @@ import {
 import { WorkbookTitleResponse } from '../dto/workbookTitleResponse';
 import { UpdateWorkbookRequest } from '../dto/updateWorkbookRequest';
 import { TokenModule } from '../../token/token.module';
+import { EventEmitter2 } from '@nestjs/event-emitter';
+import { WorkbookEventHandler } from './workbook.event.handler';
+import { MemberService } from 'src/member/service/member.service';
+import { MemberModule } from 'src/member/member.module';
 
 describe('WorkbookService 단위테스트', () => {
   let module: TestingModule;
   let service: WorkbookService;
-  const mockCategoryRepository = {
-    findByCategoryId: jest.fn(),
-  };
   const mockWorkbookRepository = {
     save: jest.fn(),
     findById: jest.fn(),
@@ -60,6 +61,10 @@ describe('WorkbookService 단위테스트', () => {
     insert: jest.fn(),
     findByIdWithoutJoin: jest.fn(),
   };
+  const mockEmitter = {
+    emit: jest.fn(),
+    emitAsync: jest.fn(),
+  };
 
   jest.mock('typeorm-transactional', () => ({
     Transactional: () => () => ({}),
@@ -68,12 +73,17 @@ describe('WorkbookService 단위테스트', () => {
   beforeAll(async () => {
     module = await Test.createTestingModule({
       imports: [await createTypeOrmModuleForTest()],
-      providers: [WorkbookService, CategoryRepository, WorkbookRepository],
+      providers: [
+        WorkbookService,
+        WorkbookRepository,
+        EventEmitter2,
+        WorkbookEventHandler,
+      ],
     })
-      .overrideProvider(CategoryRepository)
-      .useValue(mockCategoryRepository)
       .overrideProvider(WorkbookRepository)
       .useValue(mockWorkbookRepository)
+      .overrideProvider(EventEmitter2)
+      .useValue(mockEmitter)
       .compile();
     service = module.get<WorkbookService>(WorkbookService);
   });
@@ -89,9 +99,6 @@ describe('WorkbookService 단위테스트', () => {
       //given
 
       //when
-      mockCategoryRepository.findByCategoryId.mockResolvedValue(
-        categoryFixtureWithId,
-      );
       mockWorkbookRepository.insert.mockResolvedValue(workbookInsertResult);
 
       //then
@@ -104,8 +111,10 @@ describe('WorkbookService 단위테스트', () => {
       //given
 
       //when
-      mockCategoryRepository.findByCategoryId.mockResolvedValue(null);
-      mockWorkbookRepository.insert.mockResolvedValue(workbookFixtureWithId);
+      mockWorkbookRepository.insert.mockResolvedValue({
+        identifiers: [{ id: 1 }],
+      });
+      mockEmitter.emitAsync.mockRejectedValue(new CategoryNotFoundException());
 
       //then
       await expect(
@@ -117,9 +126,6 @@ describe('WorkbookService 단위테스트', () => {
       //given
 
       //when
-      mockCategoryRepository.findByCategoryId.mockResolvedValue(
-        categoryFixtureWithId,
-      );
       mockWorkbookRepository.insert.mockResolvedValue(workbookFixtureWithId);
 
       //then
@@ -147,9 +153,7 @@ describe('WorkbookService 단위테스트', () => {
       //given
 
       //when
-      mockCategoryRepository.findByCategoryId.mockResolvedValue(
-        categoryFixtureWithId,
-      );
+      mockEmitter.emitAsync.mockResolvedValue(undefined);
       mockWorkbookRepository.findAllByCategoryId.mockResolvedValue([
         workbookFixture,
       ]);
@@ -165,10 +169,10 @@ describe('WorkbookService 단위테스트', () => {
       //given
 
       //when
-      mockCategoryRepository.findByCategoryId.mockResolvedValue(null);
       mockWorkbookRepository.findAllByCategoryId.mockResolvedValue([
         workbookFixture,
       ]);
+      mockEmitter.emitAsync.mockRejectedValue(new CategoryNotFoundException());
       //then
       await expect(service.findWorkbooks(1234)).rejects.toThrow(
         new CategoryNotFoundException(),
@@ -244,9 +248,7 @@ describe('WorkbookService 단위테스트', () => {
       //given
 
       //when
-      mockCategoryRepository.findByCategoryId.mockResolvedValue(
-        categoryFixtureWithId,
-      );
+      mockEmitter.emitAsync.mockResolvedValue(undefined);
       mockWorkbookRepository.findById.mockResolvedValue(workbookFixture);
 
       //then
@@ -264,10 +266,8 @@ describe('WorkbookService 단위테스트', () => {
       //given
 
       //when
-      mockCategoryRepository.findByCategoryId.mockResolvedValue(
-        categoryFixtureWithId,
-      );
       mockWorkbookRepository.findById.mockResolvedValue(workbookFixture);
+      mockEmitter.emitAsync.mockResolvedValue(undefined);
       const workbookUpdateRequest = new UpdateWorkbookRequest(
         workbookFixture.id,
         'newT',
@@ -359,9 +359,16 @@ describe('WorkbookService 통합테스트', () => {
   let memberRepository: MemberRepository;
   let workbookService: WorkbookService;
   let workbookRepository: WorkbookRepository;
+  let memberService: MemberService;
 
   beforeAll(async () => {
-    const modules = [AuthModule, WorkbookModule, CategoryModule, TokenModule];
+    const modules = [
+      AuthModule,
+      WorkbookModule,
+      CategoryModule,
+      TokenModule,
+      MemberModule,
+    ];
 
     const moduleFixture: TestingModule =
       await createIntegrationTestModule(modules);
@@ -372,6 +379,7 @@ describe('WorkbookService 통합테스트', () => {
     await app.init();
 
     memberRepository = moduleFixture.get<MemberRepository>(MemberRepository);
+    memberService = moduleFixture.get<MemberService>(MemberService);
     categoryRepository =
       moduleFixture.get<CategoryRepository>(CategoryRepository);
     workbookService = moduleFixture.get<WorkbookService>(WorkbookService);
@@ -414,7 +422,9 @@ describe('WorkbookService 통합테스트', () => {
               `${each.name}_${index}`,
               `${each.name}_${index}`,
               category,
-              member,
+              member.id,
+              member.nickname,
+              member.profileImg,
               true,
             ),
           );
@@ -442,7 +452,9 @@ describe('WorkbookService 통합테스트', () => {
               `${each.name}_${index}`,
               `${each.name}_${index}`,
               category,
-              member,
+              member.id,
+              member.nickname,
+              member.profileImg,
               true,
             ),
           );
@@ -468,7 +480,9 @@ describe('WorkbookService 통합테스트', () => {
               `${each.name}_${index}`,
               `${each.name}_${index}`,
               category,
-              member,
+              member.id,
+              member.nickname,
+              member.profileImg,
               true,
             ),
           );
@@ -496,7 +510,9 @@ describe('WorkbookService 통합테스트', () => {
               `${each.name}_${index}`,
               `${each.name}_${index}`,
               category,
-              member,
+              member.id,
+              member.nickname,
+              member.profileImg,
               true,
             ),
           );
@@ -523,7 +539,9 @@ describe('WorkbookService 통합테스트', () => {
               `${each.name}_${index}`,
               `${each.name}_${index}`,
               category,
-              member,
+              member.id,
+              member.nickname,
+              member.profileImg,
               true,
             ),
           );
@@ -716,6 +734,22 @@ describe('WorkbookService 통합테스트', () => {
       await expect(
         workbookService.deleteWorkbookById(1244232, memberFixture),
       ).rejects.toThrow(new WorkbookNotFoundException());
+    });
+  });
+
+  describe('onDeleteEvent', () => {
+    it('회원 삭제시 문제집은 같이 삭제된다.', async () => {
+      //given
+      await memberRepository.save(memberFixture);
+      await categoryRepository.save(categoryFixtureWithId);
+      await workbookRepository.save(workbookFixtureWithId);
+
+      //when
+      await memberService.deleteMember(memberFixture);
+      //then
+      expect(
+        workbookRepository.findById(workbookFixtureWithId.id),
+      ).resolves.toBeNull();
     });
   });
 

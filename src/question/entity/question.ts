@@ -1,29 +1,27 @@
 import { DefaultEntity } from '../../app.entity';
 import { Column, Entity, Index, JoinColumn, ManyToOne } from 'typeorm';
 import { Answer } from '../../answer/entity/answer';
-import { Workbook } from '../../workbook/entity/workbook';
 
 @Entity({ name: 'Question' })
 @Index('idx_indexInWorkbook', ['indexInWorkbook'])
+@Index('Question_workbook', ['workbookId'])
+@Index('Question_defaultAnswer', ['defaultAnswerId'])
 export class Question extends DefaultEntity {
   @Column({ type: 'text' })
   readonly content: string;
 
-  @ManyToOne(() => Workbook, { onDelete: 'CASCADE', eager: true })
-  @JoinColumn({ name: 'workbook' })
-  readonly workbook: Workbook;
+  @Column({ name: 'workbook' })
+  readonly workbookId: number;
 
   @ManyToOne(() => Question, { nullable: true, onDelete: 'CASCADE' })
   @JoinColumn({ name: 'origin' })
   readonly origin: Question;
 
-  @ManyToOne(() => Answer, {
-    nullable: true,
-    onDelete: 'SET NULL',
-    eager: true,
-  })
-  @JoinColumn({ name: 'defaultAnswer' })
-  defaultAnswer: Answer;
+  @Column({ name: 'defaultAnswer', nullable: true })
+  defaultAnswerId: number;
+
+  @Column({ name: 'answerContent', nullable: true, type: 'blob' })
+  defaultAnswerContent: string;
 
   @Column({ default: 0 })
   indexInWorkbook: number;
@@ -31,35 +29,52 @@ export class Question extends DefaultEntity {
   constructor(
     id: number,
     content: string,
-    workbook: Workbook,
+    workbookId: number,
     origin: Question,
     createdAt: Date,
-    defaultAnswer: Answer,
+    defaultAnswerId: number,
+    defaultAnswerContent: string,
   ) {
     super(id, createdAt);
     this.content = content;
-    this.workbook = workbook;
+    this.workbookId = workbookId;
     this.origin = origin;
-    this.defaultAnswer = defaultAnswer;
+    this.defaultAnswerId = defaultAnswerId;
+    this.defaultAnswerContent = defaultAnswerContent;
     this.indexInWorkbook = 0;
   }
 
-  static of(workbook: Workbook, origin: Question, content: string) {
-    return new Question(null, content, workbook, origin, new Date(), null);
+  static of(workbookId: number, origin: Question, content: string) {
+    return new Question(
+      null,
+      content,
+      workbookId,
+      origin,
+      new Date(),
+      null,
+      null,
+    );
   }
 
-  static copyOf(question: Question, workbook: Workbook) {
+  static copyOf(question: Question, workbookId: number) {
     return new Question(
       null,
       question.content,
-      workbook,
+      workbookId,
       question,
       new Date(),
-      question.defaultAnswer,
+      question.defaultAnswerId,
+      question.defaultAnswerContent,
     );
   }
 
   setDefaultAnswer(answer: Answer) {
-    this.defaultAnswer = answer;
+    this.defaultAnswerId = answer.id;
+    this.defaultAnswerContent = answer.content;
+  }
+
+  clearDefaultAnswer() {
+    this.defaultAnswerId = null;
+    this.defaultAnswerContent = null;
   }
 }

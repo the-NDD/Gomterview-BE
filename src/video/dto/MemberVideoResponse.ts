@@ -1,6 +1,8 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { Video } from '../entity/video';
 import { createPropertyOption } from 'src/util/swagger.util';
+import { parseDateToString } from 'src/util/util';
+import { parseThumbnail } from '../util/video.util';
 
 export class MemberVideoResponse {
   @ApiProperty(createPropertyOption(1, '비디오 ID', Number))
@@ -23,8 +25,8 @@ export class MemberVideoResponse {
   @ApiProperty(createPropertyOption('03:00', '영상 길이', String))
   videoLength: string;
 
-  @ApiProperty(createPropertyOption(154515362, '영상 생성 일자', Number))
-  createdAt: number;
+  @ApiProperty(createPropertyOption('1998.09.05', '영상 생성 일자', Number))
+  createdAt: string;
 
   @ApiProperty(createPropertyOption('장아장', '회원 닉네임', String))
   nickname: string;
@@ -43,7 +45,7 @@ export class MemberVideoResponse {
     videoThumbnail: string,
     videoName: string,
     videoLength: string,
-    createdAt: number,
+    createdAt: string,
     nickname: string,
     userThumbnail: string,
   ) {
@@ -57,15 +59,14 @@ export class MemberVideoResponse {
   }
 
   public static from(video: Video) {
-    const member = video.member;
     return new MemberVideoResponse(
       video.id,
-      video.thumbnail,
+      parseThumbnail(video.thumbnail),
       video.name,
       video.videoLength,
-      video.createdAt.getTime(),
-      member.nickname,
-      member.profileImg,
+      parseDateToString(video.createdAt),
+      video.memberNickname,
+      video.memberProfileImg,
     );
   }
 }

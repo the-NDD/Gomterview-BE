@@ -67,7 +67,7 @@ describe('AnswerController 단위테스트', () => {
     it('원본 질문에 바로 질문을 추가할 수 있다.', async () => {
       //given
       mockAnswerService.addAnswer.mockResolvedValue(
-        AnswerResponse.from(answerFixture, memberFixture),
+        AnswerResponse.from(answerFixture),
       );
 
       //when
@@ -78,7 +78,7 @@ describe('AnswerController 단위테스트', () => {
           createAnswerRequestFixture,
           mockReqWithMemberFixture,
         ),
-      ).resolves.toEqual(AnswerResponse.from(answerFixture, memberFixture));
+      ).resolves.toEqual(AnswerResponse.from(answerFixture));
     });
   });
 
@@ -151,7 +151,7 @@ describe('AnswerController 통합테스트', () => {
       await categoryRepository.save(categoryFixtureWithId);
       const workbook = await workbookRepository.save(workbookFixture);
       const question = await questionRepository.save(
-        Question.of(workbook, null, 'testQuestion'),
+        Question.of(workbook.id, null, 'testQuestion'),
       );
 
       //when
@@ -172,10 +172,10 @@ describe('AnswerController 통합테스트', () => {
       await categoryRepository.save(categoryFixtureWithId);
       const workbook = await workbookRepository.save(workbookFixture);
       const question = await questionRepository.save(
-        Question.of(workbook, null, 'testQuestion'),
+        Question.of(workbook.id, null, 'testQuestion'),
       );
       const copyQuestion = await questionRepository.save(
-        Question.copyOf(question, workbook),
+        Question.copyOf(question, workbook.id),
       );
 
       //when&then
@@ -194,10 +194,10 @@ describe('AnswerController 통합테스트', () => {
       await categoryRepository.save(categoryFixtureWithId);
       const workbook = await workbookRepository.save(workbookFixture);
       const question = await questionRepository.save(
-        Question.of(workbook, null, 'testQuestion'),
+        Question.of(workbook.id, null, 'testQuestion'),
       );
       const copyQuestion = await questionRepository.save(
-        Question.copyOf(question, workbook),
+        Question.copyOf(question, workbook.id),
       );
 
       //when&then
@@ -230,7 +230,7 @@ describe('AnswerController 통합테스트', () => {
       await categoryRepository.save(categoryFixtureWithId);
       const workbook = await workbookRepository.save(workbookFixture);
       const question = await questionRepository.save(
-        Question.of(workbook, null, 'testQuestion'),
+        Question.of(workbook.id, null, 'testQuestion'),
       );
 
       //when&then
@@ -251,10 +251,10 @@ describe('AnswerController 통합테스트', () => {
       await categoryRepository.save(categoryFixtureWithId);
       const workbook = await workbookRepository.save(workbookFixture);
       const question = await questionRepository.save(
-        Question.of(workbook, null, 'testQuestion'),
+        Question.of(workbook.id, null, 'testQuestion'),
       );
       const answer = await answerRepository.save(
-        Answer.of('test', member, question),
+        Answer.of('test', member, question.id),
       );
       //when&then
       const token = await authService.login(memberFixturesOAuthRequest);
@@ -272,10 +272,10 @@ describe('AnswerController 통합테스트', () => {
       await categoryRepository.save(categoryFixtureWithId);
       const workbook = await workbookRepository.save(workbookFixture);
       const question = await questionRepository.save(
-        Question.of(workbook, null, 'testQuestion'),
+        Question.of(workbook.id, null, 'testQuestion'),
       );
       const answer = await answerRepository.save(
-        Answer.of('test', member, question),
+        Answer.of('test', member, question.id),
       );
 
       //when&then
@@ -292,10 +292,10 @@ describe('AnswerController 통합테스트', () => {
       await categoryRepository.save(categoryFixtureWithId);
       const workbook = await workbookRepository.save(workbookFixture);
       const question = await questionRepository.save(
-        Question.of(workbook, null, 'testQuestion'),
+        Question.of(workbook.id, null, 'testQuestion'),
       );
       const answer = await answerRepository.save(
-        Answer.of('test', member, question),
+        Answer.of('test', member, question.id),
       );
 
       //when&then
@@ -314,10 +314,10 @@ describe('AnswerController 통합테스트', () => {
       await categoryRepository.save(categoryFixtureWithId);
       const workbook = await workbookRepository.save(workbookFixture);
       const question = await questionRepository.save(
-        Question.of(workbook, null, 'testQuestion'),
+        Question.of(workbook.id, null, 'testQuestion'),
       );
       const answer = await answerRepository.save(
-        Answer.of('test', member, question),
+        Answer.of('test', member, question.id),
       );
 
       //when&then
@@ -336,7 +336,7 @@ describe('AnswerController 통합테스트', () => {
       await categoryRepository.save(categoryFixtureWithId);
       const workbook = await workbookRepository.save(workbookFixture);
       const question = await questionRepository.save(
-        Question.of(workbook, null, 'testQuestion'),
+        Question.of(workbook.id, null, 'testQuestion'),
       );
 
       //when&then
@@ -357,11 +357,11 @@ describe('AnswerController 통합테스트', () => {
       await categoryRepository.save(categoryFixtureWithId);
       const workbook = await workbookRepository.save(workbookFixture);
       const question = await questionRepository.save(
-        Question.of(workbook, null, 'testQuestion'),
+        Question.of(workbook.id, null, 'testQuestion'),
       );
       for (let index = 1; index <= 10; index++) {
         await answerRepository.save(
-          Answer.of(`test${index}`, member, question),
+          Answer.of(`test${index}`, member, question.id),
         );
       }
 
@@ -380,16 +380,16 @@ describe('AnswerController 통합테스트', () => {
       await categoryRepository.save(categoryFixtureWithId);
       const workbook = await workbookRepository.save(workbookFixture);
       const question = await questionRepository.save(
-        Question.of(workbook, null, 'testQuestion'),
+        Question.of(workbook.id, null, 'testQuestion'),
       );
       const answer = await answerRepository.save(
-        Answer.of('test', member, question),
+        Answer.of('test', member, question.id),
       );
       question.setDefaultAnswer(answer);
       await questionRepository.save(question);
       for (let index = 1; index <= 10; index++) {
         await answerRepository.save(
-          Answer.of(`test${index}`, member, question),
+          Answer.of(`test${index}`, member, question.id),
         );
       }
 
@@ -408,11 +408,11 @@ describe('AnswerController 통합테스트', () => {
       await categoryRepository.save(categoryFixtureWithId);
       const workbook = await workbookRepository.save(workbookFixture);
       const question = await questionRepository.save(
-        Question.of(workbook, null, 'testQuestion'),
+        Question.of(workbook.id, null, 'testQuestion'),
       );
       for (let index = 1; index <= 10; index++) {
         await answerRepository.save(
-          Answer.of(`test${index}`, member, question),
+          Answer.of(`test${index}`, member, question.id),
         );
       }
 
@@ -433,10 +433,10 @@ describe('AnswerController 통합테스트', () => {
       await categoryRepository.save(categoryFixtureWithId);
       const workbook = await workbookRepository.save(workbookFixture);
       const question = await questionRepository.save(
-        Question.of(workbook, null, 'testQuestion'),
+        Question.of(workbook.id, null, 'testQuestion'),
       );
       const answer = await answerRepository.save(
-        Answer.of('test', member, question),
+        Answer.of('test', member, question.id),
       );
 
       //when&then
@@ -454,10 +454,10 @@ describe('AnswerController 통합테스트', () => {
       await categoryRepository.save(categoryFixtureWithId);
       const workbook = await workbookRepository.save(workbookFixture);
       const question = await questionRepository.save(
-        Question.of(workbook, null, 'testQuestion'),
+        Question.of(workbook.id, null, 'testQuestion'),
       );
       const answer = await answerRepository.save(
-        Answer.of('test', member, question),
+        Answer.of('test', member, question.id),
       );
 
       //when&then
@@ -471,10 +471,10 @@ describe('AnswerController 통합테스트', () => {
       await categoryRepository.save(categoryFixtureWithId);
       const workbook = await workbookRepository.save(workbookFixture);
       const question = await questionRepository.save(
-        Question.of(workbook, null, 'testQuestion'),
+        Question.of(workbook.id, null, 'testQuestion'),
       );
       const answer = await answerRepository.save(
-        Answer.of('test', member, question),
+        Answer.of('test', member, question.id),
       );
 
       //when&then
